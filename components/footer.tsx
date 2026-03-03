@@ -1,4 +1,5 @@
 import Link from "next/link"
+import Image from "next/image"
 import { FileText, FileSignature, LayoutDashboard, BarChart3, HelpCircle, Mail, Shield, Phone, MapPin } from "lucide-react"
 
 export function Footer() {
@@ -11,18 +12,30 @@ export function Footer() {
             {/* Brand */}
             <div className="lg:col-span-1">
               <div className="flex items-center gap-3 mb-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary/80 shadow-lg">
-                  <span className="font-serif text-xl font-bold text-primary-foreground">SGC</span>
-                </div>
+                <Image
+                  src="/images/sgc-digital-logo.png"
+                  alt="SGC Digital"
+                  width={56}
+                  height={50}
+                />
                 <div>
                   <p className="font-bold text-foreground">SGC Digital</p>
                   <p className="text-sm text-primary font-medium">Solicitor General{"'"}s Chambers</p>
                 </div>
               </div>
-              <p className="text-sm text-muted-foreground leading-relaxed">
+              <p className="text-sm text-muted-foreground leading-relaxed mb-4">
                 The official digital portal for the Solicitor General{"'"}s Chambers of Barbados, 
                 enabling secure submission and tracking of Registry Correspondence and Government Contracts.
               </p>
+              <div className="flex items-center gap-2">
+                <Image
+                  src="/images/barbados-coat-of-arms.png"
+                  alt="Barbados Coat of Arms - Pride and Industry"
+                  width={48}
+                  height={48}
+                />
+                <span className="text-xs text-muted-foreground">Government of Barbados</span>
+              </div>
             </div>
             
             {/* Services */}
@@ -116,9 +129,18 @@ export function Footer() {
       <div className="bg-primary text-primary-foreground">
         <div className="container mx-auto px-4 py-4 lg:px-8">
           <div className="flex flex-col sm:flex-row justify-between items-center gap-3 text-xs">
-            <p>
-              © {new Date().getFullYear()} Government of Barbados. All rights reserved.
-            </p>
+            <div className="flex items-center gap-3">
+              <Image
+                src="/images/barbados-coat-of-arms.png"
+                alt="Barbados Coat of Arms"
+                width={28}
+                height={28}
+                className="hidden sm:block"
+              />
+              <p>
+                © {new Date().getFullYear()} Government of Barbados. All rights reserved.
+              </p>
+            </div>
             <div className="flex items-center gap-4">
               <Link href="/terms" className="hover:underline">Terms of Use</Link>
               <Link href="/accessibility" className="hover:underline">Accessibility</Link>

@@ -4,6 +4,7 @@ import { ServiceCard } from "@/components/service-card"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import Link from "next/link"
+import Image from "next/image"
 import { 
   FileText, 
   FileSignature, 
@@ -24,35 +25,66 @@ export default function HomePage() {
       
       <main className="flex-1">
         {/* Hero Section */}
-        <section className="relative overflow-hidden bg-primary py-20 lg:py-28">
-          <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff08_1px,transparent_1px),linear-gradient(to_bottom,#ffffff08_1px,transparent_1px)] bg-[size:24px_24px]" />
+        <section className="relative overflow-hidden bg-gradient-to-br from-primary via-primary to-primary/90 py-16 lg:py-24">
+          {/* Background Pattern */}
+          <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:32px_32px]" />
+          <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-accent/10 to-transparent" />
+          
           <div className="container relative mx-auto px-4 lg:px-8">
-            <div className="mx-auto max-w-3xl text-center">
-              <div className="mb-6 inline-flex items-center rounded-full border border-primary-foreground/20 bg-primary-foreground/10 px-4 py-1.5">
-                <span className="text-sm font-medium text-primary-foreground">
-                  Official Government Portal
-                </span>
+            <div className="grid lg:grid-cols-2 gap-12 items-center">
+              {/* Left Content */}
+              <div className="text-center lg:text-left">
+                <div className="mb-6 inline-flex items-center rounded-full border border-primary-foreground/20 bg-primary-foreground/10 px-4 py-1.5">
+                  <Image 
+                    src="/images/barbados-coat-of-arms.png" 
+                    alt="Barbados Coat of Arms" 
+                    width={24} 
+                    height={24} 
+                    className="mr-2"
+                  />
+                  <span className="text-sm font-medium text-primary-foreground">
+                    Government of Barbados - Official Portal
+                  </span>
+                </div>
+                <h1 className="font-serif text-4xl font-bold tracking-tight text-primary-foreground sm:text-5xl lg:text-6xl text-balance">
+                  SGC Digital
+                </h1>
+                <p className="mt-2 text-xl text-accent font-semibold">
+                  Solicitor General{"'"}s Chambers
+                </p>
+                <p className="mt-6 text-lg text-primary-foreground/80 leading-relaxed max-w-xl mx-auto lg:mx-0 text-pretty">
+                  Submit and track Registry Correspondence and Government Contract requests 
+                  through our secure digital portal. Streamlined processes for Government of Barbados services.
+                </p>
+                <div className="mt-10 flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
+                  <Button size="lg" className="w-full sm:w-auto bg-accent hover:bg-accent/90 text-accent-foreground shadow-lg" asChild>
+                    <Link href="/correspondence">
+                      <FileText className="mr-2 h-5 w-5" />
+                      Submit Correspondence
+                    </Link>
+                  </Button>
+                  <Button size="lg" variant="outline" asChild className="w-full sm:w-auto bg-transparent border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10">
+                    <Link href="/contracts">
+                      <FileSignature className="mr-2 h-5 w-5" />
+                      Submit Contract Request
+                    </Link>
+                  </Button>
+                </div>
               </div>
-              <h1 className="font-serif text-4xl font-bold tracking-tight text-primary-foreground sm:text-5xl lg:text-6xl text-balance">
-                Solicitor General{"'"}s Chambers Digital Services
-              </h1>
-              <p className="mt-6 text-lg text-primary-foreground/80 leading-relaxed max-w-2xl mx-auto text-pretty">
-                Submit and track Registry Correspondence and Government Contract requests 
-                through our secure digital portal. Streamlined processes for Government of Barbados services.
-              </p>
-              <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
-                <Button size="lg" variant="secondary" asChild className="w-full sm:w-auto">
-                  <Link href="/correspondence">
-                    <FileText className="mr-2 h-5 w-5" />
-                    Submit Correspondence
-                  </Link>
-                </Button>
-                <Button size="lg" variant="outline" asChild className="w-full sm:w-auto bg-transparent border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10">
-                  <Link href="/contracts">
-                    <FileSignature className="mr-2 h-5 w-5" />
-                    Submit Contract Request
-                  </Link>
-                </Button>
+              
+              {/* Right - Logo */}
+              <div className="flex justify-center lg:justify-end">
+                <div className="relative">
+                  <div className="absolute inset-0 bg-gradient-to-br from-accent/20 to-transparent rounded-full blur-3xl" />
+                  <Image
+                    src="/images/sgc-digital-logo.png"
+                    alt="SGC Digital - Solicitor General's Chambers"
+                    width={450}
+                    height={400}
+                    className="relative z-10 drop-shadow-2xl"
+                    priority
+                  />
+                </div>
               </div>
             </div>
           </div>

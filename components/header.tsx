@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { 
@@ -35,9 +36,13 @@ export function Header() {
       <div className="border-b border-primary/20 bg-gradient-to-r from-card via-card to-primary/5 backdrop-blur supports-[backdrop-filter]:bg-card/95">
         <div className="container mx-auto flex h-16 items-center justify-between px-4 lg:px-8">
           <Link href="/" className="flex items-center gap-3 group">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary/80 shadow-md group-hover:shadow-lg transition-shadow">
-              <span className="font-serif text-lg font-bold text-primary-foreground">SGC</span>
-            </div>
+            <Image
+              src="/images/sgc-digital-logo.png"
+              alt="SGC Digital"
+              width={48}
+              height={44}
+              className="group-hover:scale-105 transition-transform"
+            />
             <div className="hidden sm:block">
               <p className="text-sm font-bold text-foreground">SGC Digital</p>
               <p className="text-xs text-primary">Solicitor General{"'"}s Chambers</p>
@@ -121,9 +126,12 @@ export function Header() {
               </SheetTrigger>
               <SheetContent side="right" className="w-[300px] sm:w-[350px] bg-gradient-to-b from-card to-primary/5">
                 <div className="flex items-center gap-3 mb-8 mt-4">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary">
-                    <span className="font-serif text-sm font-bold text-primary-foreground">SGC</span>
-                  </div>
+                  <Image
+                    src="/images/sgc-digital-logo.png"
+                    alt="SGC Digital"
+                    width={44}
+                    height={40}
+                  />
                   <div>
                     <p className="font-semibold text-foreground">SGC Digital</p>
                     <p className="text-xs text-primary">Government of Barbados</p>
