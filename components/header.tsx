@@ -52,7 +52,7 @@ export function Header() {
           <Link href="/" className="flex items-center group">
             <div>
               <p className="text-base font-bold text-primary group-hover:text-primary/80 transition-colors">SGC Digital</p>
-              <p className="text-xs text-muted-foreground font-medium">Registry Correspondence & Contract Management Portal</p>
+              <p className="text-xs text-muted-foreground font-medium">Correspondence & Contract Management Portal</p>
             </div>
           </Link>
 
@@ -147,7 +147,7 @@ export function Header() {
                   </div>
                   <div>
                     <p className="font-bold text-primary">SGC Digital</p>
-                    <p className="text-xs text-muted-foreground">Registry & Contract Management Portal</p>
+                    <p className="text-xs text-muted-foreground">Correspondence & Contract Management Portal</p>
                   </div>
                 </div>
                 
