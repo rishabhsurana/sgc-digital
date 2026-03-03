@@ -23,7 +23,7 @@ export function Header() {
     <header className="sticky top-0 z-50 w-full">
       {/* Top Bar with Government Branding */}
       <div className="bg-primary text-primary-foreground">
-        <div className="container mx-auto flex h-10 items-center justify-between px-4 lg:px-8 text-xs">
+        <div className="flex h-10 items-center justify-between px-4 lg:px-6 text-xs">
           <div className="flex items-center gap-3">
             <Image
               src="/images/barbados-coat-of-arms.png"
@@ -47,7 +47,7 @@ export function Header() {
       
       {/* Main Navigation */}
       <div className="border-b border-primary/20 bg-gradient-to-r from-card via-card to-primary/5 backdrop-blur supports-[backdrop-filter]:bg-card/95">
-        <div className="container mx-auto flex h-16 items-center justify-between px-4 lg:px-8">
+        <div className="flex h-16 items-center justify-between px-4 lg:px-6">
           {/* SGC Digital Branding */}
           <Link href="/" className="flex items-center group">
             <div>
