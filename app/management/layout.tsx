@@ -1,12 +1,13 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import {
   BarChart3,
@@ -20,8 +21,17 @@ import {
   Building2,
   ChevronLeft,
   Home,
-  LogOut
+  LogOut,
+  User
 } from "lucide-react"
+
+interface AdminSession {
+  email: string
+  name: string
+  role: string
+  department?: string
+  loginTime: string
+}
 
 const sidebarNavItems = [
   {
@@ -68,7 +78,7 @@ const sidebarNavItems = [
   },
 ]
 
-function SidebarContent({ pathname }: { pathname: string }) {
+function SidebarContent({ pathname, adminSession, onSignOut }: { pathname: string; adminSession: AdminSession | null; onSignOut: () => void }) {
   return (
     <div className="flex h-full flex-col">
       {/* Header */}
@@ -113,6 +123,24 @@ function SidebarContent({ pathname }: { pathname: string }) {
         </nav>
       </ScrollArea>
 
+      {/* Admin Info */}
+      {adminSession && (
+        <div className="border-t border-primary/10 p-4">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10">
+              <User className="h-4 w-4 text-primary" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-foreground truncate">{adminSession.name}</p>
+              <p className="text-xs text-muted-foreground truncate">{adminSession.email}</p>
+            </div>
+          </div>
+          <Badge variant="outline" className="w-full justify-center text-xs capitalize mb-3">
+            {adminSession.role.replace("_", " ")}
+          </Badge>
+        </div>
+      )}
+
       {/* Footer */}
       <div className="border-t border-primary/10 p-4 space-y-2">
         <Button variant="ghost" size="sm" className="w-full justify-start" asChild>
@@ -121,7 +149,12 @@ function SidebarContent({ pathname }: { pathname: string }) {
             Back to Main Site
           </Link>
         </Button>
-        <Button variant="ghost" size="sm" className="w-full justify-start text-destructive hover:text-destructive">
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className="w-full justify-start text-destructive hover:text-destructive"
+          onClick={onSignOut}
+        >
           <LogOut className="mr-2 h-4 w-4" />
           Sign Out
         </Button>
@@ -136,19 +169,62 @@ export default function ManagementLayout({
   children: React.ReactNode
 }) {
   const pathname = usePathname()
+  const router = useRouter()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [adminSession, setAdminSession] = useState<AdminSession | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+
+  // Check for admin session on mount
+  useEffect(() => {
+    // Skip auth check for login page
+    if (pathname === "/management/login") {
+      setIsLoading(false)
+      return
+    }
+
+    const storedAdmin = sessionStorage.getItem("sgc_admin")
+    if (storedAdmin) {
+      setAdminSession(JSON.parse(storedAdmin))
+      setIsLoading(false)
+    } else {
+      // Redirect to management login
+      router.push("/management/login")
+    }
+  }, [pathname, router])
+
+  const handleSignOut = () => {
+    sessionStorage.removeItem("sgc_admin")
+    router.push("/management/login")
+  }
+
+  // Show loading state
+  if (isLoading && pathname !== "/management/login") {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-muted/30">
+        <div className="text-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto mb-4" />
+          <p className="text-sm text-muted-foreground">Verifying access...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Render login page without sidebar
+  if (pathname === "/management/login") {
+    return <>{children}</>
+  }
 
   return (
     <div className="flex min-h-screen bg-muted/30">
       {/* Desktop Sidebar */}
       <aside className="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0 border-r border-primary/10 bg-card">
-        <SidebarContent pathname={pathname} />
+        <SidebarContent pathname={pathname} adminSession={adminSession} onSignOut={handleSignOut} />
       </aside>
 
       {/* Mobile Sidebar */}
       <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
         <SheetContent side="left" className="w-64 p-0">
-          <SidebarContent pathname={pathname} />
+          <SidebarContent pathname={pathname} adminSession={adminSession} onSignOut={handleSignOut} />
         </SheetContent>
       </Sheet>
 
