@@ -59,7 +59,7 @@ export function Header() {
             />
             <div className="hidden sm:block">
               <p className="text-base font-bold text-primary">SGC Digital</p>
-              <p className="text-xs text-muted-foreground font-medium">Registry Correspondence & Contract Management</p>
+              <p className="text-xs text-muted-foreground font-medium">Registry Correspondence & Contract Management Portal</p>
             </div>
           </Link>
 
@@ -161,7 +161,7 @@ export function Header() {
                     />
                     <div>
                       <p className="font-bold text-primary">SGC Digital</p>
-                      <p className="text-xs text-muted-foreground">Registry & Contract Management</p>
+                      <p className="text-xs text-muted-foreground">Registry & Contract Management Portal</p>
                     </div>
                   </div>
                 </div>
