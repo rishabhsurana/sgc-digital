@@ -410,9 +410,9 @@ export default function ContractsPage() {
                 </p>
               </div>
               
-              <CardContent className="pt-6 pb-8 text-center">
+              <CardContent className="pt-6 pb-8">
                 {/* Transaction Number Card */}
-                <div className="rounded-xl bg-gradient-to-br from-primary/5 to-accent/10 border border-primary/20 p-6 mb-6">
+                <div className="rounded-xl bg-gradient-to-br from-primary/5 to-accent/10 border border-primary/20 p-6 mb-6 text-center">
                   <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Transaction Number</p>
                   <p className="text-3xl font-mono font-bold text-primary">{transactionNumber}</p>
                   <p className="text-xs text-muted-foreground mt-2">Save this number for your records</p>
@@ -423,8 +423,16 @@ export default function ContractsPage() {
                   <h3 className="font-semibold text-sm text-foreground mb-3">Submission Summary</h3>
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
+                      <span className="text-muted-foreground">Ministry:</span>
+                      <span className="font-medium text-foreground">{MINISTRIES.find(m => m.value === formData.ministry)?.label}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Contact:</span>
+                      <span className="font-medium text-foreground">{formData.contactName}</span>
+                    </div>
+                    <div className="flex justify-between">
                       <span className="text-muted-foreground">Contract:</span>
-                      <span className="font-medium text-foreground">{formData.contractTitle}</span>
+                      <span className="font-medium text-foreground truncate max-w-[200px]">{formData.contractTitle}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Value:</span>
@@ -443,19 +451,33 @@ export default function ContractsPage() {
                   </div>
                 </div>
                 
-                <div className="flex items-center gap-2 justify-center text-sm text-muted-foreground mb-8">
+                {/* Next Steps */}
+                <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 mb-6">
+                  <h4 className="font-semibold text-sm text-blue-900 mb-2">What Happens Next?</h4>
+                  <ol className="text-sm text-blue-800 space-y-1 list-decimal list-inside">
+                    <li>Your contract request will be reviewed by the SGC</li>
+                    <li>You may be contacted for additional documents if needed</li>
+                    <li>Track progress anytime from your Dashboard</li>
+                  </ol>
+                </div>
+                
+                <div className="flex items-center gap-2 justify-center text-sm text-muted-foreground mb-6">
                   <Mail className="h-4 w-4" />
                   <span>Confirmation sent to {formData.contactEmail}</span>
                 </div>
                 
                 <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                  <Button asChild size="lg">
+                  <Button asChild size="lg" className="bg-accent hover:bg-accent/90 text-accent-foreground">
                     <Link href="/dashboard">Go to Dashboard</Link>
                   </Button>
                   <Button variant="outline" size="lg" asChild>
                     <Link href="/">Return Home</Link>
                   </Button>
                 </div>
+                
+                <p className="text-xs text-center text-muted-foreground mt-4">
+                  Access your <Link href="/dashboard" className="text-primary hover:underline font-medium">Dashboard</Link> anytime to view all submissions and their current status.
+                </p>
               </CardContent>
             </Card>
           </div>

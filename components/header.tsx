@@ -34,18 +34,19 @@ export function Header() {
       
       {/* Main Navigation */}
       <div className="border-b border-primary/20 bg-gradient-to-r from-card via-card to-primary/5 backdrop-blur supports-[backdrop-filter]:bg-card/95">
-        <div className="container mx-auto flex h-16 items-center justify-between px-4 lg:px-8">
-          <Link href="/" className="flex items-center gap-3 group">
+        <div className="container mx-auto flex h-20 items-center justify-between px-4 lg:px-8">
+          <Link href="/" className="flex items-center gap-4 group">
             <Image
               src="/images/sgc-digital-logo.png"
               alt="SGC Digital"
-              width={48}
-              height={44}
+              width={56}
+              height={50}
               className="group-hover:scale-105 transition-transform"
             />
-            <div className="hidden sm:block">
-              <p className="text-sm font-bold text-foreground">SGC Digital</p>
-              <p className="text-xs text-primary">Solicitor General{"'"}s Chambers</p>
+            <div className="hidden sm:block border-l border-primary/20 pl-4">
+              <p className="text-base font-bold text-primary">SGC Digital</p>
+              <p className="text-xs text-muted-foreground font-medium">Solicitor General{"'"}s Chambers</p>
+              <p className="text-[10px] text-muted-foreground/70">Registry Correspondence & Contract Management</p>
             </div>
           </Link>
 
@@ -129,12 +130,13 @@ export function Header() {
                   <Image
                     src="/images/sgc-digital-logo.png"
                     alt="SGC Digital"
-                    width={44}
-                    height={40}
+                    width={48}
+                    height={44}
                   />
                   <div>
-                    <p className="font-semibold text-foreground">SGC Digital</p>
-                    <p className="text-xs text-primary">Government of Barbados</p>
+                    <p className="font-bold text-primary">SGC Digital</p>
+                    <p className="text-xs text-muted-foreground">Solicitor General{"'"}s Chambers</p>
+                    <p className="text-[10px] text-muted-foreground/70">Government of Barbados</p>
                   </div>
                 </div>
                 

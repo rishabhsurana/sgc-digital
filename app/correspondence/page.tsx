@@ -162,36 +162,80 @@ export default function CorrespondencePage() {
   }
 
   if (isSubmitted) {
+    const selectedType = CORRESPONDENCE_TYPES.find(t => t.value === formData.correspondenceType)
+    
     return (
       <div className="flex min-h-screen flex-col bg-background">
         <Header />
         <main className="flex-1 py-12">
           <div className="container mx-auto px-4 lg:px-8 max-w-2xl">
-            <Card className="bg-card border-border">
-              <CardContent className="pt-8 pb-8 text-center">
-                <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-green-100 text-green-600">
-                  <CheckCircle className="h-8 w-8" />
+            <Card className="bg-card border-border overflow-hidden">
+              {/* Success Banner */}
+              <div className="bg-gradient-to-r from-green-500 to-emerald-600 px-6 py-8 text-center">
+                <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-white/20 backdrop-blur">
+                  <CheckCircle className="h-10 w-10 text-white" />
                 </div>
-                <h1 className="text-2xl font-bold text-foreground mb-2">Submission Successful</h1>
-                <p className="text-muted-foreground mb-6">
-                  Your correspondence has been submitted successfully and is now being processed.
+                <h1 className="text-2xl font-bold text-white mb-1">Correspondence Submitted</h1>
+                <p className="text-green-100">
+                  Your request is now being processed by the SGC Registry
                 </p>
-                <div className="rounded-lg bg-muted p-4 mb-6">
-                  <p className="text-sm text-muted-foreground mb-1">Transaction Number</p>
-                  <p className="text-xl font-mono font-bold text-foreground">{transactionNumber}</p>
+              </div>
+              
+              <CardContent className="pt-6 pb-8">
+                {/* Transaction Number Card */}
+                <div className="rounded-xl bg-gradient-to-br from-primary/5 to-accent/10 border border-primary/20 p-6 mb-6 text-center">
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Transaction Number</p>
+                  <p className="text-3xl font-mono font-bold text-primary">{transactionNumber}</p>
+                  <p className="text-xs text-muted-foreground mt-2">Save this number for your records</p>
                 </div>
-                <p className="text-sm text-muted-foreground mb-8">
-                  A confirmation email has been sent to {formData.submitterEmail}. 
-                  You can track the status of your submission from your dashboard.
-                </p>
+                
+                {/* Summary */}
+                <div className="rounded-lg bg-muted/50 p-4 mb-6 text-left">
+                  <h3 className="font-semibold text-sm text-foreground mb-3">Submission Summary</h3>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Type:</span>
+                      <span className="font-medium text-foreground">{selectedType?.label}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Subject:</span>
+                      <span className="font-medium text-foreground truncate max-w-[200px]">{formData.subject}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Submitter:</span>
+                      <span className="font-medium text-foreground">{formData.submitterName}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Email:</span>
+                      <span className="font-medium text-foreground">{formData.submitterEmail}</span>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Next Steps */}
+                <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 mb-6">
+                  <h4 className="font-semibold text-sm text-blue-900 mb-2">What Happens Next?</h4>
+                  <ol className="text-sm text-blue-800 space-y-1 list-decimal list-inside">
+                    <li>Your submission will be reviewed by the SGC Registry</li>
+                    <li>You will receive email updates as your submission progresses</li>
+                    <li>Track status anytime from your Dashboard</li>
+                  </ol>
+                </div>
+                
                 <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                  <Button asChild>
-                    <Link href="/dashboard">Go to Dashboard</Link>
+                  <Button asChild size="lg" className="bg-accent hover:bg-accent/90 text-accent-foreground">
+                    <Link href="/dashboard">
+                      Go to Dashboard
+                    </Link>
                   </Button>
-                  <Button variant="outline" asChild>
+                  <Button variant="outline" size="lg" asChild>
                     <Link href="/">Return Home</Link>
                   </Button>
                 </div>
+                
+                <p className="text-xs text-center text-muted-foreground mt-4">
+                  Access your <Link href="/dashboard" className="text-primary hover:underline font-medium">Dashboard</Link> anytime to view all submissions and their current status.
+                </p>
               </CardContent>
             </Card>
           </div>

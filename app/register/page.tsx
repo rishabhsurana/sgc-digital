@@ -45,6 +45,9 @@ export default function RegisterPage() {
   }
 
   if (isRegistered) {
+    const selectedType = SUBMITTER_TYPES.find(t => t.value === formData.submitterType)
+    const entityNumber = `ENT-${Date.now().toString(36).toUpperCase()}`
+    
     return (
       <div className="flex min-h-screen flex-col bg-background">
         <Header />
@@ -58,22 +61,55 @@ export default function RegisterPage() {
                 </div>
                 <h1 className="text-2xl font-bold text-white mb-1">Registration Successful</h1>
                 <p className="text-green-100">
-                  Welcome to SGC Digital
+                  Welcome to SGC Digital, {formData.fullName}
                 </p>
               </div>
-              <CardContent className="pt-6 pb-8 text-center">
-                <p className="text-muted-foreground mb-6">
-                  Your account has been created. Please check your email to verify your account 
-                  before signing in.
-                </p>
-                <div className="rounded-xl bg-gradient-to-br from-primary/5 to-accent/10 border border-primary/20 p-5 mb-6">
+              <CardContent className="pt-6 pb-8">
+                {/* User Details Summary */}
+                <div className="rounded-lg bg-muted/50 p-4 mb-6 text-left">
+                  <h3 className="font-semibold text-sm text-foreground mb-3">Your Registration Details</h3>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Name:</span>
+                      <span className="font-medium text-foreground">{formData.fullName}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Email:</span>
+                      <span className="font-medium text-foreground">{formData.email}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Type:</span>
+                      <span className="font-medium text-foreground">{selectedType?.label.split("/")[0].trim()}</span>
+                    </div>
+                    {formData.organization && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Organization:</span>
+                        <span className="font-medium text-foreground">{formData.organization}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                
+                {/* Entity Number */}
+                <div className="rounded-xl bg-gradient-to-br from-primary/5 to-accent/10 border border-primary/20 p-5 mb-6 text-center">
                   <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Entity Number</p>
-                  <p className="text-2xl font-mono font-bold text-primary">ENT-{Date.now().toString(36).toUpperCase()}</p>
+                  <p className="text-2xl font-mono font-bold text-primary">{entityNumber}</p>
                   <p className="text-xs text-muted-foreground mt-2">Save this for your records</p>
                 </div>
-                <Button asChild className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">
-                  <Link href="/login">Continue to Sign In</Link>
-                </Button>
+                
+                <p className="text-sm text-muted-foreground mb-6 text-center">
+                  A verification email has been sent to <strong>{formData.email}</strong>. 
+                  Please verify your account before signing in.
+                </p>
+                
+                <div className="space-y-3">
+                  <Button asChild className="w-full bg-accent hover:bg-accent/90 text-accent-foreground" size="lg">
+                    <Link href="/login">Continue to Sign In</Link>
+                  </Button>
+                  <p className="text-xs text-center text-muted-foreground">
+                    After signing in, access your <Link href="/dashboard" className="text-primary hover:underline font-medium">Dashboard</Link> to submit and track requests.
+                  </p>
+                </div>
               </CardContent>
             </Card>
           </div>
