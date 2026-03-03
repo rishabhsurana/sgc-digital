@@ -1,76 +1,130 @@
 import Link from "next/link"
+import { FileText, FileSignature, LayoutDashboard, BarChart3, HelpCircle, Mail, Shield, Phone, MapPin } from "lucide-react"
 
 export function Footer() {
   return (
-    <footer className="border-t border-border bg-card">
-      <div className="container mx-auto px-4 py-8 lg:px-8">
-        <div className="grid gap-8 md:grid-cols-4">
-          <div className="md:col-span-2">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary">
-                <span className="font-serif text-lg font-bold text-primary-foreground">SGC</span>
+    <footer className="border-t border-primary/20">
+      {/* Main Footer */}
+      <div className="bg-gradient-to-b from-primary/5 to-primary/10">
+        <div className="container mx-auto px-4 py-12 lg:px-8">
+          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
+            {/* Brand */}
+            <div className="lg:col-span-1">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary/80 shadow-lg">
+                  <span className="font-serif text-xl font-bold text-primary-foreground">SGC</span>
+                </div>
+                <div>
+                  <p className="font-bold text-foreground">SGC Digital</p>
+                  <p className="text-sm text-primary font-medium">Solicitor General{"'"}s Chambers</p>
+                </div>
               </div>
-              <div>
-                <p className="font-semibold text-foreground">SGC Digital</p>
-                <p className="text-sm text-muted-foreground">Solicitor General{"'"}s Chambers</p>
-              </div>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                The official digital portal for the Solicitor General{"'"}s Chambers of Barbados, 
+                enabling secure submission and tracking of Registry Correspondence and Government Contracts.
+              </p>
             </div>
-            <p className="text-sm text-muted-foreground max-w-md">
-              The official digital portal for the Solicitor General{"'"}s Chambers of Barbados, 
-              enabling secure submission and tracking of Registry Correspondence and Government Contracts.
-            </p>
-          </div>
-          
-          <div>
-            <h4 className="font-semibold text-foreground mb-4">Services</h4>
-            <ul className="space-y-2 text-sm">
-              <li>
-                <Link href="/correspondence" className="text-muted-foreground hover:text-foreground transition-colors">
-                  Registry Correspondence
-                </Link>
-              </li>
-              <li>
-                <Link href="/contracts" className="text-muted-foreground hover:text-foreground transition-colors">
-                  Government Contracts
-                </Link>
-              </li>
-              <li>
-                <Link href="/dashboard" className="text-muted-foreground hover:text-foreground transition-colors">
-                  Track Submissions
-                </Link>
-              </li>
-            </ul>
-          </div>
-          
-          <div>
-            <h4 className="font-semibold text-foreground mb-4">Support</h4>
-            <ul className="space-y-2 text-sm">
-              <li>
-                <Link href="/help" className="text-muted-foreground hover:text-foreground transition-colors">
-                  How to Use
-                </Link>
-              </li>
-              <li>
-                <Link href="/contact" className="text-muted-foreground hover:text-foreground transition-colors">
-                  Contact Us
-                </Link>
-              </li>
-              <li>
-                <Link href="/privacy" className="text-muted-foreground hover:text-foreground transition-colors">
-                  Privacy Policy
-                </Link>
-              </li>
-            </ul>
+            
+            {/* Services */}
+            <div>
+              <h4 className="font-bold text-foreground mb-4 flex items-center gap-2">
+                <div className="h-1 w-4 bg-accent rounded" />
+                Services
+              </h4>
+              <ul className="space-y-3 text-sm">
+                <li>
+                  <Link href="/correspondence" className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors group">
+                    <FileText className="h-4 w-4 text-blue-600 group-hover:scale-110 transition-transform" />
+                    Registry Correspondence
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/contracts" className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors group">
+                    <FileSignature className="h-4 w-4 text-purple-600 group-hover:scale-110 transition-transform" />
+                    Government Contracts
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/dashboard" className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors group">
+                    <LayoutDashboard className="h-4 w-4 text-green-600 group-hover:scale-110 transition-transform" />
+                    Track Submissions
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/reports" className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors group">
+                    <BarChart3 className="h-4 w-4 text-orange-600 group-hover:scale-110 transition-transform" />
+                    Reports & Analytics
+                  </Link>
+                </li>
+              </ul>
+            </div>
+            
+            {/* Support */}
+            <div>
+              <h4 className="font-bold text-foreground mb-4 flex items-center gap-2">
+                <div className="h-1 w-4 bg-accent rounded" />
+                Support
+              </h4>
+              <ul className="space-y-3 text-sm">
+                <li>
+                  <Link href="/help" className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors group">
+                    <HelpCircle className="h-4 w-4 group-hover:scale-110 transition-transform" />
+                    How to Use
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/contact" className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors group">
+                    <Mail className="h-4 w-4 group-hover:scale-110 transition-transform" />
+                    Contact Us
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/privacy" className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors group">
+                    <Shield className="h-4 w-4 group-hover:scale-110 transition-transform" />
+                    Privacy Policy
+                  </Link>
+                </li>
+              </ul>
+            </div>
+            
+            {/* Contact Info */}
+            <div>
+              <h4 className="font-bold text-foreground mb-4 flex items-center gap-2">
+                <div className="h-1 w-4 bg-accent rounded" />
+                Contact
+              </h4>
+              <ul className="space-y-3 text-sm">
+                <li className="flex items-start gap-2 text-muted-foreground">
+                  <MapPin className="h-4 w-4 mt-0.5 text-primary" />
+                  <span>Marine House, Hastings<br />Christ Church, Barbados</span>
+                </li>
+                <li className="flex items-center gap-2 text-muted-foreground">
+                  <Phone className="h-4 w-4 text-primary" />
+                  <span>+1 (246) 430-4700</span>
+                </li>
+                <li className="flex items-center gap-2 text-muted-foreground">
+                  <Mail className="h-4 w-4 text-primary" />
+                  <span>sgc@barbados.gov.bb</span>
+                </li>
+              </ul>
+            </div>
           </div>
         </div>
-        
-        <div className="mt-8 pt-6 border-t border-border flex flex-col sm:flex-row justify-between items-center gap-4">
-          <p className="text-xs text-muted-foreground">
-            © {new Date().getFullYear()} Government of Barbados. All rights reserved.
-          </p>
-          <p className="text-xs text-muted-foreground">
-            Solicitor General{"'"}s Chambers Digital Services
-          </p>
+      </div>
+      
+      {/* Bottom Bar */}
+      <div className="bg-primary text-primary-foreground">
+        <div className="container mx-auto px-4 py-4 lg:px-8">
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-3 text-xs">
+            <p>
+              © {new Date().getFullYear()} Government of Barbados. All rights reserved.
+            </p>
+            <div className="flex items-center gap-4">
+              <Link href="/terms" className="hover:underline">Terms of Use</Link>
+              <Link href="/accessibility" className="hover:underline">Accessibility</Link>
+              <Link href="/sitemap" className="hover:underline">Sitemap</Link>
+            </div>
+          </div>
         </div>
       </div>
     </footer>

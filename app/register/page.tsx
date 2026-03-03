@@ -10,15 +10,15 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
-import { ArrowLeft, UserPlus, CheckCircle } from "lucide-react"
+import { ArrowLeft, UserPlus, CheckCircle, Building2, Scale, Landmark, Users, Briefcase, HelpCircle } from "lucide-react"
 
 const SUBMITTER_TYPES = [
-  { value: "ministry", label: "Ministry / Government Agency (MDA)" },
-  { value: "court", label: "Court" },
-  { value: "statutory", label: "Statutory Body" },
-  { value: "public", label: "Member of the Public" },
-  { value: "attorney", label: "Attorney-at-Law" },
-  { value: "other", label: "Other" }
+  { value: "ministry", label: "Ministry / Government Agency (MDA)", icon: Building2, color: "text-blue-600", bgColor: "bg-blue-50" },
+  { value: "court", label: "Court", icon: Scale, color: "text-purple-600", bgColor: "bg-purple-50" },
+  { value: "statutory", label: "Statutory Body", icon: Landmark, color: "text-green-600", bgColor: "bg-green-50" },
+  { value: "public", label: "Member of the Public", icon: Users, color: "text-orange-600", bgColor: "bg-orange-50" },
+  { value: "attorney", label: "Attorney-at-Law", icon: Briefcase, color: "text-red-600", bgColor: "bg-red-50" },
+  { value: "other", label: "Other", icon: HelpCircle, color: "text-gray-600", bgColor: "bg-gray-50" }
 ]
 
 export default function RegisterPage() {
@@ -50,21 +50,28 @@ export default function RegisterPage() {
         <Header />
         <main className="flex-1 py-12 lg:py-20">
           <div className="container mx-auto px-4 lg:px-8 max-w-md">
-            <Card className="bg-card border-border">
-              <CardContent className="pt-8 pb-8 text-center">
-                <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-green-100 text-green-600">
-                  <CheckCircle className="h-8 w-8" />
+            <Card className="bg-card border-border overflow-hidden">
+              {/* Success Banner */}
+              <div className="bg-gradient-to-r from-green-500 to-emerald-600 px-6 py-8 text-center">
+                <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-white/20 backdrop-blur">
+                  <CheckCircle className="h-10 w-10 text-white" />
                 </div>
-                <h1 className="text-2xl font-bold text-foreground mb-2">Registration Successful</h1>
+                <h1 className="text-2xl font-bold text-white mb-1">Registration Successful</h1>
+                <p className="text-green-100">
+                  Welcome to SGC Digital
+                </p>
+              </div>
+              <CardContent className="pt-6 pb-8 text-center">
                 <p className="text-muted-foreground mb-6">
                   Your account has been created. Please check your email to verify your account 
                   before signing in.
                 </p>
-                <div className="rounded-lg bg-muted p-4 mb-6 text-left">
-                  <p className="text-sm text-muted-foreground mb-1">Entity Number</p>
-                  <p className="text-lg font-mono font-bold text-foreground">ENT-{Date.now().toString(36).toUpperCase()}</p>
+                <div className="rounded-xl bg-gradient-to-br from-primary/5 to-accent/10 border border-primary/20 p-5 mb-6">
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Entity Number</p>
+                  <p className="text-2xl font-mono font-bold text-primary">ENT-{Date.now().toString(36).toUpperCase()}</p>
+                  <p className="text-xs text-muted-foreground mt-2">Save this for your records</p>
                 </div>
-                <Button asChild className="w-full">
+                <Button asChild className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">
                   <Link href="/login">Continue to Sign In</Link>
                 </Button>
               </CardContent>
@@ -90,36 +97,50 @@ export default function RegisterPage() {
             Back to Home
           </Link>
           
-          <Card className="bg-card border-border">
-            <CardHeader className="text-center">
-              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-primary">
-                <span className="font-serif text-lg font-bold text-primary-foreground">SGC</span>
+          <Card className="bg-card border-border overflow-hidden">
+            <div className="bg-gradient-to-r from-primary to-primary/80 px-6 py-8 text-center">
+              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-white/20 backdrop-blur shadow-lg">
+                <span className="font-serif text-xl font-bold text-white">SGC</span>
               </div>
-              <CardTitle className="text-2xl">Create an Account</CardTitle>
+              <h1 className="text-2xl font-bold text-white">Create an Account</h1>
+              <p className="text-primary-foreground/80 mt-1">
+                Register to submit and track your requests
+              </p>
+            </div>
+            <CardHeader className="text-center pt-6">
               <CardDescription>
-                Register to submit and track correspondence and contracts with the SGC.
+                Select your submitter type and fill in your details below.
               </CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="submitterType">Submitter Type <span className="text-destructive">*</span></Label>
-                  <Select
-                    value={formData.submitterType}
-                    onValueChange={(value) => setFormData(prev => ({ ...prev, submitterType: value }))}
-                    required
-                  >
-                    <SelectTrigger id="submitterType">
-                      <SelectValue placeholder="Select your type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {SUBMITTER_TYPES.map((type) => (
-                        <SelectItem key={type.value} value={type.value}>
-                          {type.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                <div className="space-y-3">
+                  <Label className="text-base font-semibold">Submitter Type <span className="text-destructive">*</span></Label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {SUBMITTER_TYPES.map((type) => {
+                      const Icon = type.icon
+                      const isSelected = formData.submitterType === type.value
+                      return (
+                        <button
+                          type="button"
+                          key={type.value}
+                          onClick={() => setFormData(prev => ({ ...prev, submitterType: type.value }))}
+                          className={`flex items-center gap-2 p-3 rounded-lg border-2 text-left transition-all ${
+                            isSelected 
+                              ? `border-primary ${type.bgColor} shadow-sm` 
+                              : "border-border hover:border-muted-foreground/30 hover:bg-muted/50"
+                          }`}
+                        >
+                          <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${isSelected ? type.bgColor : "bg-muted"}`}>
+                            <Icon className={`h-4 w-4 ${isSelected ? type.color : "text-muted-foreground"}`} />
+                          </div>
+                          <span className={`text-xs font-medium ${isSelected ? "text-foreground" : "text-muted-foreground"}`}>
+                            {type.label.split("/")[0].trim()}
+                          </span>
+                        </button>
+                      )
+                    })}
+                  </div>
                 </div>
 
                 <div className="space-y-2">
@@ -207,7 +228,7 @@ export default function RegisterPage() {
                   </Label>
                 </div>
 
-                <Button type="submit" className="w-full" disabled={isLoading || !formData.terms}>
+                <Button type="submit" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground shadow-md" size="lg" disabled={isLoading || !formData.terms}>
                   {isLoading ? (
                     "Creating Account..."
                   ) : (
