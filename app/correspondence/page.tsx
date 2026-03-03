@@ -14,7 +14,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { ArrowLeft, ArrowRight, Save, Send, Info, FileText, Gavel, FileStack, HelpCircle, CheckCircle } from "lucide-react"
+import { ArrowLeft, ArrowRight, Save, Send, Info, FileText, Gavel, FileStack, HelpCircle, CheckCircle, Scale, Globe, UserCheck, Lock } from "lucide-react"
 import Link from "next/link"
 
 const STEPS = [
@@ -27,7 +27,7 @@ const STEPS = [
 const CORRESPONDENCE_TYPES = [
   { 
     value: "general", 
-    label: "General Correspondence", 
+    label: "General", 
     description: "General enquiries and correspondence to the SGC",
     icon: FileText 
   },
@@ -38,16 +38,34 @@ const CORRESPONDENCE_TYPES = [
     icon: Gavel 
   },
   { 
-    value: "cabinet", 
-    label: "Cabinet Papers", 
-    description: "Cabinet-level documents and advisory requests",
-    icon: FileStack 
+    value: "compensation", 
+    label: "Compensation", 
+    description: "Compensation claims and related matters",
+    icon: Scale 
+  },
+  { 
+    value: "public-trustee", 
+    label: "Public Trustee", 
+    description: "Matters relating to the Public Trustee",
+    icon: UserCheck 
   },
   { 
     value: "advisory", 
-    label: "Legal Advisory", 
+    label: "Advisory", 
     description: "Requests for legal opinions and advice",
     icon: HelpCircle 
+  },
+  { 
+    value: "international-law", 
+    label: "International Law", 
+    description: "International law and treaty matters",
+    icon: Globe 
+  },
+  { 
+    value: "cabinet", 
+    label: "Cabinet / Confidential", 
+    description: "Cabinet-level documents requiring restricted access",
+    icon: Lock 
   }
 ]
 
