@@ -44,19 +44,19 @@ export default function HomePage() {
                 through our secure digital portal. Streamlined processes for Government of Barbados services.
               </p>
               <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
-                <Button size="lg" className="w-full sm:w-auto bg-accent hover:bg-accent/90 text-accent-foreground shadow-lg" asChild>
+                <Button size="lg" className="w-full sm:w-56 bg-accent hover:bg-accent/90 text-accent-foreground shadow-lg" asChild>
                   <Link href="/correspondence">
                     <FileText className="mr-2 h-5 w-5" />
-                    Submit Correspondence
+                    Correspondence
                   </Link>
                 </Button>
-                <Button size="lg" variant="outline" asChild className="w-full sm:w-auto bg-transparent border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10">
+                <Button size="lg" variant="outline" asChild className="w-full sm:w-56 bg-transparent border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10">
                   <Link href="/contracts">
                     <FileSignature className="mr-2 h-5 w-5" />
-                    Submit Contract Request
+                    Contract Request
                   </Link>
                 </Button>
-                <Button size="lg" variant="secondary" asChild className="w-full sm:w-auto">
+                <Button size="lg" variant="secondary" asChild className="w-full sm:w-56">
                   <Link href="/dashboard">
                     <LayoutDashboard className="mr-2 h-5 w-5" />
                     My Dashboard
