@@ -51,18 +51,222 @@ import {
   Calendar
 } from "lucide-react"
 
-// Sample contracts data
+// Contract Categories per requirements
+const CONTRACT_CATEGORIES = {
+  "Goods": ["Procurement of Goods & Services", "Lease / Property", "Inter-Agency / MOU"],
+  "Consultancy/Services": ["Consultancy / Professional Services", "Procurement of Goods & Services", "Employment / Personnel", "Inter-Agency / MOU"],
+  "Works": ["Construction / Public Works", "Procurement of Goods & Services", "Inter-Agency / MOU", "Other"]
+}
+
+// Contract Instrument Types per requirements
+const CONTRACT_INSTRUMENTS = {
+  "Goods": ["Goods", "Uniforms", "Other"],
+  "Consultancy/Services": ["Cleaning Services", "Consultancy - Company", "Consultant/Independent Contractor", "Individual Consultant", "Individual Consultant (IDB-funded)", "Services", "Other"],
+  "Works": ["Works", "Other"]
+}
+
+// Sample contracts data aligned with requirements
 const CONTRACTS_DATA = [
-  { id: 1, ref: "CON-2026-0089", title: "Medical Equipment Supply", nature: "Goods", ministry: "Ministry of Health", contractor: "MedTech Solutions Ltd", value: 2500000, currency: "BBD", startDate: "2026-03-15", duration: "12 months", status: "approved", priority: "high" },
-  { id: 2, ref: "CON-2026-0088", title: "School Renovation Project Phase 2", nature: "Works", ministry: "Ministry of Education", contractor: "BuildRight Construction", value: 8900000, currency: "BBD", startDate: "2026-04-01", duration: "24 months", status: "pending", priority: "high" },
-  { id: 3, ref: "CON-2026-0087", title: "IT Infrastructure Upgrade", nature: "Goods", ministry: "Ministry of ICT", contractor: "TechServe Caribbean", value: 1800000, currency: "BBD", startDate: "2026-03-20", duration: "6 months", status: "under-review", priority: "medium" },
-  { id: 4, ref: "CON-2026-0086", title: "Road Rehabilitation - Highway 1", nature: "Works", ministry: "Ministry of Works", contractor: "Caribbean Roadways Inc", value: 45000000, currency: "BBD", startDate: "2026-05-01", duration: "36 months", status: "pending", priority: "high" },
-  { id: 5, ref: "CON-2026-0085", title: "Financial Advisory Services", nature: "Consultancy/Services", ministry: "Ministry of Finance", contractor: "PWC Barbados", value: 750000, currency: "BBD", startDate: "2026-03-01", duration: "12 months", status: "approved", priority: "medium" },
-  { id: 6, ref: "CON-2026-0084", title: "Agricultural Equipment", nature: "Goods", ministry: "Ministry of Agriculture", contractor: "AgroSupply Ltd", value: 3200000, currency: "BBD", startDate: "2026-04-15", duration: "3 months", status: "approved", priority: "low" },
-  { id: 7, ref: "CON-2026-0083", title: "Tourism Marketing Campaign", nature: "Consultancy/Services", ministry: "Ministry of Tourism", contractor: "BrandCaribbean Agency", value: 1200000, currency: "BBD", startDate: "2026-03-01", duration: "18 months", status: "under-review", priority: "medium" },
-  { id: 8, ref: "CON-2026-0082", title: "Water Treatment Plant Upgrade", nature: "Works", ministry: "Barbados Water Authority", contractor: "AquaTech Engineering", value: 15000000, currency: "BBD", startDate: "2026-06-01", duration: "24 months", status: "pending", priority: "high" },
-  { id: 9, ref: "CON-2026-0081", title: "Legal Research Database", nature: "Consultancy/Services", ministry: "Attorney General's Office", contractor: "LexisNexis Caribbean", value: 450000, currency: "BBD", startDate: "2026-02-15", duration: "36 months", status: "approved", priority: "low" },
-  { id: 10, ref: "CON-2026-0080", title: "Office Furniture Supply", nature: "Goods", ministry: "Ministry of Home Affairs", contractor: "Office Plus Ltd", value: 580000, currency: "BBD", startDate: "2026-03-10", duration: "2 months", status: "rejected", priority: "low" },
+  { 
+    id: 1, 
+    ref: "CON-2026-0089", 
+    title: "Medical Equipment Supply", 
+    nature: "Goods", 
+    category: "Procurement of Goods & Services",
+    instrumentType: "Goods",
+    contractType: "New",
+    parentContract: null,
+    ministry: "Ministry of Health", 
+    contractor: "MedTech Solutions Ltd", 
+    value: 2500000, 
+    currency: "BBD", 
+    startDate: "2026-03-15", 
+    duration: "12 months", 
+    status: "approved", 
+    priority: "high",
+    submittedDate: "2026-02-28",
+    submittedBy: "John Smith"
+  },
+  { 
+    id: 2, 
+    ref: "CON-2026-0088", 
+    title: "School Renovation Project Phase 2", 
+    nature: "Works", 
+    category: "Construction / Public Works",
+    instrumentType: "Works",
+    contractType: "Supplemental",
+    parentContract: "CON-2025-0045",
+    ministry: "Ministry of Education", 
+    contractor: "BuildRight Construction", 
+    value: 8900000, 
+    currency: "BBD", 
+    startDate: "2026-04-01", 
+    duration: "24 months", 
+    status: "pending", 
+    priority: "high",
+    submittedDate: "2026-02-25",
+    submittedBy: "Mary Johnson"
+  },
+  { 
+    id: 3, 
+    ref: "CON-2026-0087", 
+    title: "IT Infrastructure Upgrade", 
+    nature: "Goods", 
+    category: "Procurement of Goods & Services",
+    instrumentType: "Goods",
+    contractType: "New",
+    parentContract: null,
+    ministry: "Ministry of ICT", 
+    contractor: "TechServe Caribbean", 
+    value: 1800000, 
+    currency: "BBD", 
+    startDate: "2026-03-20", 
+    duration: "6 months", 
+    status: "under-review", 
+    priority: "medium",
+    submittedDate: "2026-02-20",
+    submittedBy: "David Williams"
+  },
+  { 
+    id: 4, 
+    ref: "CON-2026-0086", 
+    title: "Road Rehabilitation - Highway 1", 
+    nature: "Works", 
+    category: "Construction / Public Works",
+    instrumentType: "Works",
+    contractType: "New",
+    parentContract: null,
+    ministry: "Ministry of Works", 
+    contractor: "Caribbean Roadways Inc", 
+    value: 45000000, 
+    currency: "BBD", 
+    startDate: "2026-05-01", 
+    duration: "36 months", 
+    status: "pending", 
+    priority: "high",
+    submittedDate: "2026-02-15",
+    submittedBy: "Sarah Brown"
+  },
+  { 
+    id: 5, 
+    ref: "CON-2026-0085", 
+    title: "Financial Advisory Services", 
+    nature: "Consultancy/Services", 
+    category: "Consultancy / Professional Services",
+    instrumentType: "Consultancy - Company",
+    contractType: "Renewal",
+    parentContract: "CON-2024-0112",
+    ministry: "Ministry of Finance", 
+    contractor: "PWC Barbados", 
+    value: 750000, 
+    currency: "BBD", 
+    startDate: "2026-03-01", 
+    duration: "12 months", 
+    status: "approved", 
+    priority: "medium",
+    submittedDate: "2026-01-20",
+    submittedBy: "Michael Davis"
+  },
+  { 
+    id: 6, 
+    ref: "CON-2026-0084", 
+    title: "Agricultural Equipment", 
+    nature: "Goods", 
+    category: "Procurement of Goods & Services",
+    instrumentType: "Goods",
+    contractType: "New",
+    parentContract: null,
+    ministry: "Ministry of Agriculture", 
+    contractor: "AgroSupply Ltd", 
+    value: 3200000, 
+    currency: "BBD", 
+    startDate: "2026-04-15", 
+    duration: "3 months", 
+    status: "approved", 
+    priority: "low",
+    submittedDate: "2026-02-10",
+    submittedBy: "Lisa Thompson"
+  },
+  { 
+    id: 7, 
+    ref: "CON-2026-0083", 
+    title: "Tourism Marketing Campaign", 
+    nature: "Consultancy/Services", 
+    category: "Consultancy / Professional Services",
+    instrumentType: "Services",
+    contractType: "New",
+    parentContract: null,
+    ministry: "Ministry of Tourism", 
+    contractor: "BrandCaribbean Agency", 
+    value: 1200000, 
+    currency: "BBD", 
+    startDate: "2026-03-01", 
+    duration: "18 months", 
+    status: "under-review", 
+    priority: "medium",
+    submittedDate: "2026-02-05",
+    submittedBy: "Robert Wilson"
+  },
+  { 
+    id: 8, 
+    ref: "CON-2026-0082", 
+    title: "Water Treatment Plant Upgrade", 
+    nature: "Works", 
+    category: "Construction / Public Works",
+    instrumentType: "Works",
+    contractType: "Supplemental",
+    parentContract: "CON-2025-0078",
+    ministry: "Barbados Water Authority", 
+    contractor: "AquaTech Engineering", 
+    value: 15000000, 
+    currency: "BBD", 
+    startDate: "2026-06-01", 
+    duration: "24 months", 
+    status: "pending", 
+    priority: "high",
+    submittedDate: "2026-01-30",
+    submittedBy: "Jennifer Lee"
+  },
+  { 
+    id: 9, 
+    ref: "CON-2026-0081", 
+    title: "Legal Research Database", 
+    nature: "Consultancy/Services", 
+    category: "Procurement of Goods & Services",
+    instrumentType: "Services",
+    contractType: "Renewal",
+    parentContract: "CON-2023-0156",
+    ministry: "Attorney General's Office", 
+    contractor: "LexisNexis Caribbean", 
+    value: 450000, 
+    currency: "BBD", 
+    startDate: "2026-02-15", 
+    duration: "36 months", 
+    status: "approved", 
+    priority: "low",
+    submittedDate: "2026-01-10",
+    submittedBy: "James Martin"
+  },
+  { 
+    id: 10, 
+    ref: "CON-2026-0080", 
+    title: "Staff Uniforms Supply", 
+    nature: "Goods", 
+    category: "Procurement of Goods & Services",
+    instrumentType: "Uniforms",
+    contractType: "New",
+    parentContract: null,
+    ministry: "Ministry of Home Affairs", 
+    contractor: "Office Plus Ltd", 
+    value: 580000, 
+    currency: "BBD", 
+    startDate: "2026-03-10", 
+    duration: "2 months", 
+    status: "rejected", 
+    priority: "low",
+    submittedDate: "2026-01-05",
+    submittedBy: "Patricia Garcia"
+  },
 ]
 
 const STATUS_CONFIG = {
@@ -82,6 +286,7 @@ export default function ContractsRegisterPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
   const [natureFilter, setNatureFilter] = useState("all")
+  const [contractTypeFilter, setContractTypeFilter] = useState("all")
   const [selectedItem, setSelectedItem] = useState<typeof CONTRACTS_DATA[0] | null>(null)
 
   const filteredData = CONTRACTS_DATA.filter(item => {
@@ -92,7 +297,8 @@ export default function ContractsRegisterPage() {
       item.contractor.toLowerCase().includes(searchQuery.toLowerCase())
     const matchesStatus = statusFilter === "all" || item.status === statusFilter
     const matchesNature = natureFilter === "all" || item.nature === natureFilter
-    return matchesSearch && matchesStatus && matchesNature
+    const matchesContractType = contractTypeFilter === "all" || item.contractType === contractTypeFilter
+    return matchesSearch && matchesStatus && matchesNature && matchesContractType
   })
 
   const totalValue = filteredData.reduce((sum, item) => sum + item.value, 0)
@@ -157,10 +363,21 @@ export default function ContractsRegisterPage() {
                   <SelectValue placeholder="Nature" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Types</SelectItem>
+                  <SelectItem value="all">All Natures</SelectItem>
                   <SelectItem value="Goods">Goods</SelectItem>
                   <SelectItem value="Works">Works</SelectItem>
                   <SelectItem value="Consultancy/Services">Consultancy/Services</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={contractTypeFilter} onValueChange={setContractTypeFilter}>
+                <SelectTrigger className="w-[150px]">
+                  <SelectValue placeholder="Contract Type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Types</SelectItem>
+                  <SelectItem value="New">New</SelectItem>
+                  <SelectItem value="Renewal">Renewal</SelectItem>
+                  <SelectItem value="Supplemental">Supplemental</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -237,10 +454,11 @@ export default function ContractsRegisterPage() {
                   <TableHead className="font-semibold">Reference</TableHead>
                   <TableHead className="font-semibold">Title</TableHead>
                   <TableHead className="font-semibold">Nature</TableHead>
+                  <TableHead className="font-semibold">Category</TableHead>
+                  <TableHead className="font-semibold">Contract Type</TableHead>
                   <TableHead className="font-semibold">Ministry/MDA</TableHead>
                   <TableHead className="font-semibold">Contractor</TableHead>
                   <TableHead className="font-semibold text-right">Value (BBD)</TableHead>
-                  <TableHead className="font-semibold">Duration</TableHead>
                   <TableHead className="font-semibold">Status</TableHead>
                   <TableHead className="font-semibold w-[50px]">Actions</TableHead>
                 </TableRow>
@@ -251,7 +469,7 @@ export default function ContractsRegisterPage() {
                   return (
                     <TableRow key={item.id} className="hover:bg-muted/30">
                       <TableCell className="font-mono text-sm font-medium text-primary">{item.ref}</TableCell>
-                      <TableCell className="max-w-[200px] truncate" title={item.title}>{item.title}</TableCell>
+                      <TableCell className="max-w-[180px] truncate" title={item.title}>{item.title}</TableCell>
                       <TableCell>
                         <Badge variant="outline" className={
                           item.nature === "Works" ? "border-orange-200 bg-orange-50 text-orange-700" :
@@ -261,10 +479,19 @@ export default function ContractsRegisterPage() {
                           {item.nature}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-sm">{item.ministry}</TableCell>
-                      <TableCell className="text-sm">{item.contractor}</TableCell>
+                      <TableCell className="text-xs max-w-[150px] truncate" title={item.category}>{item.category}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className={
+                          item.contractType === "New" ? "border-green-200 bg-green-50 text-green-700" :
+                          item.contractType === "Renewal" ? "border-blue-200 bg-blue-50 text-blue-700" :
+                          "border-amber-200 bg-amber-50 text-amber-700"
+                        }>
+                          {item.contractType}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-sm max-w-[140px] truncate" title={item.ministry}>{item.ministry}</TableCell>
+                      <TableCell className="text-sm max-w-[120px] truncate" title={item.contractor}>{item.contractor}</TableCell>
                       <TableCell className="text-right font-mono text-sm">${item.value.toLocaleString()}</TableCell>
-                      <TableCell className="text-sm text-muted-foreground">{item.duration}</TableCell>
                       <TableCell>
                         <Badge className={statusConfig.color} variant="secondary">
                           <statusConfig.icon className="mr-1 h-3 w-3" />
@@ -333,51 +560,108 @@ export default function ContractsRegisterPage() {
             </DialogDescription>
           </DialogHeader>
           {selectedItem && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-xs text-muted-foreground">Contract Title</Label>
-                  <p className="font-medium">{selectedItem.title}</p>
-                </div>
-                <div>
-                  <Label className="text-xs text-muted-foreground">Status</Label>
-                  <Badge className={STATUS_CONFIG[selectedItem.status as keyof typeof STATUS_CONFIG].color}>
-                    {STATUS_CONFIG[selectedItem.status as keyof typeof STATUS_CONFIG].label}
-                  </Badge>
-                </div>
-                <div>
-                  <Label className="text-xs text-muted-foreground">Nature of Contract</Label>
-                  <p className="font-medium">{selectedItem.nature}</p>
-                </div>
-                <div>
-                  <Label className="text-xs text-muted-foreground">Ministry/MDA</Label>
-                  <p className="font-medium">{selectedItem.ministry}</p>
-                </div>
-                <div>
-                  <Label className="text-xs text-muted-foreground">Contractor</Label>
-                  <p className="font-medium">{selectedItem.contractor}</p>
-                </div>
-                <div>
-                  <Label className="text-xs text-muted-foreground">Contract Value</Label>
-                  <p className="font-medium font-mono">{selectedItem.currency} ${selectedItem.value.toLocaleString()}</p>
-                </div>
-                <div>
-                  <Label className="text-xs text-muted-foreground">Start Date</Label>
-                  <p className="font-medium">{selectedItem.startDate}</p>
-                </div>
-                <div>
-                  <Label className="text-xs text-muted-foreground">Duration</Label>
-                  <p className="font-medium">{selectedItem.duration}</p>
+            <div className="space-y-6">
+              {/* Contract Classification */}
+              <div>
+                <h4 className="text-sm font-semibold text-foreground mb-3 border-b pb-2">Contract Classification</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Nature of Contract</Label>
+                    <Badge variant="outline" className={
+                      selectedItem.nature === "Works" ? "border-orange-200 bg-orange-50 text-orange-700" :
+                      selectedItem.nature === "Goods" ? "border-blue-200 bg-blue-50 text-blue-700" :
+                      "border-purple-200 bg-purple-50 text-purple-700"
+                    }>
+                      {selectedItem.nature}
+                    </Badge>
+                  </div>
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Contract Category</Label>
+                    <p className="font-medium text-sm">{selectedItem.category}</p>
+                  </div>
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Contract Instrument Type</Label>
+                    <p className="font-medium text-sm">{selectedItem.instrumentType}</p>
+                  </div>
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Contract Type</Label>
+                    <Badge variant="outline" className={
+                      selectedItem.contractType === "New" ? "border-green-200 bg-green-50 text-green-700" :
+                      selectedItem.contractType === "Renewal" ? "border-blue-200 bg-blue-50 text-blue-700" :
+                      "border-amber-200 bg-amber-50 text-amber-700"
+                    }>
+                      {selectedItem.contractType}
+                    </Badge>
+                  </div>
+                  {selectedItem.parentContract && (
+                    <div className="col-span-2">
+                      <Label className="text-xs text-muted-foreground">Parent Contract Reference</Label>
+                      <p className="font-mono text-sm text-primary">{selectedItem.parentContract}</p>
+                    </div>
+                  )}
                 </div>
               </div>
-              <div className="flex gap-2 pt-4">
+
+              {/* Contract Details */}
+              <div>
+                <h4 className="text-sm font-semibold text-foreground mb-3 border-b pb-2">Contract Details</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="col-span-2">
+                    <Label className="text-xs text-muted-foreground">Contract Title</Label>
+                    <p className="font-medium">{selectedItem.title}</p>
+                  </div>
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Ministry/MDA</Label>
+                    <p className="font-medium text-sm">{selectedItem.ministry}</p>
+                  </div>
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Contractor</Label>
+                    <p className="font-medium text-sm">{selectedItem.contractor}</p>
+                  </div>
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Contract Value</Label>
+                    <p className="font-medium font-mono">{selectedItem.currency} ${selectedItem.value.toLocaleString()}</p>
+                  </div>
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Duration</Label>
+                    <p className="font-medium text-sm">{selectedItem.duration}</p>
+                  </div>
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Start Date</Label>
+                    <p className="font-medium text-sm">{selectedItem.startDate}</p>
+                  </div>
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Status</Label>
+                    <Badge className={STATUS_CONFIG[selectedItem.status as keyof typeof STATUS_CONFIG].color}>
+                      {STATUS_CONFIG[selectedItem.status as keyof typeof STATUS_CONFIG].label}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+
+              {/* Submission Info */}
+              <div>
+                <h4 className="text-sm font-semibold text-foreground mb-3 border-b pb-2">Submission Information</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Submitted By</Label>
+                    <p className="font-medium text-sm">{selectedItem.submittedBy}</p>
+                  </div>
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Submission Date</Label>
+                    <p className="font-medium text-sm">{selectedItem.submittedDate}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-2 pt-4 border-t">
                 <Button className="flex-1 bg-green-600 hover:bg-green-700">
                   <CheckCircle className="mr-2 h-4 w-4" />
                   Approve Contract
                 </Button>
                 <Button variant="outline">
                   <Download className="mr-2 h-4 w-4" />
-                  Download
+                  Download Package
                 </Button>
               </div>
             </div>
