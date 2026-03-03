@@ -24,6 +24,7 @@ import {
 } from "lucide-react"
 import { Progress } from "@/components/ui/progress"
 import Link from "next/link"
+import { MINISTRIES_DEPARTMENTS_AGENCIES } from "@/lib/constants"
 
 const STEPS = [
   { id: "nature", title: "Contract Nature", description: "Select contract type" },
@@ -100,23 +101,7 @@ const CONTRACT_TYPES = [
   { value: "supplemental", label: "Supplemental", icon: Plus }
 ]
 
-const MINISTRIES = [
-  { value: "MOF", label: "Ministry of Finance" },
-  { value: "MOH", label: "Ministry of Health" },
-  { value: "MOE", label: "Ministry of Education" },
-  { value: "MOT", label: "Ministry of Transport" },
-  { value: "MWUI", label: "Ministry of Works & Urban Infrastructure" },
-  { value: "MAGR", label: "Ministry of Agriculture" },
-  { value: "MLAB", label: "Ministry of Labour" },
-  { value: "MCOM", label: "Ministry of Commerce" },
-  { value: "MENV", label: "Ministry of Environment" },
-  { value: "MTOU", label: "Ministry of Tourism" },
-  { value: "MJUS", label: "Ministry of Justice" },
-  { value: "MFOR", label: "Ministry of Foreign Affairs" },
-  { value: "MHOM", label: "Ministry of Home Affairs" },
-  { value: "MHOU", label: "Ministry of Housing" },
-  { value: "MICT", label: "Ministry of ICT" }
-]
+const MINISTRIES = MINISTRIES_DEPARTMENTS_AGENCIES
 
 const CONTRACTOR_TYPES = [
   { value: "company", label: "Company / Corporation" },

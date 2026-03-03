@@ -16,6 +16,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { ArrowLeft, ArrowRight, Save, Send, Info, FileText, Gavel, FileStack, HelpCircle, CheckCircle, Scale, Globe, UserCheck, Lock } from "lucide-react"
 import Link from "next/link"
+import { MINISTRIES_DEPARTMENTS_AGENCIES } from "@/lib/constants"
 
 const STEPS = [
   { id: "type", title: "Type", description: "Select correspondence type" },
@@ -381,22 +382,31 @@ export default function CorrespondencePage() {
                     
                     {(formData.submitterType === "ministry" || formData.submitterType === "statutory") && (
                       <div className="grid gap-4 sm:grid-cols-2">
-                        <div className="space-y-2">
-                          <Label htmlFor="organizationName">Organization Name</Label>
-                          <Input
-                            id="organizationName"
+                        <div className="space-y-2 sm:col-span-2">
+                          <Label htmlFor="organizationName">Ministry / Department / Agency <span className="text-destructive">*</span></Label>
+                          <Select
                             value={formData.organizationName}
-                            onChange={(e) => updateFormData("organizationName", e.target.value)}
-                            placeholder="Ministry or organization name"
-                          />
+                            onValueChange={(value) => updateFormData("organizationName", value)}
+                          >
+                            <SelectTrigger id="organizationName">
+                              <SelectValue placeholder="Select MDA" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {MINISTRIES_DEPARTMENTS_AGENCIES.map((mda) => (
+                                <SelectItem key={mda.value} value={mda.label}>
+                                  {mda.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="ministryDepartment">Department / Unit</Label>
+                          <Label htmlFor="ministryDepartment">Contact Unit / Section</Label>
                           <Input
                             id="ministryDepartment"
                             value={formData.ministryDepartment}
                             onChange={(e) => updateFormData("ministryDepartment", e.target.value)}
-                            placeholder="Department or unit"
+                            placeholder="Unit or section name"
                           />
                         </div>
                       </div>

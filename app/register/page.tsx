@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
 import { ArrowLeft, UserPlus, CheckCircle, Building2, Scale, Landmark, Users, Briefcase, HelpCircle } from "lucide-react"
+import { MINISTRIES_DEPARTMENTS_AGENCIES } from "@/lib/constants"
 
 const SUBMITTER_TYPES = [
   { value: "ministry", label: "Ministry / Government Agency (MDA)", icon: Building2, color: "text-blue-600", bgColor: "bg-blue-50" },
@@ -225,16 +226,35 @@ export default function RegisterPage() {
                   />
                 </div>
 
-                {(formData.submitterType === "ministry" || 
-                  formData.submitterType === "statutory" || 
-                  formData.submitterType === "court") && (
+                {(formData.submitterType === "ministry" || formData.submitterType === "statutory") && (
                   <div className="space-y-2">
-                    <Label htmlFor="organization">Organization Name</Label>
+                    <Label htmlFor="organization">Ministry / Department / Agency <span className="text-destructive">*</span></Label>
+                    <Select
+                      value={formData.organization}
+                      onValueChange={(value) => setFormData(prev => ({ ...prev, organization: value }))}
+                    >
+                      <SelectTrigger id="organization">
+                        <SelectValue placeholder="Select MDA" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {MINISTRIES_DEPARTMENTS_AGENCIES.map((mda) => (
+                          <SelectItem key={mda.value} value={mda.label}>
+                            {mda.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+                
+                {formData.submitterType === "court" && (
+                  <div className="space-y-2">
+                    <Label htmlFor="organization">Court Name <span className="text-destructive">*</span></Label>
                     <Input
                       id="organization"
                       value={formData.organization}
                       onChange={(e) => setFormData(prev => ({ ...prev, organization: e.target.value }))}
-                      placeholder="Ministry or organization name"
+                      placeholder="Enter court name"
                     />
                   </div>
                 )}
