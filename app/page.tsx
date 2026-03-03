@@ -34,11 +34,6 @@ export default function HomePage() {
             <div className="grid lg:grid-cols-2 gap-12 items-center">
               {/* Left Content */}
               <div className="text-center lg:text-left">
-                <div className="mb-6 inline-flex items-center rounded-full border border-primary-foreground/20 bg-primary-foreground/10 px-4 py-1.5">
-                  <span className="text-sm font-medium text-primary-foreground">
-                    Official Digital Portal
-                  </span>
-                </div>
                 <h1 className="font-serif text-4xl font-bold tracking-tight text-primary-foreground sm:text-5xl lg:text-6xl text-balance">
                   SGC Digital
                 </h1>
