@@ -23,8 +23,21 @@ export function Header() {
     <header className="sticky top-0 z-50 w-full">
       {/* Top Bar with Government Branding */}
       <div className="bg-primary text-primary-foreground">
-        <div className="container mx-auto flex h-8 items-center justify-between px-4 lg:px-8 text-xs">
-          <span className="font-medium">Government of Barbados - Official Portal</span>
+        <div className="container mx-auto flex h-10 items-center justify-between px-4 lg:px-8 text-xs">
+          <div className="flex items-center gap-3">
+            <Image
+              src="/images/barbados-coat-of-arms.png"
+              alt="Government of Barbados"
+              width={28}
+              height={28}
+            />
+            <div className="hidden sm:flex items-center">
+              <span className="font-semibold">Government of Barbados</span>
+              <span className="mx-2 opacity-50">|</span>
+              <span className="opacity-90">Solicitor General{"'"}s Chambers</span>
+            </div>
+            <span className="sm:hidden font-medium">Gov. of Barbados</span>
+          </div>
           <div className="hidden sm:flex items-center gap-4">
             <Link href="/help" className="hover:underline">Help</Link>
             <Link href="/contact" className="hover:underline">Contact</Link>
@@ -34,37 +47,21 @@ export function Header() {
       
       {/* Main Navigation */}
       <div className="border-b border-primary/20 bg-gradient-to-r from-card via-card to-primary/5 backdrop-blur supports-[backdrop-filter]:bg-card/95">
-        <div className="container mx-auto flex h-20 items-center justify-between px-4 lg:px-8">
-          <div className="flex items-center gap-4">
-            {/* Government of Barbados Coat of Arms - Far Left */}
-            <Link href="/" className="flex items-center">
-              <Image
-                src="/images/barbados-coat-of-arms.png"
-                alt="Government of Barbados"
-                width={52}
-                height={52}
-                className="hover:scale-105 transition-transform"
-              />
-            </Link>
-            
-            <div className="h-12 w-px bg-primary/20 hidden sm:block" />
-            
-            {/* SGC Digital Branding */}
-            <Link href="/" className="flex items-center gap-3 group">
-              <Image
-                src="/images/sgc-digital-logo.png"
-                alt="SGC Digital"
-                width={48}
-                height={44}
-                className="group-hover:scale-105 transition-transform"
-              />
-              <div className="hidden sm:block">
-                <p className="text-base font-bold text-primary">SGC Digital</p>
-                <p className="text-xs text-muted-foreground font-medium">Solicitor General{"'"}s Chambers</p>
-                <p className="text-[10px] text-muted-foreground/70">Registry Correspondence & Contract Management</p>
-              </div>
-            </Link>
-          </div>
+        <div className="container mx-auto flex h-16 items-center justify-between px-4 lg:px-8">
+          {/* SGC Digital Branding */}
+          <Link href="/" className="flex items-center gap-3 group">
+            <Image
+              src="/images/sgc-digital-logo.png"
+              alt="SGC Digital"
+              width={48}
+              height={44}
+              className="group-hover:scale-105 transition-transform"
+            />
+            <div className="hidden sm:block">
+              <p className="text-base font-bold text-primary">SGC Digital</p>
+              <p className="text-xs text-muted-foreground font-medium">Registry Correspondence & Contract Management</p>
+            </div>
+          </Link>
 
           <nav className="hidden items-center gap-1 lg:flex">
             <Link 
@@ -142,23 +139,30 @@ export function Header() {
                 </Button>
               </SheetTrigger>
               <SheetContent side="right" className="w-[300px] sm:w-[350px] bg-gradient-to-b from-card to-primary/5">
-                <div className="flex items-center gap-3 mb-8 mt-4">
-                  <Image
-                    src="/images/barbados-coat-of-arms.png"
-                    alt="Government of Barbados"
-                    width={44}
-                    height={44}
-                  />
-                  <Image
-                    src="/images/sgc-digital-logo.png"
-                    alt="SGC Digital"
-                    width={40}
-                    height={36}
-                  />
-                  <div>
-                    <p className="font-bold text-primary">SGC Digital</p>
-                    <p className="text-xs text-muted-foreground">Solicitor General{"'"}s Chambers</p>
-                    <p className="text-[10px] text-muted-foreground/70">Government of Barbados</p>
+                <div className="mb-8 mt-4">
+                  <div className="flex items-center gap-2 mb-3 pb-3 border-b border-primary/10">
+                    <Image
+                      src="/images/barbados-coat-of-arms.png"
+                      alt="Government of Barbados"
+                      width={32}
+                      height={32}
+                    />
+                    <div>
+                      <p className="text-xs font-semibold text-primary">Government of Barbados</p>
+                      <p className="text-[10px] text-muted-foreground">Solicitor General{"'"}s Chambers</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Image
+                      src="/images/sgc-digital-logo.png"
+                      alt="SGC Digital"
+                      width={44}
+                      height={40}
+                    />
+                    <div>
+                      <p className="font-bold text-primary">SGC Digital</p>
+                      <p className="text-xs text-muted-foreground">Registry & Contract Management</p>
+                    </div>
                   </div>
                 </div>
                 
