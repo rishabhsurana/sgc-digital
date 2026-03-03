@@ -41,7 +41,7 @@ export default function HomePage() {
               </p>
               <p className="mt-6 text-lg text-primary-foreground/80 leading-relaxed max-w-2xl mx-auto text-pretty">
                 Submit and track Correspondence and Government Contract requests 
-                through our secure digital portal. Streamlined digital services.
+                through our secure digital portal. Streamlined and automated digital services.
               </p>
               <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
                 <Button size="lg" className="w-full sm:w-56 bg-accent hover:bg-accent/90 text-accent-foreground shadow-lg" asChild>
