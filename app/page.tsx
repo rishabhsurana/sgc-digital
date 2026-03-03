@@ -39,7 +39,7 @@ export default function HomePage() {
                 Correspondence & Contract Management Portal
               </p>
               <p className="mt-6 text-lg text-primary-foreground/80 leading-relaxed max-w-2xl mx-auto text-pretty">
-                Submit and track Registry Correspondence and Government Contract requests 
+                Submit and track Correspondence and Government Contract requests 
                 through our secure digital portal. Streamlined processes for Government of Barbados services.
               </p>
               <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
