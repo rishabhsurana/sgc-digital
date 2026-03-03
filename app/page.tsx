@@ -15,7 +15,8 @@ import {
   ArrowRight,
   Building2,
   Users,
-  Scale
+  Scale,
+  LayoutDashboard
 } from "lucide-react"
 
 export default function HomePage() {
@@ -53,6 +54,12 @@ export default function HomePage() {
                   <Link href="/contracts">
                     <FileSignature className="mr-2 h-5 w-5" />
                     Submit Contract Request
+                  </Link>
+                </Button>
+                <Button size="lg" variant="secondary" asChild className="w-full sm:w-auto">
+                  <Link href="/dashboard">
+                    <LayoutDashboard className="mr-2 h-5 w-5" />
+                    My Dashboard
                   </Link>
                 </Button>
               </div>
