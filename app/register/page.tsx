@@ -40,6 +40,18 @@ export default function RegisterPage() {
     setIsLoading(true)
     // Simulate registration
     await new Promise(resolve => setTimeout(resolve, 2000))
+    
+    // Store user data in sessionStorage for demo purposes
+    const entityNumber = `ENT-${Date.now().toString(36).toUpperCase()}`
+    const userData = {
+      fullName: formData.fullName,
+      email: formData.email,
+      submitterType: formData.submitterType,
+      organization: formData.organization,
+      entityNumber: entityNumber
+    }
+    sessionStorage.setItem("sgc_user", JSON.stringify(userData))
+    
     setIsRegistered(true)
     setIsLoading(false)
   }

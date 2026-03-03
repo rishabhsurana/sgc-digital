@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
@@ -38,9 +38,31 @@ import {
   Calendar,
   Building2,
   ArrowRight,
-  RefreshCw
+  RefreshCw,
+  User,
+  LogOut,
+  Settings
 } from "lucide-react"
 import Link from "next/link"
+
+// User info interface
+interface UserInfo {
+  fullName: string
+  email: string
+  submitterType: string
+  organization?: string
+  entityNumber: string
+}
+
+// Submitter type labels
+const SUBMITTER_TYPE_LABELS: Record<string, string> = {
+  ministry: "Ministry / Government Agency",
+  court: "Court",
+  statutory: "Statutory Body",
+  public: "Member of the Public",
+  attorney: "Attorney-at-Law",
+  other: "Other"
+}
 
 type SubmissionStatus = "pending" | "in-review" | "clarification" | "approved" | "completed" | "rejected"
 
@@ -289,6 +311,15 @@ export default function DashboardPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const [typeFilter, setTypeFilter] = useState<string>("all")
+  const [userInfo, setUserInfo] = useState<UserInfo | null>(null)
+
+  // Load user info from sessionStorage on mount
+  useEffect(() => {
+    const storedUser = sessionStorage.getItem("sgc_user")
+    if (storedUser) {
+      setUserInfo(JSON.parse(storedUser))
+    }
+  }, [])
   
   const filteredSubmissions = MOCK_SUBMISSIONS.filter(submission => {
     const matchesSearch = 
@@ -321,6 +352,60 @@ export default function DashboardPage() {
       
       <main className="flex-1 py-8 lg:py-12">
         <div className="container mx-auto px-4 lg:px-8">
+          {/* User Welcome Banner */}
+          {userInfo && (
+            <Card className="mb-8 bg-gradient-to-r from-primary/5 via-primary/10 to-accent/5 border-primary/20">
+              <CardContent className="p-6">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div className="flex items-center gap-4">
+                    <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                      <User className="h-7 w-7" />
+                    </div>
+                    <div>
+                      <h2 className="text-xl font-bold text-foreground">Welcome, {userInfo.fullName}</h2>
+                      <div className="flex flex-wrap items-center gap-2 mt-1 text-sm text-muted-foreground">
+                        <span>{userInfo.email}</span>
+                        <span className="text-muted-foreground/50">|</span>
+                        <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
+                          {SUBMITTER_TYPE_LABELS[userInfo.submitterType] || userInfo.submitterType}
+                        </Badge>
+                      </div>
+                      {userInfo.organization && (
+                        <div className="flex items-center gap-1 mt-1 text-sm text-muted-foreground">
+                          <Building2 className="h-3 w-3" />
+                          <span>{userInfo.organization}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="text-right mr-4 hidden sm:block">
+                      <p className="text-xs text-muted-foreground">Entity Number</p>
+                      <p className="font-mono text-sm font-semibold text-primary">{userInfo.entityNumber}</p>
+                    </div>
+                    <Button variant="outline" size="sm" asChild>
+                      <Link href="/settings">
+                        <Settings className="h-4 w-4 mr-1" />
+                        Settings
+                      </Link>
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => {
+                        sessionStorage.removeItem("sgc_user")
+                        window.location.href = "/"
+                      }}
+                    >
+                      <LogOut className="h-4 w-4 mr-1" />
+                      Sign Out
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Page Header */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
             <div>

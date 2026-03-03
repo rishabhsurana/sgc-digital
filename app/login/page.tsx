@@ -12,12 +12,28 @@ import { ArrowLeft, LogIn } from "lucide-react"
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
+  const [email, setEmail] = useState("")
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
     // Simulate login
     await new Promise(resolve => setTimeout(resolve, 1500))
+    
+    // Check if user data exists, if not create demo data based on email
+    const existingUser = sessionStorage.getItem("sgc_user")
+    if (!existingUser) {
+      // Create demo user data based on email input
+      const userData = {
+        fullName: email.split("@")[0].replace(/[._]/g, " ").replace(/\b\w/g, l => l.toUpperCase()),
+        email: email,
+        submitterType: "ministry",
+        organization: "Ministry of Finance",
+        entityNumber: `ENT-${Date.now().toString(36).toUpperCase()}`
+      }
+      sessionStorage.setItem("sgc_user", JSON.stringify(userData))
+    }
+    
     window.location.href = "/dashboard"
   }
 
@@ -57,6 +73,8 @@ export default function LoginPage() {
                     placeholder="email@example.com"
                     required
                     className="h-11"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                   />
                 </div>
                 <div className="space-y-2">
