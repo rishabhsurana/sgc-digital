@@ -18,8 +18,11 @@ import { Badge } from "@/components/ui/badge"
 import { 
   ArrowLeft, ArrowRight, Save, Send, Info, 
   Package, Briefcase, HardHat, Plus, RefreshCw,
-  CheckCircle, AlertTriangle, FileText
+  CheckCircle, AlertTriangle, FileText, Building2, User, 
+  Calendar, DollarSign, Clock, MapPin, Mail, Phone,
+  FileCheck, Shield, Banknote, CalendarDays, Timer
 } from "lucide-react"
+import { Progress } from "@/components/ui/progress"
 import Link from "next/link"
 
 const STEPS = [
@@ -280,7 +283,39 @@ export default function ContractsPage() {
   const [transactionNumber, setTransactionNumber] = useState("")
 
   const updateFormData = (field: string, value: string | boolean) => {
-    setFormData(prev => ({ ...prev, [field]: value }))
+    setFormData(prev => {
+      const newData = { ...prev, [field]: value }
+      
+      // Auto-calculate duration when start or end date changes
+      if ((field === "contractStartDate" || field === "contractEndDate") && 
+          newData.contractStartDate && newData.contractEndDate) {
+        const start = new Date(newData.contractStartDate)
+        const end = new Date(newData.contractEndDate)
+        
+        if (end > start) {
+          const diffTime = Math.abs(end.getTime() - start.getTime())
+          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+          
+          if (diffDays >= 365) {
+            const years = Math.floor(diffDays / 365)
+            const remainingMonths = Math.floor((diffDays % 365) / 30)
+            newData.contractDuration = remainingMonths > 0 
+              ? `${years} year${years > 1 ? 's' : ''}, ${remainingMonths} month${remainingMonths > 1 ? 's' : ''}`
+              : `${years} year${years > 1 ? 's' : ''}`
+          } else if (diffDays >= 30) {
+            const months = Math.floor(diffDays / 30)
+            const remainingDays = diffDays % 30
+            newData.contractDuration = remainingDays > 0 
+              ? `${months} month${months > 1 ? 's' : ''}, ${remainingDays} day${remainingDays > 1 ? 's' : ''}`
+              : `${months} month${months > 1 ? 's' : ''}`
+          } else {
+            newData.contractDuration = `${diffDays} day${diffDays > 1 ? 's' : ''}`
+          }
+        }
+      }
+      
+      return newData
+    })
   }
 
   // Get available categories based on nature
@@ -363,28 +398,61 @@ export default function ContractsPage() {
         <Header />
         <main className="flex-1 py-12">
           <div className="container mx-auto px-4 lg:px-8 max-w-2xl">
-            <Card className="bg-card border-border">
-              <CardContent className="pt-8 pb-8 text-center">
-                <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-green-100 text-green-600">
-                  <CheckCircle className="h-8 w-8" />
+            <Card className="bg-card border-border overflow-hidden">
+              {/* Success Banner */}
+              <div className="bg-gradient-to-r from-green-500 to-emerald-600 px-6 py-8 text-center">
+                <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-white/20 backdrop-blur">
+                  <CheckCircle className="h-10 w-10 text-white" />
                 </div>
-                <h1 className="text-2xl font-bold text-foreground mb-2">Contract Submission Successful</h1>
-                <p className="text-muted-foreground mb-6">
-                  Your Government Contract request has been submitted and is now being processed by the SGC.
+                <h1 className="text-2xl font-bold text-white mb-1">Contract Submission Successful</h1>
+                <p className="text-green-100">
+                  Your request is now being processed by the SGC
                 </p>
-                <div className="rounded-lg bg-muted p-4 mb-6">
-                  <p className="text-sm text-muted-foreground mb-1">Transaction Number</p>
-                  <p className="text-xl font-mono font-bold text-foreground">{transactionNumber}</p>
+              </div>
+              
+              <CardContent className="pt-6 pb-8 text-center">
+                {/* Transaction Number Card */}
+                <div className="rounded-xl bg-gradient-to-br from-primary/5 to-accent/10 border border-primary/20 p-6 mb-6">
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Transaction Number</p>
+                  <p className="text-3xl font-mono font-bold text-primary">{transactionNumber}</p>
+                  <p className="text-xs text-muted-foreground mt-2">Save this number for your records</p>
                 </div>
-                <p className="text-sm text-muted-foreground mb-8">
-                  A confirmation email has been sent to {formData.contactEmail}. 
-                  You can track the status of your contract submission from your dashboard.
-                </p>
+                
+                {/* Summary */}
+                <div className="rounded-lg bg-muted/50 p-4 mb-6 text-left">
+                  <h3 className="font-semibold text-sm text-foreground mb-3">Submission Summary</h3>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Contract:</span>
+                      <span className="font-medium text-foreground">{formData.contractTitle}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Value:</span>
+                      <span className="font-medium text-foreground">{formData.contractCurrency} ${Number(formData.contractValue).toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Contractor:</span>
+                      <span className="font-medium text-foreground">{formData.contractorName}</span>
+                    </div>
+                    {formData.contractDuration && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Duration:</span>
+                        <span className="font-medium text-foreground">{formData.contractDuration}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-2 justify-center text-sm text-muted-foreground mb-8">
+                  <Mail className="h-4 w-4" />
+                  <span>Confirmation sent to {formData.contactEmail}</span>
+                </div>
+                
                 <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                  <Button asChild>
+                  <Button asChild size="lg">
                     <Link href="/dashboard">Go to Dashboard</Link>
                   </Button>
-                  <Button variant="outline" asChild>
+                  <Button variant="outline" size="lg" asChild>
                     <Link href="/">Return Home</Link>
                   </Button>
                 </div>
@@ -407,21 +475,40 @@ export default function ContractsPage() {
           <div className="mb-8">
             <Link 
               href="/" 
-              className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-4"
+              className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-4 transition-colors"
             >
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back to Home
             </Link>
-            <div className="flex items-start justify-between">
-              <div>
-                <h1 className="font-serif text-3xl font-bold text-foreground">
-                  Submit Government Contract Request
-                </h1>
-                <p className="mt-2 text-muted-foreground">
-                  Submit post-award contract requests for legal review by the Solicitor General{"'"}s Chambers.
-                </p>
+            
+            {/* Hero Banner */}
+            <div className="rounded-xl bg-gradient-to-r from-primary/10 via-primary/5 to-accent/10 border border-primary/20 p-6 mb-6">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex items-start gap-4">
+                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-primary/10">
+                    <FileText className="h-7 w-7 text-primary" />
+                  </div>
+                  <div>
+                    <h1 className="font-serif text-2xl sm:text-3xl font-bold text-foreground">
+                      Submit Government Contract
+                    </h1>
+                    <p className="mt-1 text-muted-foreground">
+                      Submit post-award contract requests for legal review by the Solicitor General{"'"}s Chambers.
+                    </p>
+                  </div>
+                </div>
+                <Badge className="shrink-0 bg-accent text-accent-foreground border-0">Ministry/MDA Only</Badge>
               </div>
-              <Badge variant="secondary" className="shrink-0">Ministry/MDA Only</Badge>
+            </div>
+            
+            {/* Progress Overview */}
+            <div className="flex items-center gap-4 px-1">
+              <div className="flex-1">
+                <Progress value={(currentStep / (STEPS.length - 1)) * 100} className="h-2" />
+              </div>
+              <span className="text-sm font-medium text-muted-foreground">
+                Step {currentStep + 1} of {STEPS.length}
+              </span>
             </div>
           </div>
 
@@ -441,6 +528,20 @@ export default function ContractsPage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
+                  {/* Guidance Box */}
+                  <div className="flex items-start gap-4 rounded-lg bg-blue-50 border border-blue-200 p-4">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-100">
+                      <Info className="h-5 w-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <h4 className="font-medium text-blue-900">How to classify your contract</h4>
+                      <p className="text-sm text-blue-700 mt-1">
+                        Start by selecting the nature of your contract below. This will determine the available categories 
+                        and required documents. For assistance, contact the SGC Registry.
+                      </p>
+                    </div>
+                  </div>
+                  
                   {/* Nature of Contract */}
                   <div className="space-y-4">
                     <Label className="text-base font-semibold">Nature of Contract <span className="text-destructive">*</span></Label>
@@ -455,21 +556,35 @@ export default function ContractsPage() {
                     >
                       {CONTRACT_NATURES.map((nature) => {
                         const Icon = nature.icon
+                        const isSelected = formData.contractNature === nature.value
+                        const colorClasses = {
+                          goods: { bg: "from-blue-500/10 to-blue-600/5", icon: "text-blue-600", border: "border-blue-300" },
+                          consultancy: { bg: "from-purple-500/10 to-purple-600/5", icon: "text-purple-600", border: "border-purple-300" },
+                          works: { bg: "from-orange-500/10 to-orange-600/5", icon: "text-orange-600", border: "border-orange-300" }
+                        }
+                        const colors = colorClasses[nature.value as keyof typeof colorClasses]
                         return (
                           <Label
                             key={nature.value}
                             htmlFor={`nature-${nature.value}`}
-                            className={`flex cursor-pointer flex-col items-center gap-3 rounded-lg border p-4 text-center transition-colors hover:bg-muted/50 ${
-                              formData.contractNature === nature.value 
-                                ? "border-primary bg-primary/5" 
-                                : "border-border"
+                            className={`relative flex cursor-pointer flex-col items-center gap-4 rounded-xl border-2 p-6 text-center transition-all duration-200 hover:scale-[1.02] hover:shadow-lg ${
+                              isSelected 
+                                ? `${colors.border} bg-gradient-to-br ${colors.bg} shadow-md` 
+                                : "border-border hover:border-muted-foreground/30"
                             }`}
                           >
                             <RadioGroupItem value={nature.value} id={`nature-${nature.value}`} className="sr-only" />
-                            <Icon className={`h-8 w-8 ${formData.contractNature === nature.value ? "text-primary" : "text-muted-foreground"}`} />
+                            {isSelected && (
+                              <div className="absolute top-3 right-3">
+                                <CheckCircle className={`h-5 w-5 ${colors.icon}`} />
+                              </div>
+                            )}
+                            <div className={`flex h-16 w-16 items-center justify-center rounded-full ${isSelected ? `bg-white shadow-sm` : "bg-muted"}`}>
+                              <Icon className={`h-8 w-8 ${isSelected ? colors.icon : "text-muted-foreground"}`} />
+                            </div>
                             <div>
-                              <span className="font-medium text-foreground">{nature.label}</span>
-                              <p className="text-xs text-muted-foreground mt-1">{nature.description}</p>
+                              <span className={`text-lg font-semibold ${isSelected ? "text-foreground" : "text-foreground"}`}>{nature.label}</span>
+                              <p className="text-xs text-muted-foreground mt-2 leading-relaxed">{nature.description}</p>
                             </div>
                           </Label>
                         )
@@ -613,7 +728,10 @@ export default function ContractsPage() {
                 <CardContent className="space-y-8">
                   {/* Ministry Information */}
                   <div className="space-y-4">
-                    <h3 className="font-semibold text-foreground border-b border-border pb-2">Ministry/MDA Information</h3>
+                    <h3 className="font-semibold text-foreground border-b border-border pb-2 flex items-center gap-2">
+                      <Building2 className="h-5 w-5 text-primary" />
+                      Ministry/MDA Information
+                    </h3>
                     <div className="grid gap-4 sm:grid-cols-2">
                       <div className="space-y-2">
                         <Label htmlFor="ministry">Ministry/MDA <span className="text-destructive">*</span></Label>
@@ -687,7 +805,10 @@ export default function ContractsPage() {
 
                   {/* Contractor Information */}
                   <div className="space-y-4">
-                    <h3 className="font-semibold text-foreground border-b border-border pb-2">Contractor Information</h3>
+                    <h3 className="font-semibold text-foreground border-b border-border pb-2 flex items-center gap-2">
+                      <User className="h-5 w-5 text-primary" />
+                      Contractor Information
+                    </h3>
                     <div className="grid gap-4 sm:grid-cols-2">
                       <div className="space-y-2">
                         <Label htmlFor="contractorType">Contractor Type <span className="text-destructive">*</span></Label>
@@ -803,7 +924,10 @@ export default function ContractsPage() {
 
                   {/* Contract Specifics */}
                   <div className="space-y-4">
-                    <h3 className="font-semibold text-foreground border-b border-border pb-2">Contract Specifics</h3>
+                    <h3 className="font-semibold text-foreground border-b border-border pb-2 flex items-center gap-2">
+                      <FileCheck className="h-5 w-5 text-primary" />
+                      Contract Specifics
+                    </h3>
                     <div className="space-y-2">
                       <Label htmlFor="contractTitle">Contract Title <span className="text-destructive">*</span></Label>
                       <Input
@@ -849,7 +973,10 @@ export default function ContractsPage() {
 
                   {/* Financial & Procurement */}
                   <div className="space-y-4">
-                    <h3 className="font-semibold text-foreground border-b border-border pb-2">Financial & Procurement</h3>
+                    <h3 className="font-semibold text-foreground border-b border-border pb-2 flex items-center gap-2">
+                      <Banknote className="h-5 w-5 text-primary" />
+                      Financial & Procurement
+                    </h3>
                     <div className="grid gap-4 sm:grid-cols-3">
                       <div className="space-y-2">
                         <Label htmlFor="contractCurrency">Currency <span className="text-destructive">*</span></Label>
@@ -870,14 +997,26 @@ export default function ContractsPage() {
                         </Select>
                       </div>
                       <div className="space-y-2 sm:col-span-2">
-                        <Label htmlFor="contractValue">Contract Value <span className="text-destructive">*</span></Label>
-                        <Input
-                          id="contractValue"
-                          type="number"
-                          value={formData.contractValue}
-                          onChange={(e) => updateFormData("contractValue", e.target.value)}
-                          placeholder="0.00"
-                        />
+                        <Label htmlFor="contractValue" className="flex items-center gap-2">
+                          <DollarSign className="h-3.5 w-3.5 text-green-600" />
+                          Contract Value <span className="text-destructive">*</span>
+                        </Label>
+                        <div className="relative">
+                          <Input
+                            id="contractValue"
+                            type="number"
+                            value={formData.contractValue}
+                            onChange={(e) => updateFormData("contractValue", e.target.value)}
+                            placeholder="0.00"
+                            className="pl-8 text-lg font-semibold"
+                          />
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">$</span>
+                        </div>
+                        {formData.contractValue && Number(formData.contractValue) > 0 && (
+                          <p className="text-xs text-muted-foreground">
+                            {formData.contractCurrency} {Number(formData.contractValue).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                          </p>
+                        )}
                       </div>
                     </div>
                     <div className="grid gap-4 sm:grid-cols-2">
@@ -933,48 +1072,85 @@ export default function ContractsPage() {
 
                   {/* Contract Period */}
                   <div className="space-y-4">
-                    <h3 className="font-semibold text-foreground border-b border-border pb-2">Contract Period</h3>
-                    <div className="grid gap-4 sm:grid-cols-4">
+                    <h3 className="font-semibold text-foreground border-b border-border pb-2 flex items-center gap-2">
+                      <CalendarDays className="h-5 w-5 text-primary" />
+                      Contract Period
+                    </h3>
+                    <div className="grid gap-4 sm:grid-cols-3">
                       <div className="space-y-2">
-                        <Label htmlFor="awardDate">Award Date</Label>
+                        <Label htmlFor="awardDate" className="flex items-center gap-2">
+                          <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                          Award Date
+                        </Label>
                         <Input
                           id="awardDate"
                           type="date"
                           value={formData.awardDate}
                           onChange={(e) => updateFormData("awardDate", e.target.value)}
+                          className="bg-background"
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="contractStartDate">Start Date</Label>
+                        <Label htmlFor="contractStartDate" className="flex items-center gap-2">
+                          <Calendar className="h-3.5 w-3.5 text-green-600" />
+                          Start Date
+                        </Label>
                         <Input
                           id="contractStartDate"
                           type="date"
                           value={formData.contractStartDate}
                           onChange={(e) => updateFormData("contractStartDate", e.target.value)}
+                          className="bg-background border-green-200 focus:border-green-400"
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="contractEndDate">End Date</Label>
+                        <Label htmlFor="contractEndDate" className="flex items-center gap-2">
+                          <Calendar className="h-3.5 w-3.5 text-red-500" />
+                          End Date
+                        </Label>
                         <Input
                           id="contractEndDate"
                           type="date"
                           value={formData.contractEndDate}
                           onChange={(e) => updateFormData("contractEndDate", e.target.value)}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="contractDuration">Duration</Label>
-                        <Input
-                          id="contractDuration"
-                          value={formData.contractDuration}
-                          onChange={(e) => updateFormData("contractDuration", e.target.value)}
-                          placeholder="e.g., 12 months"
+                          className="bg-background border-red-200 focus:border-red-400"
                         />
                       </div>
                     </div>
+                    
+                    {/* Auto-calculated Duration Display */}
+                    {formData.contractDuration && (
+                      <div className="rounded-xl bg-gradient-to-r from-primary/5 via-primary/10 to-accent/10 border border-primary/20 p-4">
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+                            <Timer className="h-6 w-6 text-primary" />
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Contract Duration</p>
+                            <p className="text-2xl font-bold text-primary">{formData.contractDuration}</p>
+                          </div>
+                          <Badge className="bg-primary/10 text-primary border-0 px-3 py-1">
+                            Auto-calculated
+                          </Badge>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {!formData.contractDuration && formData.contractStartDate && formData.contractEndDate && (
+                      <Alert className="bg-red-50 border-red-200">
+                        <AlertTriangle className="h-4 w-4 text-red-600" />
+                        <AlertDescription className="text-red-800">
+                          End date must be after start date to calculate duration.
+                        </AlertDescription>
+                      </Alert>
+                    )}
+                    
                     {(formData.contractType === "renewal") && (
                       <div className="space-y-2">
-                        <Label htmlFor="renewalTerm">Renewal Term Details</Label>
+                        <Label htmlFor="renewalTerm" className="flex items-center gap-2">
+                          <RefreshCw className="h-3.5 w-3.5 text-muted-foreground" />
+                          Renewal Term Details
+                        </Label>
                         <Input
                           id="renewalTerm"
                           value={formData.renewalTerm}
@@ -991,53 +1167,75 @@ export default function ContractsPage() {
             {/* Step 3: Documents */}
             {currentStep === 2 && (
               <>
-                <CardHeader>
-                  <CardTitle>Supporting Documents</CardTitle>
-                  <CardDescription>
-                    Upload the required supporting documents for your contract submission. 
-                    The checklist below shows documents required based on your contract classification.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  {/* Document Checklist */}
-                  <div className="rounded-lg border border-border p-4 space-y-4">
+                <CardHeader className="bg-gradient-to-r from-primary/5 to-transparent border-b">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                      <FileCheck className="h-5 w-5 text-primary" />
+                    </div>
                     <div>
-                      <h4 className="font-semibold text-foreground flex items-center gap-2 mb-3">
-                        <FileText className="h-4 w-4 text-primary" />
-                        Required Documents
+                      <CardTitle>Supporting Documents</CardTitle>
+                      <CardDescription>
+                        Upload required documents based on your contract classification.
+                      </CardDescription>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-6 pt-6">
+                  {/* Document Progress */}
+                  <div className="rounded-xl bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 p-5">
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="font-semibold text-green-900 flex items-center gap-2">
+                        <Shield className="h-5 w-5 text-green-600" />
+                        Document Checklist
                       </h4>
-                      <div className="grid gap-2 sm:grid-cols-2">
-                        {documentRequirements.always.map((doc) => {
-                          const isUploaded = files.some(f => f.documentType === doc.value)
-                          return (
-                            <div key={doc.value} className="flex items-center gap-2">
-                              {isUploaded ? (
-                                <CheckCircle className="h-4 w-4 text-green-600" />
-                              ) : (
-                                <div className="h-4 w-4 rounded-full border-2 border-muted-foreground/30" />
-                              )}
-                              <span className={`text-sm ${isUploaded ? "text-foreground" : "text-muted-foreground"}`}>
-                                {doc.label}
-                              </span>
-                            </div>
-                          )
-                        })}
+                      <Badge className={`${
+                        missingRequiredDocs.length === 0 
+                          ? "bg-green-100 text-green-700 border-green-300" 
+                          : "bg-amber-100 text-amber-700 border-amber-300"
+                      }`}>
+                        {documentRequirements.always.length - missingRequiredDocs.length} / {documentRequirements.always.length} uploaded
+                      </Badge>
+                    </div>
+                    <Progress 
+                      value={((documentRequirements.always.length - missingRequiredDocs.length) / documentRequirements.always.length) * 100} 
+                      className="h-2 mb-4"
+                    />
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      {documentRequirements.always.map((doc) => {
+                        const isUploaded = files.some(f => f.documentType === doc.value)
+                        return (
+                          <div key={doc.value} className={`flex items-center gap-2 p-2 rounded-lg transition-colors ${isUploaded ? "bg-green-100/50" : "bg-white/50"}`}>
+                            {isUploaded ? (
+                              <CheckCircle className="h-5 w-5 text-green-600" />
+                            ) : (
+                              <div className="h-5 w-5 rounded-full border-2 border-amber-400 flex items-center justify-center">
+                                <span className="text-xs text-amber-600">!</span>
+                              </div>
+                            )}
+                            <span className={`text-sm ${isUploaded ? "text-green-800 font-medium" : "text-muted-foreground"}`}>
+                              {doc.label}
+                            </span>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                  
+                  {documentRequirements.optional.length > 0 && (
+                    <div className="rounded-lg bg-muted/50 p-4">
+                      <h4 className="font-medium text-foreground text-sm mb-3 flex items-center gap-2">
+                        <Info className="h-4 w-4 text-muted-foreground" />
+                        Optional Documents (If Applicable)
+                      </h4>
+                      <div className="flex flex-wrap gap-2">
+                        {documentRequirements.optional.map((doc) => (
+                          <Badge key={doc.value} variant="outline" className="text-xs bg-background">
+                            {doc.label}
+                          </Badge>
+                        ))}
                       </div>
                     </div>
-                    
-                    {documentRequirements.optional.length > 0 && (
-                      <div>
-                        <h4 className="font-semibold text-foreground text-sm mb-2">Optional Documents (If Applicable)</h4>
-                        <div className="flex flex-wrap gap-2">
-                          {documentRequirements.optional.map((doc) => (
-                            <Badge key={doc.value} variant="outline" className="text-xs">
-                              {doc.label}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                  )}
 
                   {missingRequiredDocs.length > 0 && (
                     <>
@@ -1075,17 +1273,27 @@ export default function ContractsPage() {
             {/* Step 4: Review */}
             {currentStep === 3 && (
               <>
-                <CardHeader>
-                  <CardTitle>Review & Submit</CardTitle>
-                  <CardDescription>
-                    Please review your contract submission details before submitting.
-                  </CardDescription>
+                <CardHeader className="bg-gradient-to-r from-accent/10 to-transparent border-b">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent/20">
+                      <CheckCircle className="h-5 w-5 text-accent" />
+                    </div>
+                    <div>
+                      <CardTitle>Review & Submit</CardTitle>
+                      <CardDescription>
+                        Please review your contract submission details before submitting.
+                      </CardDescription>
+                    </div>
+                  </div>
                 </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="rounded-lg border border-border divide-y divide-border">
+                <CardContent className="space-y-6 pt-6">
+                  <div className="rounded-xl border border-border divide-y divide-border overflow-hidden">
                     {/* Classification */}
-                    <div className="p-4">
-                      <h4 className="text-sm font-medium text-muted-foreground mb-3">Contract Classification</h4>
+                    <div className="p-5 bg-muted/30">
+                      <h4 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                        <Package className="h-4 w-4 text-primary" />
+                        Contract Classification
+                      </h4>
                       <div className="grid gap-4 sm:grid-cols-4">
                         <div>
                           <p className="text-xs text-muted-foreground">Nature</p>
