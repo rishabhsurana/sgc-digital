@@ -38,7 +38,7 @@ export default function HomePage() {
                   SGC Digital
                 </h1>
                 <p className="mt-2 text-xl text-accent font-semibold">
-                  Registry Correspondence & Contract Management
+                  Registry Correspondence & Contract Management Portal
                 </p>
                 <p className="mt-6 text-lg text-primary-foreground/80 leading-relaxed max-w-xl mx-auto lg:mx-0 text-pretty">
                   Submit and track Registry Correspondence and Government Contract requests 
