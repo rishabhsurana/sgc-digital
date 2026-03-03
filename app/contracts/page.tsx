@@ -107,7 +107,57 @@ const MINISTRIES = [
   { value: "MLAB", label: "Ministry of Labour" },
   { value: "MCOM", label: "Ministry of Commerce" },
   { value: "MENV", label: "Ministry of Environment" },
-  { value: "MTOU", label: "Ministry of Tourism" }
+  { value: "MTOU", label: "Ministry of Tourism" },
+  { value: "MJUS", label: "Ministry of Justice" },
+  { value: "MFOR", label: "Ministry of Foreign Affairs" },
+  { value: "MHOM", label: "Ministry of Home Affairs" },
+  { value: "MHOU", label: "Ministry of Housing" },
+  { value: "MICT", label: "Ministry of ICT" }
+]
+
+const CONTRACTOR_TYPES = [
+  { value: "company", label: "Company / Corporation" },
+  { value: "individual", label: "Individual / Sole Trader" },
+  { value: "joint-venture", label: "Joint Venture / Consortium" },
+  { value: "government", label: "Government Entity" },
+  { value: "ngo", label: "NGO / Non-Profit" }
+]
+
+const FUNDING_SOURCES = [
+  { value: "budget", label: "Government Budget (Recurrent)" },
+  { value: "capital", label: "Government Budget (Capital)" },
+  { value: "grant", label: "Grant / Donor Funded" },
+  { value: "loan", label: "Loan Funded (IDB, CDB, etc.)" },
+  { value: "mixed", label: "Mixed / Multiple Sources" },
+  { value: "other", label: "Other" }
+]
+
+const PROCUREMENT_METHODS = [
+  { value: "open-tender", label: "Open Competitive Tender" },
+  { value: "selective-tender", label: "Selective / Limited Tender" },
+  { value: "single-source", label: "Single Source Procurement" },
+  { value: "framework", label: "Framework Agreement" },
+  { value: "direct", label: "Direct Procurement (Below Threshold)" },
+  { value: "emergency", label: "Emergency Procurement" }
+]
+
+const CURRENCIES = [
+  { value: "BBD", label: "BBD - Barbados Dollar" },
+  { value: "USD", label: "USD - US Dollar" },
+  { value: "EUR", label: "EUR - Euro" },
+  { value: "GBP", label: "GBP - British Pound" },
+  { value: "XCD", label: "XCD - East Caribbean Dollar" }
+]
+
+const COUNTRIES = [
+  { value: "Barbados", label: "Barbados" },
+  { value: "Trinidad and Tobago", label: "Trinidad and Tobago" },
+  { value: "Jamaica", label: "Jamaica" },
+  { value: "Guyana", label: "Guyana" },
+  { value: "United States", label: "United States" },
+  { value: "United Kingdom", label: "United Kingdom" },
+  { value: "Canada", label: "Canada" },
+  { value: "Other", label: "Other" }
 ]
 
 // Document requirements based on nature + category
@@ -174,25 +224,54 @@ const REQUIRED_DOCUMENTS = {
 export default function ContractsPage() {
   const [currentStep, setCurrentStep] = useState(0)
   const [formData, setFormData] = useState({
+    // Contract Classification
     contractNature: "",
     contractCategory: "",
     contractInstrument: "",
     contractInstrumentOther: "",
     contractType: "new",
     parentContractNumber: "",
+    categoryOtherJustification: "",
+    
+    // Ministry/MDA Information
     ministry: "",
     department: "",
+    ministryFileReference: "",
     contactName: "",
     contactEmail: "",
     contactPhone: "",
+    
+    // Contractor Information
+    contractorType: "company",
     contractorName: "",
     contractorAddress: "",
+    contractorCity: "",
+    contractorCountry: "Barbados",
+    contractorEmail: "",
+    contractorPhone: "",
+    companyRegistrationNumber: "",
+    taxIdentificationNumber: "",
+    
+    // Contract Details
     contractTitle: "",
     contractDescription: "",
+    scopeOfWork: "",
+    keyDeliverables: "",
+    contractCurrency: "BBD",
     contractValue: "",
+    fundingSource: "budget",
+    procurementMethod: "open-tender",
+    isSingleSource: false,
+    awardDate: "",
     contractStartDate: "",
     contractEndDate: "",
-    categoryOtherJustification: "",
+    contractDuration: "",
+    renewalTerm: "",
+    
+    // Document exceptions
+    missingDocumentReason: "",
+    
+    // Declaration
     declaration: false
   })
   const [files, setFiles] = useState<UploadedFile[]>([])
@@ -252,9 +331,12 @@ export default function ContractsPage() {
           formData.ministry !== "" &&
           formData.contactName !== "" &&
           formData.contactEmail !== "" &&
+          formData.contractorType !== "" &&
           formData.contractorName !== "" &&
           formData.contractTitle !== "" &&
           formData.contractValue !== "" &&
+          formData.procurementMethod !== "" &&
+          formData.fundingSource !== "" &&
           (formData.contractType === "new" || formData.parentContractNumber !== "")
         )
       case 2:
@@ -528,10 +610,10 @@ export default function ContractsPage() {
                     Provide information about the Ministry, contractor, and contract specifics.
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-6">
+                <CardContent className="space-y-8">
                   {/* Ministry Information */}
                   <div className="space-y-4">
-                    <h3 className="font-semibold text-foreground">Ministry/MDA Information</h3>
+                    <h3 className="font-semibold text-foreground border-b border-border pb-2">Ministry/MDA Information</h3>
                     <div className="grid gap-4 sm:grid-cols-2">
                       <div className="space-y-2">
                         <Label htmlFor="ministry">Ministry/MDA <span className="text-destructive">*</span></Label>
@@ -560,6 +642,15 @@ export default function ContractsPage() {
                           placeholder="Department or unit name"
                         />
                       </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="ministryFileReference">Ministry File Reference</Label>
+                      <Input
+                        id="ministryFileReference"
+                        value={formData.ministryFileReference}
+                        onChange={(e) => updateFormData("ministryFileReference", e.target.value)}
+                        placeholder="Internal ministry file or reference number"
+                      />
                     </div>
                     <div className="grid gap-4 sm:grid-cols-3">
                       <div className="space-y-2">
@@ -596,8 +687,26 @@ export default function ContractsPage() {
 
                   {/* Contractor Information */}
                   <div className="space-y-4">
-                    <h3 className="font-semibold text-foreground">Contractor Information</h3>
+                    <h3 className="font-semibold text-foreground border-b border-border pb-2">Contractor Information</h3>
                     <div className="grid gap-4 sm:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label htmlFor="contractorType">Contractor Type <span className="text-destructive">*</span></Label>
+                        <Select
+                          value={formData.contractorType}
+                          onValueChange={(value) => updateFormData("contractorType", value)}
+                        >
+                          <SelectTrigger id="contractorType">
+                            <SelectValue placeholder="Select contractor type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {CONTRACTOR_TYPES.map((type) => (
+                              <SelectItem key={type.value} value={type.value}>
+                                {type.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
                       <div className="space-y-2">
                         <Label htmlFor="contractorName">Contractor Name <span className="text-destructive">*</span></Label>
                         <Input
@@ -607,8 +716,10 @@ export default function ContractsPage() {
                           placeholder="Company or individual name"
                         />
                       </div>
+                    </div>
+                    <div className="grid gap-4 sm:grid-cols-2">
                       <div className="space-y-2">
-                        <Label htmlFor="contractorAddress">Contractor Address</Label>
+                        <Label htmlFor="contractorAddress">Street Address</Label>
                         <Input
                           id="contractorAddress"
                           value={formData.contractorAddress}
@@ -616,12 +727,83 @@ export default function ContractsPage() {
                           placeholder="Business address"
                         />
                       </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="contractorCity">City / Parish</Label>
+                        <Input
+                          id="contractorCity"
+                          value={formData.contractorCity}
+                          onChange={(e) => updateFormData("contractorCity", e.target.value)}
+                          placeholder="City or parish"
+                        />
+                      </div>
                     </div>
+                    <div className="grid gap-4 sm:grid-cols-3">
+                      <div className="space-y-2">
+                        <Label htmlFor="contractorCountry">Country</Label>
+                        <Select
+                          value={formData.contractorCountry}
+                          onValueChange={(value) => updateFormData("contractorCountry", value)}
+                        >
+                          <SelectTrigger id="contractorCountry">
+                            <SelectValue placeholder="Select country" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {COUNTRIES.map((country) => (
+                              <SelectItem key={country.value} value={country.value}>
+                                {country.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="contractorEmail">Contractor Email</Label>
+                        <Input
+                          id="contractorEmail"
+                          type="email"
+                          value={formData.contractorEmail}
+                          onChange={(e) => updateFormData("contractorEmail", e.target.value)}
+                          placeholder="contractor@email.com"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="contractorPhone">Contractor Phone</Label>
+                        <Input
+                          id="contractorPhone"
+                          type="tel"
+                          value={formData.contractorPhone}
+                          onChange={(e) => updateFormData("contractorPhone", e.target.value)}
+                          placeholder="+1 (246) XXX-XXXX"
+                        />
+                      </div>
+                    </div>
+                    {formData.contractorType === "company" && (
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <div className="space-y-2">
+                          <Label htmlFor="companyRegistrationNumber">Company Registration Number</Label>
+                          <Input
+                            id="companyRegistrationNumber"
+                            value={formData.companyRegistrationNumber}
+                            onChange={(e) => updateFormData("companyRegistrationNumber", e.target.value)}
+                            placeholder="Business registration number"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="taxIdentificationNumber">Tax Identification Number (TIN)</Label>
+                          <Input
+                            id="taxIdentificationNumber"
+                            value={formData.taxIdentificationNumber}
+                            onChange={(e) => updateFormData("taxIdentificationNumber", e.target.value)}
+                            placeholder="Tax ID number"
+                          />
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* Contract Specifics */}
                   <div className="space-y-4">
-                    <h3 className="font-semibold text-foreground">Contract Specifics</h3>
+                    <h3 className="font-semibold text-foreground border-b border-border pb-2">Contract Specifics</h3>
                     <div className="space-y-2">
                       <Label htmlFor="contractTitle">Contract Title <span className="text-destructive">*</span></Label>
                       <Input
@@ -637,19 +819,129 @@ export default function ContractsPage() {
                         id="contractDescription"
                         value={formData.contractDescription}
                         onChange={(e) => updateFormData("contractDescription", e.target.value)}
-                        placeholder="Detailed description of the contract scope and deliverables..."
-                        rows={4}
+                        placeholder="Detailed description of the contract scope..."
+                        rows={3}
                       />
                     </div>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label htmlFor="scopeOfWork">Scope of Work Summary</Label>
+                        <Textarea
+                          id="scopeOfWork"
+                          value={formData.scopeOfWork}
+                          onChange={(e) => updateFormData("scopeOfWork", e.target.value)}
+                          placeholder="Summary of work to be performed..."
+                          rows={3}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="keyDeliverables">Key Deliverables</Label>
+                        <Textarea
+                          id="keyDeliverables"
+                          value={formData.keyDeliverables}
+                          onChange={(e) => updateFormData("keyDeliverables", e.target.value)}
+                          placeholder="List main deliverables..."
+                          rows={3}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Financial & Procurement */}
+                  <div className="space-y-4">
+                    <h3 className="font-semibold text-foreground border-b border-border pb-2">Financial & Procurement</h3>
                     <div className="grid gap-4 sm:grid-cols-3">
                       <div className="space-y-2">
-                        <Label htmlFor="contractValue">Contract Value (BBD) <span className="text-destructive">*</span></Label>
+                        <Label htmlFor="contractCurrency">Currency <span className="text-destructive">*</span></Label>
+                        <Select
+                          value={formData.contractCurrency}
+                          onValueChange={(value) => updateFormData("contractCurrency", value)}
+                        >
+                          <SelectTrigger id="contractCurrency">
+                            <SelectValue placeholder="Select currency" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {CURRENCIES.map((currency) => (
+                              <SelectItem key={currency.value} value={currency.value}>
+                                {currency.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2 sm:col-span-2">
+                        <Label htmlFor="contractValue">Contract Value <span className="text-destructive">*</span></Label>
                         <Input
                           id="contractValue"
                           type="number"
                           value={formData.contractValue}
                           onChange={(e) => updateFormData("contractValue", e.target.value)}
                           placeholder="0.00"
+                        />
+                      </div>
+                    </div>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label htmlFor="fundingSource">Funding Source <span className="text-destructive">*</span></Label>
+                        <Select
+                          value={formData.fundingSource}
+                          onValueChange={(value) => updateFormData("fundingSource", value)}
+                        >
+                          <SelectTrigger id="fundingSource">
+                            <SelectValue placeholder="Select funding source" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {FUNDING_SOURCES.map((source) => (
+                              <SelectItem key={source.value} value={source.value}>
+                                {source.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="procurementMethod">Procurement Method <span className="text-destructive">*</span></Label>
+                        <Select
+                          value={formData.procurementMethod}
+                          onValueChange={(value) => {
+                            updateFormData("procurementMethod", value)
+                            updateFormData("isSingleSource", value === "single-source")
+                          }}
+                        >
+                          <SelectTrigger id="procurementMethod">
+                            <SelectValue placeholder="Select procurement method" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {PROCUREMENT_METHODS.map((method) => (
+                              <SelectItem key={method.value} value={method.value}>
+                                {method.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    {formData.procurementMethod === "single-source" && (
+                      <Alert className="bg-amber-50 border-amber-200">
+                        <Info className="h-4 w-4 text-amber-600" />
+                        <AlertDescription className="text-amber-800">
+                          Single Source Procurement requires additional supporting documents including Single Source Request and Approval.
+                        </AlertDescription>
+                      </Alert>
+                    )}
+                  </div>
+
+                  {/* Contract Period */}
+                  <div className="space-y-4">
+                    <h3 className="font-semibold text-foreground border-b border-border pb-2">Contract Period</h3>
+                    <div className="grid gap-4 sm:grid-cols-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="awardDate">Award Date</Label>
+                        <Input
+                          id="awardDate"
+                          type="date"
+                          value={formData.awardDate}
+                          onChange={(e) => updateFormData("awardDate", e.target.value)}
                         />
                       </div>
                       <div className="space-y-2">
@@ -670,7 +962,27 @@ export default function ContractsPage() {
                           onChange={(e) => updateFormData("contractEndDate", e.target.value)}
                         />
                       </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="contractDuration">Duration</Label>
+                        <Input
+                          id="contractDuration"
+                          value={formData.contractDuration}
+                          onChange={(e) => updateFormData("contractDuration", e.target.value)}
+                          placeholder="e.g., 12 months"
+                        />
+                      </div>
                     </div>
+                    {(formData.contractType === "renewal") && (
+                      <div className="space-y-2">
+                        <Label htmlFor="renewalTerm">Renewal Term Details</Label>
+                        <Input
+                          id="renewalTerm"
+                          value={formData.renewalTerm}
+                          onChange={(e) => updateFormData("renewalTerm", e.target.value)}
+                          placeholder="e.g., Second renewal of 12 months"
+                        />
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </>
@@ -728,13 +1040,27 @@ export default function ContractsPage() {
                   </div>
 
                   {missingRequiredDocs.length > 0 && (
-                    <Alert className="bg-amber-50 border-amber-200">
-                      <AlertTriangle className="h-4 w-4 text-amber-600" />
-                      <AlertDescription className="text-amber-800">
-                        Missing required documents: {missingRequiredDocs.map(d => d.label).join(", ")}. 
-                        You may still submit, but your request may be returned for additional information.
-                      </AlertDescription>
-                    </Alert>
+                    <>
+                      <Alert className="bg-amber-50 border-amber-200">
+                        <AlertTriangle className="h-4 w-4 text-amber-600" />
+                        <AlertDescription className="text-amber-800">
+                          Missing required documents: {missingRequiredDocs.map(d => d.label).join(", ")}. 
+                          You may still submit, but your request may be returned for additional information.
+                        </AlertDescription>
+                      </Alert>
+                      <div className="space-y-2">
+                        <Label htmlFor="missingDocumentReason">
+                          Reason for Missing Documents (if applicable)
+                        </Label>
+                        <Textarea
+                          id="missingDocumentReason"
+                          value={formData.missingDocumentReason}
+                          onChange={(e) => updateFormData("missingDocumentReason", e.target.value)}
+                          placeholder="Explain why required documents are not available or will be provided later..."
+                          rows={2}
+                        />
+                      </div>
+                    </>
                   )}
 
                   <FileUpload
@@ -757,9 +1083,10 @@ export default function ContractsPage() {
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div className="rounded-lg border border-border divide-y divide-border">
+                    {/* Classification */}
                     <div className="p-4">
-                      <h4 className="text-sm font-medium text-muted-foreground mb-2">Contract Classification</h4>
-                      <div className="grid gap-2 sm:grid-cols-3">
+                      <h4 className="text-sm font-medium text-muted-foreground mb-3">Contract Classification</h4>
+                      <div className="grid gap-4 sm:grid-cols-4">
                         <div>
                           <p className="text-xs text-muted-foreground">Nature</p>
                           <p className="text-foreground font-medium">
@@ -780,32 +1107,121 @@ export default function ContractsPage() {
                               : availableInstruments.find(i => i.value === formData.contractInstrument)?.label}
                           </p>
                         </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground">Contract Type</p>
+                          <p className="text-foreground font-medium capitalize">{formData.contractType}</p>
+                        </div>
+                      </div>
+                      {formData.parentContractNumber && (
+                        <p className="text-sm text-muted-foreground mt-2">Parent Contract: {formData.parentContractNumber}</p>
+                      )}
+                    </div>
+                    
+                    {/* Ministry */}
+                    <div className="p-4">
+                      <h4 className="text-sm font-medium text-muted-foreground mb-3">Ministry/MDA</h4>
+                      <p className="text-foreground font-medium">{MINISTRIES.find(m => m.value === formData.ministry)?.label}</p>
+                      {formData.department && <p className="text-sm text-muted-foreground">{formData.department}</p>}
+                      {formData.ministryFileReference && (
+                        <p className="text-sm text-muted-foreground">Ministry Ref: {formData.ministryFileReference}</p>
+                      )}
+                      <p className="text-sm text-muted-foreground mt-2">
+                        Contact: {formData.contactName} | {formData.contactEmail}
+                        {formData.contactPhone && ` | ${formData.contactPhone}`}
+                      </p>
+                    </div>
+                    
+                    {/* Contractor */}
+                    <div className="p-4">
+                      <h4 className="text-sm font-medium text-muted-foreground mb-3">Contractor</h4>
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <div>
+                          <p className="text-foreground font-medium">{formData.contractorName}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {CONTRACTOR_TYPES.find(t => t.value === formData.contractorType)?.label}
+                          </p>
+                          {(formData.contractorAddress || formData.contractorCity) && (
+                            <p className="text-sm text-muted-foreground mt-1">
+                              {[formData.contractorAddress, formData.contractorCity, formData.contractorCountry].filter(Boolean).join(", ")}
+                            </p>
+                          )}
+                        </div>
+                        <div>
+                          {formData.contractorEmail && (
+                            <p className="text-sm text-muted-foreground">{formData.contractorEmail}</p>
+                          )}
+                          {formData.contractorPhone && (
+                            <p className="text-sm text-muted-foreground">{formData.contractorPhone}</p>
+                          )}
+                          {formData.companyRegistrationNumber && (
+                            <p className="text-sm text-muted-foreground">Reg #: {formData.companyRegistrationNumber}</p>
+                          )}
+                          {formData.taxIdentificationNumber && (
+                            <p className="text-sm text-muted-foreground">TIN: {formData.taxIdentificationNumber}</p>
+                          )}
+                        </div>
                       </div>
                     </div>
+                    
+                    {/* Contract Details */}
                     <div className="p-4">
-                      <h4 className="text-sm font-medium text-muted-foreground mb-2">Ministry Contact</h4>
-                      <p className="text-foreground">{MINISTRIES.find(m => m.value === formData.ministry)?.label}</p>
-                      <p className="text-sm text-muted-foreground">{formData.contactName} - {formData.contactEmail}</p>
-                    </div>
-                    <div className="p-4">
-                      <h4 className="text-sm font-medium text-muted-foreground mb-2">Contractor</h4>
-                      <p className="text-foreground">{formData.contractorName}</p>
-                      {formData.contractorAddress && (
-                        <p className="text-sm text-muted-foreground">{formData.contractorAddress}</p>
-                      )}
-                    </div>
-                    <div className="p-4">
-                      <h4 className="text-sm font-medium text-muted-foreground mb-2">Contract Details</h4>
+                      <h4 className="text-sm font-medium text-muted-foreground mb-3">Contract Details</h4>
                       <p className="text-foreground font-medium">{formData.contractTitle}</p>
-                      <p className="text-sm text-muted-foreground mt-1">Value: BBD ${Number(formData.contractValue).toLocaleString()}</p>
-                      {formData.contractStartDate && formData.contractEndDate && (
-                        <p className="text-sm text-muted-foreground">
-                          Period: {formData.contractStartDate} to {formData.contractEndDate}
-                        </p>
+                      {formData.contractDescription && (
+                        <p className="text-sm text-muted-foreground mt-1">{formData.contractDescription}</p>
+                      )}
+                      {formData.scopeOfWork && (
+                        <div className="mt-2">
+                          <p className="text-xs text-muted-foreground">Scope of Work:</p>
+                          <p className="text-sm text-foreground">{formData.scopeOfWork}</p>
+                        </div>
+                      )}
+                      {formData.keyDeliverables && (
+                        <div className="mt-2">
+                          <p className="text-xs text-muted-foreground">Key Deliverables:</p>
+                          <p className="text-sm text-foreground">{formData.keyDeliverables}</p>
+                        </div>
                       )}
                     </div>
+                    
+                    {/* Financial & Period */}
                     <div className="p-4">
-                      <h4 className="text-sm font-medium text-muted-foreground mb-2">Documents ({files.length})</h4>
+                      <h4 className="text-sm font-medium text-muted-foreground mb-3">Financial & Period</h4>
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <div>
+                          <p className="text-xs text-muted-foreground">Contract Value</p>
+                          <p className="text-foreground font-medium text-lg">
+                            {formData.contractCurrency} ${Number(formData.contractValue).toLocaleString()}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            {FUNDING_SOURCES.find(f => f.value === formData.fundingSource)?.label}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            {PROCUREMENT_METHODS.find(p => p.value === formData.procurementMethod)?.label}
+                          </p>
+                        </div>
+                        <div>
+                          {formData.awardDate && (
+                            <p className="text-sm text-muted-foreground">Award Date: {formData.awardDate}</p>
+                          )}
+                          {(formData.contractStartDate || formData.contractEndDate) && (
+                            <p className="text-sm text-muted-foreground">
+                              Period: {formData.contractStartDate || "TBD"} to {formData.contractEndDate || "TBD"}
+                            </p>
+                          )}
+                          {formData.contractDuration && (
+                            <p className="text-sm text-muted-foreground">Duration: {formData.contractDuration}</p>
+                          )}
+                          {formData.renewalTerm && (
+                            <p className="text-sm text-muted-foreground">Renewal: {formData.renewalTerm}</p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Documents */}
+                    <div className="p-4">
+                      <h4 className="text-sm font-medium text-muted-foreground mb-3">Documents ({files.length})</h4>
                       {files.length === 0 ? (
                         <p className="text-muted-foreground">No documents uploaded</p>
                       ) : (
@@ -817,6 +1233,12 @@ export default function ContractsPage() {
                             </li>
                           ))}
                         </ul>
+                      )}
+                      {formData.missingDocumentReason && (
+                        <div className="mt-3 p-2 bg-amber-50 rounded text-sm">
+                          <p className="text-xs text-amber-600 font-medium">Missing Documents Reason:</p>
+                          <p className="text-amber-800">{formData.missingDocumentReason}</p>
+                        </div>
                       )}
                     </div>
                   </div>
