@@ -49,16 +49,9 @@ export function Header() {
       <div className="border-b border-primary/20 bg-gradient-to-r from-card via-card to-primary/5 backdrop-blur supports-[backdrop-filter]:bg-card/95">
         <div className="container mx-auto flex h-16 items-center justify-between px-4 lg:px-8">
           {/* SGC Digital Branding */}
-          <Link href="/" className="flex items-center gap-3 group">
-            <Image
-              src="/images/sgc-digital-logo.png"
-              alt="SGC Digital"
-              width={48}
-              height={44}
-              className="group-hover:scale-105 transition-transform"
-            />
-            <div className="hidden sm:block">
-              <p className="text-base font-bold text-primary">SGC Digital</p>
+          <Link href="/" className="flex items-center group">
+            <div>
+              <p className="text-base font-bold text-primary group-hover:text-primary/80 transition-colors">SGC Digital</p>
               <p className="text-xs text-muted-foreground font-medium">Registry Correspondence & Contract Management Portal</p>
             </div>
           </Link>
@@ -152,17 +145,9 @@ export function Header() {
                       <p className="text-[10px] text-muted-foreground">Solicitor General{"'"}s Chambers</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <Image
-                      src="/images/sgc-digital-logo.png"
-                      alt="SGC Digital"
-                      width={44}
-                      height={40}
-                    />
-                    <div>
-                      <p className="font-bold text-primary">SGC Digital</p>
-                      <p className="text-xs text-muted-foreground">Registry & Contract Management Portal</p>
-                    </div>
+                  <div>
+                    <p className="font-bold text-primary">SGC Digital</p>
+                    <p className="text-xs text-muted-foreground">Registry & Contract Management Portal</p>
                   </div>
                 </div>
                 
