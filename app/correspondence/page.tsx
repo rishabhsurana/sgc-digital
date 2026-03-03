@@ -1,0 +1,609 @@
+"use client"
+
+import { useState } from "react"
+import { Header } from "@/components/header"
+import { Footer } from "@/components/footer"
+import { FormStepper } from "@/components/form-stepper"
+import { FileUpload, type UploadedFile } from "@/components/file-upload"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { ArrowLeft, ArrowRight, Save, Send, Info, FileText, Gavel, FileStack, HelpCircle, CheckCircle } from "lucide-react"
+import Link from "next/link"
+
+const STEPS = [
+  { id: "type", title: "Type", description: "Select correspondence type" },
+  { id: "details", title: "Details", description: "Enter submission details" },
+  { id: "documents", title: "Documents", description: "Upload supporting files" },
+  { id: "review", title: "Review", description: "Review and submit" }
+]
+
+const CORRESPONDENCE_TYPES = [
+  { 
+    value: "general", 
+    label: "General Correspondence", 
+    description: "General enquiries and correspondence to the SGC",
+    icon: FileText 
+  },
+  { 
+    value: "litigation", 
+    label: "Litigation", 
+    description: "Court-related matters and litigation correspondence",
+    icon: Gavel 
+  },
+  { 
+    value: "cabinet", 
+    label: "Cabinet Papers", 
+    description: "Cabinet-level documents and advisory requests",
+    icon: FileStack 
+  },
+  { 
+    value: "advisory", 
+    label: "Legal Advisory", 
+    description: "Requests for legal opinions and advice",
+    icon: HelpCircle 
+  }
+]
+
+const SUBMITTER_TYPES = [
+  { value: "ministry", label: "Ministry / Government Agency (MDA)" },
+  { value: "court", label: "Court" },
+  { value: "statutory", label: "Statutory Body" },
+  { value: "public", label: "Member of the Public" },
+  { value: "attorney", label: "Attorney-at-Law" },
+  { value: "other", label: "Other" }
+]
+
+const URGENCY_LEVELS = [
+  { value: "standard", label: "Standard" },
+  { value: "urgent", label: "Urgent" }
+]
+
+const CONFIDENTIALITY_LEVELS = [
+  { value: "standard", label: "Standard" },
+  { value: "confidential", label: "Confidential" },
+  { value: "cabinet", label: "Cabinet-Level-Restricted" }
+]
+
+const DOCUMENT_TYPES = [
+  { value: "correspondence", label: "Correspondence Letter" },
+  { value: "supporting", label: "Supporting Document" },
+  { value: "court_doc", label: "Court Document" },
+  { value: "legal_opinion", label: "Legal Opinion Request" },
+  { value: "cabinet_paper", label: "Cabinet Paper" },
+  { value: "reference", label: "Reference Material" },
+  { value: "other", label: "Other" }
+]
+
+export default function CorrespondencePage() {
+  const [currentStep, setCurrentStep] = useState(0)
+  const [formData, setFormData] = useState({
+    correspondenceType: "",
+    submitterType: "",
+    submitterName: "",
+    submitterEmail: "",
+    submitterPhone: "",
+    organizationName: "",
+    ministryDepartment: "",
+    contactUnit: "",
+    registryFileNumber: "",
+    courtFileNumber: "",
+    ministryFileReference: "",
+    urgency: "standard",
+    urgentReason: "",
+    confidentiality: "standard",
+    subject: "",
+    description: "",
+    declaration: false
+  })
+  const [files, setFiles] = useState<UploadedFile[]>([])
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isSubmitted, setIsSubmitted] = useState(false)
+  const [transactionNumber, setTransactionNumber] = useState("")
+
+  const updateFormData = (field: string, value: string | boolean) => {
+    setFormData(prev => ({ ...prev, [field]: value }))
+  }
+
+  const canProceed = () => {
+    switch (currentStep) {
+      case 0:
+        return formData.correspondenceType !== ""
+      case 1:
+        return (
+          formData.submitterType !== "" &&
+          formData.submitterName !== "" &&
+          formData.submitterEmail !== "" &&
+          formData.subject !== "" &&
+          formData.description !== "" &&
+          (formData.urgency !== "urgent" || formData.urgentReason !== "")
+        )
+      case 2:
+        return files.length === 0 || files.every(f => f.documentType !== "")
+      case 3:
+        return formData.declaration
+      default:
+        return false
+    }
+  }
+
+  const handleSubmit = async () => {
+    setIsSubmitting(true)
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 2000))
+    const txn = `COR-${Date.now().toString(36).toUpperCase()}`
+    setTransactionNumber(txn)
+    setIsSubmitted(true)
+    setIsSubmitting(false)
+  }
+
+  if (isSubmitted) {
+    return (
+      <div className="flex min-h-screen flex-col bg-background">
+        <Header />
+        <main className="flex-1 py-12">
+          <div className="container mx-auto px-4 lg:px-8 max-w-2xl">
+            <Card className="bg-card border-border">
+              <CardContent className="pt-8 pb-8 text-center">
+                <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-green-100 text-green-600">
+                  <CheckCircle className="h-8 w-8" />
+                </div>
+                <h1 className="text-2xl font-bold text-foreground mb-2">Submission Successful</h1>
+                <p className="text-muted-foreground mb-6">
+                  Your correspondence has been submitted successfully and is now being processed.
+                </p>
+                <div className="rounded-lg bg-muted p-4 mb-6">
+                  <p className="text-sm text-muted-foreground mb-1">Transaction Number</p>
+                  <p className="text-xl font-mono font-bold text-foreground">{transactionNumber}</p>
+                </div>
+                <p className="text-sm text-muted-foreground mb-8">
+                  A confirmation email has been sent to {formData.submitterEmail}. 
+                  You can track the status of your submission from your dashboard.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                  <Button asChild>
+                    <Link href="/dashboard">Go to Dashboard</Link>
+                  </Button>
+                  <Button variant="outline" asChild>
+                    <Link href="/">Return Home</Link>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex min-h-screen flex-col bg-background">
+      <Header />
+      
+      <main className="flex-1 py-8 lg:py-12">
+        <div className="container mx-auto px-4 lg:px-8 max-w-4xl">
+          {/* Page Header */}
+          <div className="mb-8">
+            <Link 
+              href="/" 
+              className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-4"
+            >
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to Home
+            </Link>
+            <h1 className="font-serif text-3xl font-bold text-foreground">
+              Submit Registry Correspondence
+            </h1>
+            <p className="mt-2 text-muted-foreground">
+              Complete the form below to submit correspondence to the Solicitor General{"'"}s Chambers Registry.
+            </p>
+          </div>
+
+          {/* Stepper */}
+          <FormStepper steps={STEPS} currentStep={currentStep} className="mb-8" />
+
+          {/* Form Card */}
+          <Card className="bg-card border-border">
+            {/* Step 1: Correspondence Type */}
+            {currentStep === 0 && (
+              <>
+                <CardHeader>
+                  <CardTitle>Select Correspondence Type</CardTitle>
+                  <CardDescription>
+                    Choose the type of correspondence you wish to submit.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <RadioGroup
+                    value={formData.correspondenceType}
+                    onValueChange={(value) => updateFormData("correspondenceType", value)}
+                    className="grid gap-4 sm:grid-cols-2"
+                  >
+                    {CORRESPONDENCE_TYPES.map((type) => {
+                      const Icon = type.icon
+                      return (
+                        <Label
+                          key={type.value}
+                          htmlFor={type.value}
+                          className={`flex cursor-pointer items-start gap-4 rounded-lg border p-4 transition-colors hover:bg-muted/50 ${
+                            formData.correspondenceType === type.value 
+                              ? "border-primary bg-primary/5" 
+                              : "border-border"
+                          }`}
+                        >
+                          <RadioGroupItem value={type.value} id={type.value} className="mt-1" />
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <Icon className="h-4 w-4 text-primary" />
+                              <span className="font-medium text-foreground">{type.label}</span>
+                            </div>
+                            <p className="text-sm text-muted-foreground">{type.description}</p>
+                          </div>
+                        </Label>
+                      )
+                    })}
+                  </RadioGroup>
+                </CardContent>
+              </>
+            )}
+
+            {/* Step 2: Details */}
+            {currentStep === 1 && (
+              <>
+                <CardHeader>
+                  <CardTitle>Submission Details</CardTitle>
+                  <CardDescription>
+                    Provide your details and information about your correspondence.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* Submitter Information */}
+                  <div className="space-y-4">
+                    <h3 className="font-semibold text-foreground">Submitter Information</h3>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label htmlFor="submitterType">Submitter Type <span className="text-destructive">*</span></Label>
+                        <Select
+                          value={formData.submitterType}
+                          onValueChange={(value) => updateFormData("submitterType", value)}
+                        >
+                          <SelectTrigger id="submitterType">
+                            <SelectValue placeholder="Select type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {SUBMITTER_TYPES.map((type) => (
+                              <SelectItem key={type.value} value={type.value}>
+                                {type.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="submitterName">Full Name <span className="text-destructive">*</span></Label>
+                        <Input
+                          id="submitterName"
+                          value={formData.submitterName}
+                          onChange={(e) => updateFormData("submitterName", e.target.value)}
+                          placeholder="Enter your full name"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="submitterEmail">Email Address <span className="text-destructive">*</span></Label>
+                        <Input
+                          id="submitterEmail"
+                          type="email"
+                          value={formData.submitterEmail}
+                          onChange={(e) => updateFormData("submitterEmail", e.target.value)}
+                          placeholder="email@example.com"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="submitterPhone">Phone Number</Label>
+                        <Input
+                          id="submitterPhone"
+                          type="tel"
+                          value={formData.submitterPhone}
+                          onChange={(e) => updateFormData("submitterPhone", e.target.value)}
+                          placeholder="+1 (246) XXX-XXXX"
+                        />
+                      </div>
+                    </div>
+                    
+                    {(formData.submitterType === "ministry" || formData.submitterType === "statutory") && (
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <div className="space-y-2">
+                          <Label htmlFor="organizationName">Organization Name</Label>
+                          <Input
+                            id="organizationName"
+                            value={formData.organizationName}
+                            onChange={(e) => updateFormData("organizationName", e.target.value)}
+                            placeholder="Ministry or organization name"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="ministryDepartment">Department / Unit</Label>
+                          <Input
+                            id="ministryDepartment"
+                            value={formData.ministryDepartment}
+                            onChange={(e) => updateFormData("ministryDepartment", e.target.value)}
+                            placeholder="Department or unit"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* File References */}
+                  <div className="space-y-4">
+                    <h3 className="font-semibold text-foreground">File References (if known)</h3>
+                    <div className="grid gap-4 sm:grid-cols-3">
+                      <div className="space-y-2">
+                        <Label htmlFor="registryFileNumber">Registry File Number</Label>
+                        <Input
+                          id="registryFileNumber"
+                          value={formData.registryFileNumber}
+                          onChange={(e) => updateFormData("registryFileNumber", e.target.value)}
+                          placeholder="REG-XXXX"
+                        />
+                      </div>
+                      {formData.correspondenceType === "litigation" && (
+                        <div className="space-y-2">
+                          <Label htmlFor="courtFileNumber">Court File Number</Label>
+                          <Input
+                            id="courtFileNumber"
+                            value={formData.courtFileNumber}
+                            onChange={(e) => updateFormData("courtFileNumber", e.target.value)}
+                            placeholder="CV-XXXX"
+                          />
+                        </div>
+                      )}
+                      <div className="space-y-2">
+                        <Label htmlFor="ministryFileReference">Ministry File Reference</Label>
+                        <Input
+                          id="ministryFileReference"
+                          value={formData.ministryFileReference}
+                          onChange={(e) => updateFormData("ministryFileReference", e.target.value)}
+                          placeholder="Your internal reference"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Priority and Confidentiality */}
+                  <div className="space-y-4">
+                    <h3 className="font-semibold text-foreground">Priority & Confidentiality</h3>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label htmlFor="urgency">Urgency <span className="text-destructive">*</span></Label>
+                        <Select
+                          value={formData.urgency}
+                          onValueChange={(value) => updateFormData("urgency", value)}
+                        >
+                          <SelectTrigger id="urgency">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {URGENCY_LEVELS.map((level) => (
+                              <SelectItem key={level.value} value={level.value}>
+                                {level.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="confidentiality">Confidentiality <span className="text-destructive">*</span></Label>
+                        <Select
+                          value={formData.confidentiality}
+                          onValueChange={(value) => updateFormData("confidentiality", value)}
+                        >
+                          <SelectTrigger id="confidentiality">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {CONFIDENTIALITY_LEVELS.map((level) => (
+                              <SelectItem key={level.value} value={level.value}>
+                                {level.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    {formData.urgency === "urgent" && (
+                      <div className="space-y-2">
+                        <Label htmlFor="urgentReason">Reason for Urgency <span className="text-destructive">*</span></Label>
+                        <Textarea
+                          id="urgentReason"
+                          value={formData.urgentReason}
+                          onChange={(e) => updateFormData("urgentReason", e.target.value)}
+                          placeholder="Please explain why this matter is urgent..."
+                          rows={3}
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Subject Matter */}
+                  <div className="space-y-4">
+                    <h3 className="font-semibold text-foreground">Subject Matter</h3>
+                    <div className="space-y-2">
+                      <Label htmlFor="subject">Subject <span className="text-destructive">*</span></Label>
+                      <Input
+                        id="subject"
+                        value={formData.subject}
+                        onChange={(e) => updateFormData("subject", e.target.value)}
+                        placeholder="Brief subject line"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="description">Detailed Description <span className="text-destructive">*</span></Label>
+                      <Textarea
+                        id="description"
+                        value={formData.description}
+                        onChange={(e) => updateFormData("description", e.target.value)}
+                        placeholder="Provide a detailed description of your correspondence..."
+                        rows={5}
+                      />
+                    </div>
+                  </div>
+                </CardContent>
+              </>
+            )}
+
+            {/* Step 3: Documents */}
+            {currentStep === 2 && (
+              <>
+                <CardHeader>
+                  <CardTitle>Supporting Documents</CardTitle>
+                  <CardDescription>
+                    Upload any supporting documents for your correspondence. Each document must be assigned a type.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <Alert className="bg-muted border-muted-foreground/20">
+                    <Info className="h-4 w-4" />
+                    <AlertDescription>
+                      Documents are optional but recommended. All uploaded files must have a document type selected.
+                    </AlertDescription>
+                  </Alert>
+                  
+                  <FileUpload
+                    files={files}
+                    onFilesChange={setFiles}
+                    documentTypes={DOCUMENT_TYPES}
+                  />
+                </CardContent>
+              </>
+            )}
+
+            {/* Step 4: Review */}
+            {currentStep === 3 && (
+              <>
+                <CardHeader>
+                  <CardTitle>Review & Submit</CardTitle>
+                  <CardDescription>
+                    Please review your submission details before submitting.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="rounded-lg border border-border divide-y divide-border">
+                    <div className="p-4">
+                      <h4 className="text-sm font-medium text-muted-foreground mb-2">Correspondence Type</h4>
+                      <p className="text-foreground">
+                        {CORRESPONDENCE_TYPES.find(t => t.value === formData.correspondenceType)?.label}
+                      </p>
+                    </div>
+                    <div className="p-4">
+                      <h4 className="text-sm font-medium text-muted-foreground mb-2">Submitter</h4>
+                      <p className="text-foreground">{formData.submitterName}</p>
+                      <p className="text-sm text-muted-foreground">{formData.submitterEmail}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {SUBMITTER_TYPES.find(t => t.value === formData.submitterType)?.label}
+                      </p>
+                    </div>
+                    <div className="p-4">
+                      <h4 className="text-sm font-medium text-muted-foreground mb-2">Subject</h4>
+                      <p className="text-foreground font-medium">{formData.subject}</p>
+                      <p className="text-sm text-muted-foreground mt-1">{formData.description}</p>
+                    </div>
+                    <div className="p-4">
+                      <h4 className="text-sm font-medium text-muted-foreground mb-2">Priority</h4>
+                      <div className="flex gap-4">
+                        <span className="text-foreground">
+                          Urgency: <span className="font-medium">{formData.urgency === "urgent" ? "Urgent" : "Standard"}</span>
+                        </span>
+                        <span className="text-foreground">
+                          Confidentiality: <span className="font-medium">{CONFIDENTIALITY_LEVELS.find(l => l.value === formData.confidentiality)?.label}</span>
+                        </span>
+                      </div>
+                    </div>
+                    <div className="p-4">
+                      <h4 className="text-sm font-medium text-muted-foreground mb-2">Documents</h4>
+                      {files.length === 0 ? (
+                        <p className="text-muted-foreground">No documents uploaded</p>
+                      ) : (
+                        <ul className="space-y-1">
+                          {files.map((file) => (
+                            <li key={file.id} className="text-sm text-foreground">
+                              {file.file.name} ({DOCUMENT_TYPES.find(t => t.value === file.documentType)?.label})
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3 p-4 rounded-lg bg-muted">
+                    <Checkbox
+                      id="declaration"
+                      checked={formData.declaration}
+                      onCheckedChange={(checked) => updateFormData("declaration", checked === true)}
+                    />
+                    <Label htmlFor="declaration" className="text-sm leading-relaxed cursor-pointer">
+                      I declare that the information provided in this submission is true and accurate to the best of my knowledge. 
+                      I understand that providing false information may result in legal consequences.
+                    </Label>
+                  </div>
+                </CardContent>
+              </>
+            )}
+
+            {/* Navigation Buttons */}
+            <div className="flex items-center justify-between border-t border-border p-6">
+              <Button
+                variant="outline"
+                onClick={() => setCurrentStep(prev => prev - 1)}
+                disabled={currentStep === 0}
+              >
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Previous
+              </Button>
+              
+              <div className="flex gap-2">
+                <Button variant="ghost">
+                  <Save className="mr-2 h-4 w-4" />
+                  Save Draft
+                </Button>
+                
+                {currentStep < STEPS.length - 1 ? (
+                  <Button
+                    onClick={() => setCurrentStep(prev => prev + 1)}
+                    disabled={!canProceed()}
+                  >
+                    Next
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={handleSubmit}
+                    disabled={!canProceed() || isSubmitting}
+                  >
+                    {isSubmitting ? (
+                      <>Processing...</>
+                    ) : (
+                      <>
+                        <Send className="mr-2 h-4 w-4" />
+                        Submit
+                      </>
+                    )}
+                  </Button>
+                )}
+              </div>
+            </div>
+          </Card>
+        </div>
+      </main>
+
+      <Footer />
+    </div>
+  )
+}
