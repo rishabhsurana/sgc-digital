@@ -19,11 +19,19 @@ import {
   Settings,
   Users,
   Building2,
-  ChevronLeft,
+  ChevronRight,
   Home,
   LogOut,
   User
 } from "lucide-react"
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb"
 
 interface AdminSession {
   email: string
@@ -31,6 +39,35 @@ interface AdminSession {
   role: string
   department?: string
   loginTime: string
+}
+
+// Breadcrumb configuration
+const breadcrumbConfig: Record<string, { label: string; parent?: string }> = {
+  "/management": { label: "Dashboard" },
+  "/management/registers": { label: "Registers", parent: "/management" },
+  "/management/correspondence-register": { label: "Correspondence Register", parent: "/management/registers" },
+  "/management/contracts-register": { label: "Contracts Register", parent: "/management/registers" },
+  "/management/reports": { label: "Reports & Analytics", parent: "/management" },
+  "/management/users": { label: "User Management", parent: "/management" },
+  "/management/mda": { label: "MDA Management", parent: "/management" },
+  "/management/settings": { label: "Settings", parent: "/management" },
+}
+
+function getBreadcrumbs(pathname: string) {
+  const breadcrumbs: { href: string; label: string; isCurrentPage: boolean }[] = []
+  let currentPath = pathname
+  
+  while (currentPath && breadcrumbConfig[currentPath]) {
+    const config = breadcrumbConfig[currentPath]
+    breadcrumbs.unshift({
+      href: currentPath,
+      label: config.label,
+      isCurrentPage: currentPath === pathname
+    })
+    currentPath = config.parent || ""
+  }
+  
+  return breadcrumbs
 }
 
 const sidebarNavItems = [
@@ -253,7 +290,44 @@ export default function ManagementLayout({
 
         {/* Page Content */}
         <main className="flex-1">
-          {children}
+          {/* Breadcrumbs */}
+          <div className="border-b border-primary/10 bg-card px-6 py-3">
+            <Breadcrumb>
+              <BreadcrumbList>
+                <BreadcrumbItem>
+                  <BreadcrumbLink href="/" className="flex items-center gap-1 text-muted-foreground hover:text-primary">
+                    <Home className="h-3.5 w-3.5" />
+                    Home
+                  </BreadcrumbLink>
+                </BreadcrumbItem>
+                <BreadcrumbSeparator>
+                  <ChevronRight className="h-3.5 w-3.5" />
+                </BreadcrumbSeparator>
+                {getBreadcrumbs(pathname).map((crumb, index, arr) => (
+                  <BreadcrumbItem key={crumb.href}>
+                    {crumb.isCurrentPage ? (
+                      <BreadcrumbPage className="font-medium">{crumb.label}</BreadcrumbPage>
+                    ) : (
+                      <>
+                        <BreadcrumbLink href={crumb.href} className="text-muted-foreground hover:text-primary">
+                          {crumb.label}
+                        </BreadcrumbLink>
+                        {index < arr.length - 1 && (
+                          <BreadcrumbSeparator>
+                            <ChevronRight className="h-3.5 w-3.5" />
+                          </BreadcrumbSeparator>
+                        )}
+                      </>
+                    )}
+                  </BreadcrumbItem>
+                ))}
+              </BreadcrumbList>
+            </Breadcrumb>
+          </div>
+          
+          <div className="p-6">
+            {children}
+          </div>
         </main>
       </div>
     </div>
