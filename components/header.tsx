@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { 
   Menu, User, LogIn, FileText, FileSignature, 
-  LayoutDashboard, BarChart3, Home, ChevronDown 
+  LayoutDashboard, BarChart3, Home, ChevronDown, Settings 
 } from "lucide-react"
 import { useState } from "react"
 import {
@@ -108,6 +108,14 @@ export function Header() {
               <BarChart3 className="h-4 w-4" />
               Reports
             </Link>
+            
+            <Link 
+              href="/management" 
+              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-foreground/80 rounded-lg transition-all hover:text-primary hover:bg-primary/5"
+            >
+              <Settings className="h-4 w-4" />
+              Management
+            </Link>
           </nav>
 
           <div className="flex items-center gap-2">
@@ -201,6 +209,14 @@ export function Header() {
                   >
                     <BarChart3 className="h-5 w-5" />
                     Reports
+                  </Link>
+                  <Link 
+                    href="/management" 
+                    onClick={() => setIsOpen(false)}
+                    className="flex items-center gap-3 px-4 py-3 text-foreground rounded-lg hover:bg-primary/10 hover:text-primary transition-colors ml-2"
+                  >
+                    <Settings className="h-5 w-5" />
+                    Management
                   </Link>
                   
                   <hr className="my-4 border-primary/20" />
