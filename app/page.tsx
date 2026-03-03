@@ -35,22 +35,15 @@ export default function HomePage() {
               {/* Left Content */}
               <div className="text-center lg:text-left">
                 <div className="mb-6 inline-flex items-center rounded-full border border-primary-foreground/20 bg-primary-foreground/10 px-4 py-1.5">
-                  <Image 
-                    src="/images/barbados-coat-of-arms.png" 
-                    alt="Barbados Coat of Arms" 
-                    width={24} 
-                    height={24} 
-                    className="mr-2"
-                  />
                   <span className="text-sm font-medium text-primary-foreground">
-                    Government of Barbados - Official Portal
+                    Official Digital Portal
                   </span>
                 </div>
                 <h1 className="font-serif text-4xl font-bold tracking-tight text-primary-foreground sm:text-5xl lg:text-6xl text-balance">
                   SGC Digital
                 </h1>
                 <p className="mt-2 text-xl text-accent font-semibold">
-                  Solicitor General{"'"}s Chambers
+                  Registry Correspondence & Contract Management
                 </p>
                 <p className="mt-6 text-lg text-primary-foreground/80 leading-relaxed max-w-xl mx-auto lg:mx-0 text-pretty">
                   Submit and track Registry Correspondence and Government Contract requests 
