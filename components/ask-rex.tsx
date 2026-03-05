@@ -3,7 +3,6 @@
 import { useState, useRef, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import {
@@ -279,7 +278,14 @@ export function AskRex() {
       </div>
 
       {/* Messages Area */}
-      <ScrollArea className="flex-1 p-4" ref={scrollRef}>
+      <div 
+        ref={scrollRef}
+        className="flex-1 p-4 overflow-y-auto scrollbar-thin scrollbar-thumb-emerald-300 scrollbar-track-muted/30 hover:scrollbar-thumb-emerald-400"
+        style={{
+          scrollbarWidth: 'thin',
+          scrollbarColor: '#6ee7b7 #f1f5f9'
+        }}
+      >
         <div className="space-y-4">
           {messages.map((message) => (
             <div
@@ -376,7 +382,7 @@ export function AskRex() {
             </div>
           )}
         </div>
-      </ScrollArea>
+      </div>
 
       {/* Suggested Prompts */}
       {messages.length <= 1 && (
