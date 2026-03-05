@@ -1,6 +1,8 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
+import { useChat } from "@ai-sdk/react"
+import { DefaultChatTransport } from "ai"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -20,23 +22,24 @@ import {
   Loader2,
   User,
   Volume2,
-  VolumeX
+  VolumeX,
+  RefreshCw
 } from "lucide-react"
 
-interface Message {
-  id: string
-  role: "user" | "assistant"
-  content: string
-  timestamp: Date
-  type?: "text" | "file-result" | "report" | "search-result"
-  files?: { name: string; ref: string; type: string }[]
-}
-
 const SUGGESTED_PROMPTS = [
-  { icon: Search, label: "Find a file", prompt: "Find me file with FileNumber " },
-  { icon: FileText, label: "Retrieve documents", prompt: "Retrieve all documents on " },
-  { icon: FileBarChart, label: "Generate report", prompt: "Generate a report on " },
+  { icon: Search, label: "Search contracts", prompt: "Search for contracts related to infrastructure" },
+  { icon: FileText, label: "Find correspondence", prompt: "Find correspondence from Ministry of Finance" },
+  { icon: FileBarChart, label: "Get statistics", prompt: "Show me statistics for contracts this month" },
 ]
+
+// Helper to extract text from message parts
+function getMessageText(message: { parts?: Array<{ type: string; text?: string }> }): string {
+  if (!message.parts || !Array.isArray(message.parts)) return ""
+  return message.parts
+    .filter((p): p is { type: "text"; text: string } => p.type === "text")
+    .map((p) => p.text)
+    .join("")
+}
 
 export function AskRex() {
   const [isOpen, setIsOpen] = useState(false)
@@ -44,18 +47,14 @@ export function AskRex() {
   const [input, setInput] = useState("")
   const [isListening, setIsListening] = useState(false)
   const [isSpeaking, setIsSpeaking] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "welcome",
-      role: "assistant",
-      content: "Hello! I'm Rex, your AI assistant. I can help you find files, retrieve documents, and generate reports. How can I assist you today?",
-      timestamp: new Date(),
-      type: "text"
-    }
-  ])
   const scrollRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+
+  const { messages, sendMessage, status, setMessages } = useChat({
+    transport: new DefaultChatTransport({ api: "/api/rex" }),
+  })
+
+  const isLoading = status === "streaming" || status === "submitted"
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -77,7 +76,10 @@ export function AskRex() {
       return
     }
 
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+    const SpeechRecognition = (window as unknown as { SpeechRecognition?: new () => SpeechRecognition; webkitSpeechRecognition?: new () => SpeechRecognition }).SpeechRecognition || 
+      (window as unknown as { webkitSpeechRecognition?: new () => SpeechRecognition }).webkitSpeechRecognition
+    if (!SpeechRecognition) return
+    
     const recognition = new SpeechRecognition()
     
     recognition.continuous = false
@@ -88,7 +90,7 @@ export function AskRex() {
     recognition.onend = () => setIsListening(false)
     recognition.onerror = () => setIsListening(false)
 
-    recognition.onresult = (event: any) => {
+    recognition.onresult = (event: SpeechRecognitionEvent) => {
       const transcript = event.results[0][0].transcript
       setInput(transcript)
     }
@@ -116,102 +118,22 @@ export function AskRex() {
     window.speechSynthesis.speak(utterance)
   }
 
-  const simulateAIResponse = async (userMessage: string): Promise<Message> => {
-    // Simulate AI processing delay
-    await new Promise(resolve => setTimeout(resolve, 1500))
-
-    const lowerMessage = userMessage.toLowerCase()
-
-    // File search simulation
-    if (lowerMessage.includes("find") && lowerMessage.includes("file")) {
-      const fileMatch = userMessage.match(/[A-Z0-9]{4,}/i)
-      const fileNumber = fileMatch ? fileMatch[0].toUpperCase() : "X5556"
-      return {
-        id: Date.now().toString(),
-        role: "assistant",
-        content: `I found the file you requested. Here are the details for File Number ${fileNumber}:`,
-        timestamp: new Date(),
-        type: "file-result",
-        files: [
-          { name: `Contract Agreement - ${fileNumber}`, ref: fileNumber, type: "Contract" },
-        ]
-      }
-    }
-
-    // Document retrieval simulation
-    if (lowerMessage.includes("retrieve") && lowerMessage.includes("document")) {
-      const subject = userMessage.replace(/retrieve all documents on|retrieve documents on|retrieve/gi, "").trim() || "contracts"
-      return {
-        id: Date.now().toString(),
-        role: "assistant",
-        content: `I found several documents related to "${subject}" across the repository:`,
-        timestamp: new Date(),
-        type: "search-result",
-        files: [
-          { name: `${subject} - Policy Document 2024`, ref: "DOC-2024-001", type: "Policy" },
-          { name: `${subject} - Guidelines Update`, ref: "DOC-2024-015", type: "Guidelines" },
-          { name: `${subject} - Annual Review`, ref: "DOC-2023-089", type: "Report" },
-        ]
-      }
-    }
-
-    // Report generation simulation
-    if (lowerMessage.includes("generate") && lowerMessage.includes("report")) {
-      const subject = userMessage.replace(/generate a report on|generate report on|generate report/gi, "").trim() || "correspondence"
-      return {
-        id: Date.now().toString(),
-        role: "assistant",
-        content: `I've generated a summary report on "${subject}":\n\n**Executive Summary**\nBased on analysis of 47 documents in the repository, here are the key findings:\n\n• Total active items: 23\n• Pending review: 12\n• Completed this month: 8\n• Average processing time: 5.2 days\n\n**Key Insights**\nThe data shows a 15% improvement in processing efficiency compared to the previous quarter. Most items are being resolved within the standard SLA.\n\nWould you like me to export this as a detailed PDF report?`,
-        timestamp: new Date(),
-        type: "report"
-      }
-    }
-
-    // Default response
-    return {
-      id: Date.now().toString(),
-      role: "assistant",
-      content: `I understand you're asking about "${userMessage}". I can help you with:\n\n• **Finding files** - Just say "Find me file with FileNumber [number]"\n• **Retrieving documents** - Say "Retrieve all documents on [subject]"\n• **Generating reports** - Say "Generate a report on [subject]"\n\nHow would you like me to assist you?`,
-      timestamp: new Date(),
-      type: "text"
-    }
-  }
-
   const handleSubmit = async (e?: React.FormEvent) => {
     e?.preventDefault()
     if (!input.trim() || isLoading) return
 
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      role: "user",
-      content: input.trim(),
-      timestamp: new Date(),
-      type: "text"
-    }
-
-    setMessages(prev => [...prev, userMessage])
+    const userInput = input.trim()
     setInput("")
-    setIsLoading(true)
-
-    try {
-      const response = await simulateAIResponse(userMessage.content)
-      setMessages(prev => [...prev, response])
-    } catch (error) {
-      setMessages(prev => [...prev, {
-        id: Date.now().toString(),
-        role: "assistant",
-        content: "I apologize, but I encountered an error processing your request. Please try again.",
-        timestamp: new Date(),
-        type: "text"
-      }])
-    } finally {
-      setIsLoading(false)
-    }
+    sendMessage({ text: userInput })
   }
 
   const handleSuggestionClick = (prompt: string) => {
     setInput(prompt)
     inputRef.current?.focus()
+  }
+
+  const handleClearChat = () => {
+    setMessages([])
   }
 
   if (!isOpen) {
@@ -254,10 +176,19 @@ export function AskRex() {
           </div>
           <div>
             <h3 className="font-semibold text-white">Ask Rex</h3>
-            <p className="text-xs text-emerald-100">AI Assistant • Online</p>
+            <p className="text-xs text-emerald-100">AI Assistant • {isLoading ? "Thinking..." : "Online"}</p>
           </div>
         </div>
         <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 text-white/80 hover:text-white hover:bg-white/10"
+            onClick={handleClearChat}
+            title="Clear chat"
+          >
+            <RefreshCw className="h-4 w-4" />
+          </Button>
           <Button
             variant="ghost"
             size="icon"
@@ -280,103 +211,181 @@ export function AskRex() {
       {/* Messages Area */}
       <div 
         ref={scrollRef}
-        className="flex-1 p-4 overflow-y-auto scrollbar-thin scrollbar-thumb-emerald-300 scrollbar-track-muted/30 hover:scrollbar-thumb-emerald-400"
+        className="flex-1 p-4 overflow-y-auto"
         style={{
           scrollbarWidth: 'thin',
           scrollbarColor: '#6ee7b7 #f1f5f9'
         }}
       >
         <div className="space-y-4">
-          {messages.map((message) => (
-            <div
-              key={message.id}
-              className={cn(
-                "flex gap-3",
-                message.role === "user" ? "flex-row-reverse" : "flex-row"
-              )}
-            >
-              <div
-                className={cn(
-                  "flex h-8 w-8 shrink-0 items-center justify-center rounded-full",
-                  message.role === "user"
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-accent text-accent-foreground"
-                )}
-              >
-                {message.role === "user" ? (
-                  <User className="h-4 w-4" />
-                ) : (
-                  <Bot className="h-4 w-4" />
-                )}
+          {/* Welcome message if no messages */}
+          {messages.length === 0 && (
+            <div className="flex gap-3">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-green-600 text-white">
+                <Bot className="h-4 w-4" />
               </div>
+              <div className="flex flex-col gap-2 max-w-[80%]">
+                <div className="rounded-lg px-3 py-2 text-sm bg-muted text-foreground">
+                  <p>Hello! I&apos;m Rex, your AI assistant for the SGC Portal. I can help you:</p>
+                  <ul className="mt-2 space-y-1 text-sm">
+                    <li>• Search correspondence and contracts</li>
+                    <li>• Generate reports and statistics</li>
+                    <li>• Answer questions about the portal</li>
+                    <li>• Guide you through processes</li>
+                  </ul>
+                  <p className="mt-2">How can I assist you today?</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {messages.map((message) => {
+            const messageText = getMessageText(message)
+            return (
               <div
+                key={message.id}
                 className={cn(
-                  "flex flex-col gap-2 max-w-[80%]",
-                  message.role === "user" ? "items-end" : "items-start"
+                  "flex gap-3",
+                  message.role === "user" ? "flex-row-reverse" : "flex-row"
                 )}
               >
                 <div
                   className={cn(
-                    "rounded-lg px-3 py-2 text-sm",
+                    "flex h-8 w-8 shrink-0 items-center justify-center rounded-full",
                     message.role === "user"
                       ? "bg-primary text-primary-foreground"
-                      : "bg-muted text-foreground"
+                      : "bg-gradient-to-br from-emerald-500 to-green-600 text-white"
                   )}
                 >
-                  <p className="whitespace-pre-wrap">{message.content}</p>
+                  {message.role === "user" ? (
+                    <User className="h-4 w-4" />
+                  ) : (
+                    <Bot className="h-4 w-4" />
+                  )}
                 </div>
-                
-                {/* File Results */}
-                {message.files && message.files.length > 0 && (
-                  <div className="w-full space-y-2">
-                    {message.files.map((file, index) => (
-                      <div
-                        key={index}
-                        className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 border border-primary/10 hover:bg-muted transition-colors cursor-pointer"
-                      >
-                        <FileText className="h-5 w-5 text-primary" />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate">{file.name}</p>
-                          <p className="text-xs text-muted-foreground">Ref: {file.ref}</p>
-                        </div>
-                        <Badge variant="outline" className="shrink-0">{file.type}</Badge>
-                      </div>
-                    ))}
+                <div
+                  className={cn(
+                    "flex flex-col gap-2 max-w-[80%]",
+                    message.role === "user" ? "items-end" : "items-start"
+                  )}
+                >
+                  <div
+                    className={cn(
+                      "rounded-lg px-3 py-2 text-sm",
+                      message.role === "user"
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted text-foreground"
+                    )}
+                  >
+                    <p className="whitespace-pre-wrap">{messageText}</p>
                   </div>
-                )}
 
-                {/* Actions for assistant messages */}
-                {message.role === "assistant" && (
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-6 w-6"
-                      onClick={() => speakResponse(message.content)}
-                    >
-                      {isSpeaking ? (
-                        <VolumeX className="h-3 w-3" />
-                      ) : (
-                        <Volume2 className="h-3 w-3" />
-                      )}
-                    </Button>
-                    <span className="text-xs text-muted-foreground">
-                      {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </span>
-                  </div>
-                )}
+                  {/* Tool calls display */}
+                  {message.parts?.map((part, index) => {
+                    if (part.type === "tool-invocation") {
+                      const toolPart = part as { type: "tool-invocation"; toolInvocation: { toolName: string; state: string; result?: unknown } }
+                      return (
+                        <div key={index} className="w-full">
+                          {toolPart.toolInvocation.state === "output-available" && toolPart.toolInvocation.result && (
+                            <div className="mt-2 p-3 rounded-lg bg-emerald-50 border border-emerald-200 text-sm">
+                              <div className="flex items-center gap-2 text-emerald-700 font-medium mb-2">
+                                <FileText className="h-4 w-4" />
+                                <span>
+                                  {toolPart.toolInvocation.toolName === "searchCorrespondence" && "Correspondence Search Results"}
+                                  {toolPart.toolInvocation.toolName === "searchContracts" && "Contract Search Results"}
+                                  {toolPart.toolInvocation.toolName === "getStatistics" && "Statistics"}
+                                  {toolPart.toolInvocation.toolName === "generateReport" && "Report Generated"}
+                                  {toolPart.toolInvocation.toolName === "getHelp" && "Help & Guidance"}
+                                </span>
+                              </div>
+                              {toolPart.toolInvocation.toolName === "searchCorrespondence" && (
+                                <div className="space-y-2">
+                                  {((toolPart.toolInvocation.result as { results: Array<{ ref: string; subject: string; mda: string; status: string }> }).results || []).map((item, i) => (
+                                    <div key={i} className="flex items-center gap-2 p-2 bg-white rounded border">
+                                      <FileText className="h-4 w-4 text-emerald-600" />
+                                      <div className="flex-1 min-w-0">
+                                        <p className="font-medium text-sm truncate">{item.subject}</p>
+                                        <p className="text-xs text-muted-foreground">{item.ref} • {item.mda}</p>
+                                      </div>
+                                      <Badge variant="outline" className="text-xs">{item.status}</Badge>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                              {toolPart.toolInvocation.toolName === "searchContracts" && (
+                                <div className="space-y-2">
+                                  {((toolPart.toolInvocation.result as { results: Array<{ ref: string; subject: string; nature: string; mda: string; status: string; value: number }> }).results || []).map((item, i) => (
+                                    <div key={i} className="flex items-center gap-2 p-2 bg-white rounded border">
+                                      <FileText className="h-4 w-4 text-emerald-600" />
+                                      <div className="flex-1 min-w-0">
+                                        <p className="font-medium text-sm truncate">{item.subject}</p>
+                                        <p className="text-xs text-muted-foreground">{item.ref} • ${item.value?.toLocaleString()}</p>
+                                      </div>
+                                      <Badge variant="outline" className="text-xs">{item.nature}</Badge>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                              {toolPart.toolInvocation.toolName === "getStatistics" && (
+                                <div className="grid grid-cols-2 gap-2 text-xs">
+                                  {(toolPart.toolInvocation.result as { correspondence?: { total: number; pending: number; approved: number } }).correspondence && (
+                                    <>
+                                      <div className="p-2 bg-white rounded border">
+                                        <p className="text-muted-foreground">Total Correspondence</p>
+                                        <p className="font-bold text-lg">{(toolPart.toolInvocation.result as { correspondence: { total: number } }).correspondence.total}</p>
+                                      </div>
+                                      <div className="p-2 bg-white rounded border">
+                                        <p className="text-muted-foreground">Pending</p>
+                                        <p className="font-bold text-lg">{(toolPart.toolInvocation.result as { correspondence: { pending: number } }).correspondence.pending}</p>
+                                      </div>
+                                    </>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          )}
+                          {toolPart.toolInvocation.state === "input-available" && (
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                              <span>Searching...</span>
+                            </div>
+                          )}
+                        </div>
+                      )
+                    }
+                    return null
+                  })}
+
+                  {/* Actions for assistant messages */}
+                  {message.role === "assistant" && messageText && (
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6"
+                        onClick={() => speakResponse(messageText)}
+                      >
+                        {isSpeaking ? (
+                          <VolumeX className="h-3 w-3" />
+                        ) : (
+                          <Volume2 className="h-3 w-3" />
+                        )}
+                      </Button>
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
           
           {/* Loading indicator */}
           {isLoading && (
             <div className="flex gap-3">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent text-accent-foreground">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-green-600 text-white">
                 <Bot className="h-4 w-4" />
               </div>
               <div className="flex items-center gap-2 rounded-lg bg-muted px-3 py-2">
-                <Loader2 className="h-4 w-4 animate-spin" />
+                <Loader2 className="h-4 w-4 animate-spin text-emerald-600" />
                 <span className="text-sm text-muted-foreground">Rex is thinking...</span>
               </div>
             </div>
@@ -385,7 +394,7 @@ export function AskRex() {
       </div>
 
       {/* Suggested Prompts */}
-      {messages.length <= 1 && (
+      {messages.length === 0 && (
         <div className="px-4 pb-2">
           <p className="text-xs text-muted-foreground mb-2">Suggested actions:</p>
           <div className="flex flex-wrap gap-2">
@@ -394,7 +403,7 @@ export function AskRex() {
                 key={index}
                 variant="outline"
                 size="sm"
-                className="h-8 text-xs"
+                className="h-8 text-xs border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700"
                 onClick={() => handleSuggestionClick(suggestion.prompt)}
               >
                 <suggestion.icon className="mr-1.5 h-3 w-3" />
@@ -406,7 +415,7 @@ export function AskRex() {
       )}
 
       {/* Input Area */}
-      <div className="p-4 border-t border-primary/10">
+      <div className="p-4 border-t border-emerald-100">
         <form onSubmit={handleSubmit} className="flex items-center gap-2">
           <Button
             type="button"
@@ -426,7 +435,7 @@ export function AskRex() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Ask Rex anything..."
-            className="flex-1"
+            className="flex-1 border-emerald-200 focus-visible:ring-emerald-500"
             disabled={isLoading}
           />
           <Button
@@ -439,7 +448,7 @@ export function AskRex() {
           </Button>
         </form>
         <p className="text-xs text-muted-foreground mt-2 text-center">
-          Rex can find files, retrieve documents, and generate reports
+          Rex is powered by AI and can search, analyze, and assist with SGC Portal tasks
         </p>
       </div>
     </div>
