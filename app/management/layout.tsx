@@ -32,6 +32,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
+import { AskRex } from "@/components/ask-rex"
 
 interface AdminSession {
   email: string
@@ -330,6 +331,9 @@ export default function ManagementLayout({
           </div>
         </main>
       </div>
+
+      {/* Ask Rex AI Assistant */}
+      <AskRex />
     </div>
   )
 }
