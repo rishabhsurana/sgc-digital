@@ -55,7 +55,7 @@ const toolDefinitions = {
     },
   },
   
-  generateReport: {
+  generateContractsReport: {
     execute: async () => {
       const contractsThisWeek = [
         {
@@ -117,12 +117,96 @@ const toolDefinitions = {
         period: 'this-week',
         generatedAt: new Date().toISOString(),
         contracts: contractsThisWeek,
+        correspondence: null,
         summary: {
           totalContracts: contractsThisWeek.length,
           byStatus: { approved: 2, pending: 2, underReview: 1 },
           byNature: { Goods: 2, Works: 2, 'Consultancy/Services': 1 }
         },
         message: `Report for this week generated. Found ${contractsThisWeek.length} contracts.`
+      }
+    },
+  },
+  
+  generateCorrespondenceReport: {
+    execute: async () => {
+      const correspondenceThisWeek = [
+        {
+          dateReceived: '2026-03-02',
+          originatingMDA: 'Ministry of Finance',
+          subject: 'Budget Allocation Request FY2026',
+          referenceNumber: 'COR-2026-0156',
+          category: 'Financial Matters',
+          correspondenceType: 'Internal',
+          status: 'Pending',
+          dateCompleted: null
+        },
+        {
+          dateReceived: '2026-03-02',
+          originatingMDA: 'Ministry of Education',
+          subject: 'Staff Training Program Approval',
+          referenceNumber: 'COR-2026-0157',
+          category: 'Human Resources',
+          correspondenceType: 'Internal',
+          status: 'Approved',
+          dateCompleted: '2026-03-04'
+        },
+        {
+          dateReceived: '2026-03-03',
+          originatingMDA: 'Ministry of Health',
+          subject: 'Emergency Medical Supplies Request',
+          referenceNumber: 'COR-2026-0158',
+          category: 'Procurement',
+          correspondenceType: 'Urgent',
+          status: 'Under Review',
+          dateCompleted: null
+        },
+        {
+          dateReceived: '2026-03-03',
+          originatingMDA: 'Ministry of Works',
+          subject: 'Infrastructure Assessment Report Q1',
+          referenceNumber: 'COR-2026-0159',
+          category: 'Reports',
+          correspondenceType: 'Internal',
+          status: 'Approved',
+          dateCompleted: '2026-03-05'
+        },
+        {
+          dateReceived: '2026-03-04',
+          originatingMDA: 'Attorney General Office',
+          subject: 'Legal Opinion on Contract Amendment',
+          referenceNumber: 'COR-2026-0160',
+          category: 'Legal',
+          correspondenceType: 'Internal',
+          status: 'Pending',
+          dateCompleted: null
+        },
+        {
+          dateReceived: '2026-03-05',
+          originatingMDA: 'Ministry of Tourism',
+          subject: 'Tourism Development Initiative Proposal',
+          referenceNumber: 'COR-2026-0161',
+          category: 'Policy',
+          correspondenceType: 'External',
+          status: 'Under Review',
+          dateCompleted: null
+        },
+      ]
+
+      return {
+        reportGenerated: true,
+        reportType: 'weekly',
+        category: 'correspondence',
+        period: 'this-week',
+        generatedAt: new Date().toISOString(),
+        contracts: null,
+        correspondence: correspondenceThisWeek,
+        summary: {
+          totalCorrespondence: correspondenceThisWeek.length,
+          byStatus: { approved: 2, pending: 2, underReview: 2 },
+          byType: { Internal: 4, External: 1, Urgent: 1 }
+        },
+        message: `Report for this week generated. Found ${correspondenceThisWeek.length} correspondence items.`
       }
     },
   },
@@ -143,9 +227,11 @@ const toolDefinitions = {
   },
 }
 
-// Intent detection patterns
+// Intent detection patterns - order matters, more specific patterns first
 const intentPatterns = [
-  { pattern: /report|generate.*report|weekly.*report|contracts.*week|submitted.*week/i, tool: 'generateReport', params: { reportType: 'weekly', category: 'contracts', period: 'this-week' } },
+  { pattern: /correspondence.*report|report.*correspondence|correspondence.*submitted|correspondence.*week/i, tool: 'generateCorrespondenceReport', params: {} },
+  { pattern: /contract.*report|report.*contract|contracts.*submitted|contracts.*week|generate.*report.*contract/i, tool: 'generateContractsReport', params: {} },
+  { pattern: /report|generate.*report|weekly.*report|submitted.*week/i, tool: 'generateContractsReport', params: {} },
   { pattern: /search.*correspondence|find.*correspondence|correspondence.*search|correspondence.*from/i, tool: 'searchCorrespondence', params: { query: '', filterType: 'all' } },
   { pattern: /search.*contract|find.*contract|contract.*search|contracts.*related/i, tool: 'searchContracts', params: { query: '', nature: 'all' } },
   { pattern: /statistics|stats|analytics|how many|dashboard.*stats/i, tool: 'getStatistics', params: { type: 'both', period: 'month' } },
@@ -164,8 +250,10 @@ function detectIntent(message: string): { tool: string; params: Record<string, u
 function generateResponse(message: string, toolResult?: { tool: string; result: unknown }): string {
   if (toolResult) {
     switch (toolResult.tool) {
-      case 'generateReport':
+      case 'generateContractsReport':
         return `I've generated the contracts report for this week. The table below shows all ${(toolResult.result as { summary: { totalContracts: number } }).summary.totalContracts} contracts submitted, including Date Received, Originating MDA, Subject, Nature of Contract, Category, Contract #, Contract Type, and Status/Stage.`
+      case 'generateCorrespondenceReport':
+        return `I've generated the correspondence report for this week. The table below shows all ${(toolResult.result as { summary: { totalCorrespondence: number } }).summary.totalCorrespondence} correspondence items submitted, including Date Received, Originating MDA, Subject, Reference Number, Category, Type, Status, and Date Completed.`
       case 'searchCorrespondence':
         return `I found ${(toolResult.result as { totalFound: number }).totalFound} correspondence records matching your search. Here are the results:`
       case 'searchContracts':

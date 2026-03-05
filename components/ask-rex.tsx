@@ -319,7 +319,8 @@ export function AskRex() {
                         {message.toolResult.tool === "searchCorrespondence" && "Correspondence Search Results"}
                         {message.toolResult.tool === "searchContracts" && "Contract Search Results"}
                         {message.toolResult.tool === "getStatistics" && "Statistics"}
-                        {message.toolResult.tool === "generateReport" && "Report Generated"}
+                        {message.toolResult.tool === "generateContractsReport" && "Contracts Report"}
+                        {message.toolResult.tool === "generateCorrespondenceReport" && "Correspondence Report"}
                         {message.toolResult.tool === "getHelp" && "Help & Guidance"}
                       </span>
                     </div>
@@ -386,8 +387,8 @@ export function AskRex() {
                       </div>
                     )}
 
-                    {/* Report */}
-                    {message.toolResult.tool === "generateReport" && (
+                    {/* Contracts Report */}
+                    {message.toolResult.tool === "generateContractsReport" && (
                       <div className="space-y-3">
                         {/* Summary stats */}
                         <div className="grid grid-cols-3 gap-2 text-xs">
@@ -449,6 +450,77 @@ export function AskRex() {
                                         {contract.status}
                                       </Badge>
                                     </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Correspondence Report */}
+                    {message.toolResult.tool === "generateCorrespondenceReport" && (
+                      <div className="space-y-3">
+                        {/* Summary stats */}
+                        <div className="grid grid-cols-3 gap-2 text-xs">
+                          <div className="p-2 bg-white rounded border text-center">
+                            <p className="text-muted-foreground">Total</p>
+                            <p className="font-bold text-lg text-emerald-600">
+                              {(message.toolResult.result as { summary?: { totalCorrespondence?: number } })?.summary?.totalCorrespondence || 0}
+                            </p>
+                          </div>
+                          <div className="p-2 bg-white rounded border text-center">
+                            <p className="text-muted-foreground">Approved</p>
+                            <p className="font-bold text-lg text-green-600">
+                              {(message.toolResult.result as { summary?: { byStatus?: { approved?: number } } })?.summary?.byStatus?.approved || 0}
+                            </p>
+                          </div>
+                          <div className="p-2 bg-white rounded border text-center">
+                            <p className="text-muted-foreground">Pending</p>
+                            <p className="font-bold text-lg text-amber-600">
+                              {(message.toolResult.result as { summary?: { byStatus?: { pending?: number } } })?.summary?.byStatus?.pending || 0}
+                            </p>
+                          </div>
+                        </div>
+                        
+                        {/* Correspondence Table */}
+                        {(message.toolResult.result as { correspondence?: Array<{ dateReceived: string; originatingMDA: string; subject: string; referenceNumber: string; category: string; correspondenceType: string; status: string; dateCompleted: string | null }> })?.correspondence && (
+                          <div className="overflow-x-auto">
+                            <p className="text-xs font-medium text-emerald-700 mb-2">Correspondence Submitted This Week:</p>
+                            <table className="w-full text-xs border-collapse">
+                              <thead>
+                                <tr className="bg-blue-100 text-blue-800">
+                                  <th className="border border-blue-200 px-2 py-1 text-left">Date Received</th>
+                                  <th className="border border-blue-200 px-2 py-1 text-left">Originating MDA</th>
+                                  <th className="border border-blue-200 px-2 py-1 text-left">Subject</th>
+                                  <th className="border border-blue-200 px-2 py-1 text-left">Reference #</th>
+                                  <th className="border border-blue-200 px-2 py-1 text-left">Category</th>
+                                  <th className="border border-blue-200 px-2 py-1 text-left">Type</th>
+                                  <th className="border border-blue-200 px-2 py-1 text-left">Status</th>
+                                  <th className="border border-blue-200 px-2 py-1 text-left">Date Completed</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {((message.toolResult.result as { correspondence: Array<{ dateReceived: string; originatingMDA: string; subject: string; referenceNumber: string; category: string; correspondenceType: string; status: string; dateCompleted: string | null }> }).correspondence || []).map((item, i) => (
+                                  <tr key={i} className="bg-white hover:bg-blue-50">
+                                    <td className="border border-blue-200 px-2 py-1">{item.dateReceived}</td>
+                                    <td className="border border-blue-200 px-2 py-1 max-w-[100px] truncate" title={item.originatingMDA}>{item.originatingMDA}</td>
+                                    <td className="border border-blue-200 px-2 py-1 max-w-[120px] truncate" title={item.subject}>{item.subject}</td>
+                                    <td className="border border-blue-200 px-2 py-1 font-mono">{item.referenceNumber}</td>
+                                    <td className="border border-blue-200 px-2 py-1">{item.category}</td>
+                                    <td className="border border-blue-200 px-2 py-1">{item.correspondenceType}</td>
+                                    <td className="border border-blue-200 px-2 py-1">
+                                      <Badge variant="outline" className={cn(
+                                        "text-[10px]",
+                                        item.status === "Approved" && "border-green-300 bg-green-50 text-green-700",
+                                        item.status === "Pending" && "border-amber-300 bg-amber-50 text-amber-700",
+                                        item.status === "Under Review" && "border-blue-300 bg-blue-50 text-blue-700"
+                                      )}>
+                                        {item.status}
+                                      </Badge>
+                                    </td>
+                                    <td className="border border-blue-200 px-2 py-1">{item.dateCompleted || "-"}</td>
                                   </tr>
                                 ))}
                               </tbody>
