@@ -218,14 +218,14 @@ export function AskRex() {
   if (!isOpen) {
     return (
       <div className="fixed top-20 right-6 z-[100]">
-        <div className="flex items-center gap-2">
-          <div className="bg-card border-2 border-primary/30 rounded-full px-4 py-2 shadow-lg flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-accent" />
-            <span className="text-sm font-medium">Ask Rex</span>
+        <div className="flex items-center gap-3">
+          <div className="bg-gradient-to-r from-emerald-500 to-green-600 rounded-full px-5 py-2.5 shadow-lg flex items-center gap-2 border border-emerald-400/30">
+            <Sparkles className="h-4 w-4 text-white" />
+            <span className="text-sm font-semibold text-white">Ask Rex</span>
           </div>
           <Button
             onClick={() => setIsOpen(true)}
-            className="h-14 w-14 rounded-full shadow-2xl bg-primary hover:bg-primary/90 border-2 border-accent"
+            className="h-14 w-14 rounded-full shadow-2xl bg-gradient-to-br from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 border-2 border-emerald-300/50 text-white"
             size="icon"
           >
             <Bot className="h-6 w-6" />
@@ -238,31 +238,31 @@ export function AskRex() {
   return (
     <div
       className={cn(
-        "fixed z-[100] bg-card border-2 border-primary/30 rounded-xl shadow-2xl flex flex-col transition-all duration-300",
+        "fixed z-[100] bg-card border-2 border-emerald-200 rounded-xl shadow-2xl flex flex-col transition-all duration-300",
         isExpanded
           ? "bottom-4 right-4 left-4 top-4 md:left-auto md:w-[600px] md:top-4"
           : "top-20 right-6 w-[400px] h-[550px]"
       )}
     >
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-primary/10 bg-primary/5 rounded-t-lg">
+      <div className="flex items-center justify-between p-4 border-b border-emerald-200 bg-gradient-to-r from-emerald-500 to-green-600 rounded-t-xl">
         <div className="flex items-center gap-3">
           <div className="relative">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur-sm">
               <Bot className="h-5 w-5" />
             </div>
-            <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-green-500 border-2 border-card" />
+            <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-emerald-300 border-2 border-emerald-600 animate-pulse" />
           </div>
           <div>
-            <h3 className="font-semibold text-foreground">Ask Rex</h3>
-            <p className="text-xs text-muted-foreground">AI Assistant • Online</p>
+            <h3 className="font-semibold text-white">Ask Rex</h3>
+            <p className="text-xs text-emerald-100">AI Assistant • Online</p>
           </div>
         </div>
         <div className="flex items-center gap-1">
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8"
+            className="h-8 w-8 text-white/80 hover:text-white hover:bg-white/10"
             onClick={() => setIsExpanded(!isExpanded)}
           >
             {isExpanded ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
@@ -270,7 +270,7 @@ export function AskRex() {
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8"
+            className="h-8 w-8 text-white/80 hover:text-white hover:bg-white/10"
             onClick={() => setIsOpen(false)}
           >
             <X className="h-4 w-4" />
@@ -426,7 +426,7 @@ export function AskRex() {
           <Button
             type="submit"
             size="icon"
-            className="h-10 w-10 shrink-0"
+            className="h-10 w-10 shrink-0 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white"
             disabled={!input.trim() || isLoading}
           >
             <Send className="h-4 w-4" />
