@@ -321,6 +321,8 @@ export function AskRex() {
                         {message.toolResult.tool === "getStatistics" && "Statistics"}
                         {message.toolResult.tool === "generateContractsReport" && "Contracts Report"}
                         {message.toolResult.tool === "generateCorrespondenceReport" && "Correspondence Report"}
+                        {message.toolResult.tool === "generateCombinedReport" && "Combined Report"}
+                        {message.toolResult.tool === "getMDAList" && "MDA Information"}
                         {message.toolResult.tool === "getHelp" && "Help & Guidance"}
                       </span>
                     </div>
@@ -527,6 +529,62 @@ export function AskRex() {
                             </table>
                           </div>
                         )}
+                      </div>
+                    )}
+
+                    {/* Combined Report */}
+                    {message.toolResult.tool === "generateCombinedReport" && (
+                      <div className="space-y-4">
+                        <p className="text-xs font-medium text-emerald-700">Combined Contracts & Correspondence Report:</p>
+                        
+                        {/* Contracts section */}
+                        {(message.toolResult.result as { contracts?: Array<{ dateReceived: string; originatingMDA: string; subject: string; contractNumber: string; status: string }> })?.contracts && (
+                          <div>
+                            <p className="text-xs font-medium text-emerald-600 mb-1">Contracts ({((message.toolResult.result as { contracts: unknown[] }).contracts || []).length})</p>
+                            <div className="space-y-1">
+                              {((message.toolResult.result as { contracts: Array<{ dateReceived: string; originatingMDA: string; subject: string; contractNumber: string; status: string }> }).contracts || []).slice(0, 5).map((contract, i) => (
+                                <div key={i} className="flex items-center gap-2 p-2 bg-white rounded border text-xs">
+                                  <span className="font-mono text-emerald-600">{contract.contractNumber}</span>
+                                  <span className="flex-1 truncate">{contract.subject}</span>
+                                  <Badge variant="outline" className="text-[10px]">{contract.status}</Badge>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* Correspondence section */}
+                        {(message.toolResult.result as { correspondence?: Array<{ dateReceived: string; originatingMDA: string; subject: string; referenceNumber: string; status: string }> })?.correspondence && (
+                          <div>
+                            <p className="text-xs font-medium text-blue-600 mb-1">Correspondence ({((message.toolResult.result as { correspondence: unknown[] }).correspondence || []).length})</p>
+                            <div className="space-y-1">
+                              {((message.toolResult.result as { correspondence: Array<{ dateReceived: string; originatingMDA: string; subject: string; referenceNumber: string; status: string }> }).correspondence || []).slice(0, 5).map((item, i) => (
+                                <div key={i} className="flex items-center gap-2 p-2 bg-white rounded border text-xs">
+                                  <span className="font-mono text-blue-600">{item.referenceNumber}</span>
+                                  <span className="flex-1 truncate">{item.subject}</span>
+                                  <Badge variant="outline" className="text-[10px]">{item.status}</Badge>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* MDA List */}
+                    {message.toolResult.tool === "getMDAList" && (
+                      <div className="space-y-2">
+                        <div className="grid grid-cols-2 gap-2 text-xs">
+                          {((message.toolResult.result as { contractsByMDA?: Array<{ name: string; contracts: number; correspondence: number }> })?.contractsByMDA || []).map((mda, i) => (
+                            <div key={i} className="p-2 bg-white rounded border">
+                              <p className="font-medium truncate" title={mda.name}>{mda.name}</p>
+                              <div className="flex gap-2 mt-1 text-muted-foreground">
+                                <span>{mda.contracts} contracts</span>
+                                <span>{mda.correspondence} correspondence</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     )}
                   </div>
