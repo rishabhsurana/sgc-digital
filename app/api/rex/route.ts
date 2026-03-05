@@ -1,11 +1,10 @@
-import { z } from 'zod'
+import { NextResponse } from 'next/server'
 
 export const maxDuration = 30
 
 // Tool definitions with their execute functions
 const toolDefinitions = {
   searchCorrespondence: {
-    description: 'Search for correspondence records',
     execute: async (params: { query: string; filterType?: string }) => {
       return {
         results: [
@@ -34,7 +33,7 @@ const toolDefinitions = {
   },
   
   getStatistics: {
-    execute: async (params: { type: string; period?: string }) => {
+    execute: async () => {
       return {
         correspondence: {
           total: 156,
@@ -51,13 +50,13 @@ const toolDefinitions = {
           totalValue: 125000000,
           byNature: { Goods: 34, Works: 28, 'Consultancy/Services': 27 },
         },
-        period: params.period || 'all-time',
+        period: 'all-time',
       }
     },
   },
   
   generateReport: {
-    execute: async (params: { reportType: string; category: string; period?: string }) => {
+    execute: async () => {
       const contractsThisWeek = [
         {
           dateReceived: '2026-03-02',
@@ -113,9 +112,9 @@ const toolDefinitions = {
 
       return {
         reportGenerated: true,
-        reportType: params.reportType,
-        category: params.category,
-        period: params.period || 'this-week',
+        reportType: 'weekly',
+        category: 'contracts',
+        period: 'this-week',
         generatedAt: new Date().toISOString(),
         contracts: contractsThisWeek,
         summary: {
@@ -131,10 +130,10 @@ const toolDefinitions = {
   getHelp: {
     execute: async (params: { topic: string }) => {
       const helpTopics: Record<string, string> = {
-        'correspondence': 'To submit correspondence, navigate to the Correspondence Register and use the submission form.',
-        'contracts': 'Contract submissions require details about nature, category, contractor, and value.',
-        'reports': 'Access Reports & Analytics from the sidebar to generate custom reports.',
-        'default': 'I can help with correspondence tracking, contract management, reports, and navigation.',
+        'correspondence': 'To submit correspondence, navigate to the Correspondence Register and use the submission form. You can track the status of all correspondence from the main dashboard.',
+        'contracts': 'Contract submissions require details about nature (Goods, Works, Consultancy/Services), category, contractor, and value. All contracts go through an approval workflow.',
+        'reports': 'Access Reports & Analytics from the sidebar to generate custom reports. You can filter by date range, MDA, status, and more.',
+        'default': 'I can help you with correspondence tracking, contract management, reports generation, and portal navigation. Just ask me what you need!',
       }
       return {
         topic: params.topic,
@@ -146,11 +145,11 @@ const toolDefinitions = {
 
 // Intent detection patterns
 const intentPatterns = [
-  { pattern: /report|generate.*report|weekly.*report|contracts.*week/i, tool: 'generateReport', params: { reportType: 'weekly', category: 'contracts', period: 'this-week' } },
-  { pattern: /search.*correspondence|find.*correspondence|correspondence.*search/i, tool: 'searchCorrespondence', params: { query: '', filterType: 'all' } },
-  { pattern: /search.*contract|find.*contract|contract.*search/i, tool: 'searchContracts', params: { query: '', nature: 'all' } },
-  { pattern: /statistics|stats|analytics|how many/i, tool: 'getStatistics', params: { type: 'both', period: 'month' } },
-  { pattern: /help|how do i|how to|guide/i, tool: 'getHelp', params: { topic: 'default' } },
+  { pattern: /report|generate.*report|weekly.*report|contracts.*week|submitted.*week/i, tool: 'generateReport', params: { reportType: 'weekly', category: 'contracts', period: 'this-week' } },
+  { pattern: /search.*correspondence|find.*correspondence|correspondence.*search|correspondence.*from/i, tool: 'searchCorrespondence', params: { query: '', filterType: 'all' } },
+  { pattern: /search.*contract|find.*contract|contract.*search|contracts.*related/i, tool: 'searchContracts', params: { query: '', nature: 'all' } },
+  { pattern: /statistics|stats|analytics|how many|dashboard.*stats/i, tool: 'getStatistics', params: { type: 'both', period: 'month' } },
+  { pattern: /help|how do i|how to|guide|what can you/i, tool: 'getHelp', params: { topic: 'default' } },
 ]
 
 function detectIntent(message: string): { tool: string; params: Record<string, unknown> } | null {
@@ -182,109 +181,53 @@ function generateResponse(message: string, toolResult?: { tool: string; result: 
   
   // Default responses for general queries
   const lowerMessage = message.toLowerCase()
-  if (lowerMessage.includes('hello') || lowerMessage.includes('hi')) {
+  if (lowerMessage.includes('hello') || lowerMessage.includes('hi') || lowerMessage.includes('hey')) {
     return "Hello! I'm Rex, your AI assistant for the SGC Portal. I can help you search for correspondence and contracts, generate reports, view statistics, and navigate the portal. How can I assist you today?"
   }
   if (lowerMessage.includes('thank')) {
     return "You're welcome! Let me know if there's anything else I can help you with."
   }
+  if (lowerMessage.includes('good morning') || lowerMessage.includes('good afternoon') || lowerMessage.includes('good evening')) {
+    return "Good day! I'm Rex, ready to assist you with the SGC Portal. Would you like me to generate a report, search for documents, or show you some statistics?"
+  }
   
-  return "I can help you with searching correspondence, finding contracts, generating reports, and viewing statistics. Try asking me to 'Generate a report on contracts this week' or 'Show me the statistics'."
+  return "I can help you with searching correspondence, finding contracts, generating reports, and viewing statistics. Try asking me to:\n\n• 'Generate a report on contracts submitted this week'\n• 'Search for contracts related to infrastructure'\n• 'Show me the statistics'\n• 'Find correspondence from Ministry of Finance'"
 }
 
 export async function POST(req: Request) {
-  const { messages } = await req.json()
-  
-  // Get the last user message
-  const lastMessage = messages[messages.length - 1]
-  const userText = lastMessage?.parts?.find((p: { type: string }) => p.type === 'text')?.text || ''
-  
-  // Detect intent and execute tool if applicable
-  const intent = detectIntent(userText)
-  let toolResult: { tool: string; result: unknown } | undefined
-  
-  if (intent) {
-    const toolDef = toolDefinitions[intent.tool as keyof typeof toolDefinitions]
-    if (toolDef) {
-      toolResult = {
-        tool: intent.tool,
-        result: await toolDef.execute(intent.params as never)
+  try {
+    const { message } = await req.json()
+    
+    if (!message) {
+      return NextResponse.json({ error: 'Message is required' }, { status: 400 })
+    }
+    
+    // Detect intent and execute tool if applicable
+    const intent = detectIntent(message)
+    let toolResult: { tool: string; result: unknown } | undefined
+    
+    if (intent) {
+      const toolDef = toolDefinitions[intent.tool as keyof typeof toolDefinitions]
+      if (toolDef) {
+        toolResult = {
+          tool: intent.tool,
+          result: await toolDef.execute(intent.params as never)
+        }
       }
     }
-  }
-  
-  // Generate response
-  const responseText = generateResponse(userText, toolResult)
-  
-  // Build the response with tool invocation if applicable
-  const responseParts: Array<{ type: string; text?: string; toolInvocation?: { toolCallId: string; toolName: string; args: unknown; state: string; result: unknown } }> = []
-  
-  if (toolResult) {
-    responseParts.push({
-      type: 'tool-invocation',
-      toolInvocation: {
-        toolCallId: `call_${Date.now()}`,
-        toolName: toolResult.tool,
-        args: intent?.params || {},
-        state: 'output-available',
-        result: toolResult.result
-      }
+    
+    // Generate response
+    const responseText = generateResponse(message, toolResult)
+    
+    return NextResponse.json({
+      response: responseText,
+      toolResult: toolResult || null
     })
+  } catch (error) {
+    console.error('Rex API error:', error)
+    return NextResponse.json({ 
+      response: "I apologize, but I encountered an error processing your request. Please try again.",
+      toolResult: null
+    }, { status: 500 })
   }
-  
-  responseParts.push({ type: 'text', text: responseText })
-  
-  // Return as a streaming response format compatible with useChat
-  const responseMessage = {
-    role: 'assistant',
-    id: `msg_${Date.now()}`,
-    parts: responseParts
-  }
-  
-  // Create a proper SSE stream
-  const encoder = new TextEncoder()
-  const stream = new ReadableStream({
-    start(controller) {
-      // Send tool invocation first if present
-      if (toolResult) {
-        const toolChunk = {
-          type: 'tool-invocation',
-          toolInvocation: {
-            toolCallId: `call_${Date.now()}`,
-            toolName: toolResult.tool,
-            args: intent?.params || {},
-            state: 'output-available',
-            result: toolResult.result
-          }
-        }
-        controller.enqueue(encoder.encode(`data: ${JSON.stringify(toolChunk)}\n\n`))
-      }
-      
-      // Stream the text response character by character for a typing effect
-      const words = responseText.split(' ')
-      let currentText = ''
-      
-      words.forEach((word, index) => {
-        currentText += (index > 0 ? ' ' : '') + word
-        const chunk = {
-          type: 'text-delta',
-          delta: (index > 0 ? ' ' : '') + word
-        }
-        controller.enqueue(encoder.encode(`data: ${JSON.stringify(chunk)}\n\n`))
-      })
-      
-      // Send finish message
-      controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'finish', finishReason: 'stop' })}\n\n`))
-      controller.enqueue(encoder.encode('data: [DONE]\n\n'))
-      controller.close()
-    }
-  })
-  
-  return new Response(stream, {
-    headers: {
-      'Content-Type': 'text/event-stream',
-      'Cache-Control': 'no-cache',
-      'Connection': 'keep-alive',
-    },
-  })
 }
