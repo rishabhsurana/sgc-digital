@@ -217,27 +217,31 @@ export function AskRex() {
 
   if (!isOpen) {
     return (
-      <Button
-        onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg bg-primary hover:bg-primary/90 z-50"
-        size="icon"
-      >
+      <div className="fixed bottom-6 right-6 z-[100]">
         <div className="relative">
-          <Bot className="h-6 w-6" />
-          <Sparkles className="h-3 w-3 absolute -top-1 -right-1 text-accent" />
+          <Button
+            onClick={() => setIsOpen(true)}
+            className="h-16 w-16 rounded-full shadow-2xl bg-primary hover:bg-primary/90 border-4 border-accent animate-pulse hover:animate-none"
+            size="icon"
+          >
+            <Bot className="h-7 w-7" />
+          </Button>
+          <div className="absolute -top-2 -right-2 bg-accent text-accent-foreground text-[10px] font-bold px-2 py-1 rounded-full shadow-lg">
+            Ask Rex
+          </div>
+          <Sparkles className="h-4 w-4 absolute -bottom-1 -left-1 text-accent animate-bounce" />
         </div>
-        <span className="sr-only">Ask Rex</span>
-      </Button>
+      </div>
     )
   }
 
   return (
     <div
       className={cn(
-        "fixed z-50 bg-card border border-primary/20 rounded-lg shadow-2xl flex flex-col transition-all duration-300",
+        "fixed z-[100] bg-card border-2 border-primary/30 rounded-xl shadow-2xl flex flex-col transition-all duration-300",
         isExpanded
           ? "bottom-4 right-4 left-4 top-4 md:left-auto md:w-[600px] md:top-4"
-          : "bottom-6 right-6 w-[380px] h-[520px]"
+          : "bottom-6 right-6 w-[400px] h-[550px]"
       )}
     >
       {/* Header */}
