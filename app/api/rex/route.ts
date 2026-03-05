@@ -89,18 +89,114 @@ const tools = {
   }),
   
   generateReport: tool({
-    description: 'Generate a report on correspondence or contracts activity',
+    description: 'Generate a detailed report on correspondence or contracts. Returns records with Date Received, Originating MDA, Subject, Nature of Contract, Category, Contract #, Contract Type, and Status/Stage',
     inputSchema: z.object({
-      reportType: z.enum(['summary', 'detailed', 'pending-actions', 'overdue']).describe('Type of report to generate'),
+      reportType: z.enum(['summary', 'detailed', 'pending-actions', 'overdue', 'weekly', 'monthly']).describe('Type of report to generate'),
       category: z.enum(['correspondence', 'contracts', 'all']).describe('Category to report on'),
+      period: z.enum(['today', 'this-week', 'this-month', 'this-year']).nullable().describe('Time period for the report'),
     }),
-    execute: async ({ reportType, category }) => {
+    execute: async ({ reportType, category, period }) => {
+      // Sample contracts data for this week - in production, this would query the database
+      const contractsThisWeek = [
+        {
+          dateReceived: '2026-03-02',
+          originatingMDA: 'Ministry of Health',
+          subject: 'Medical Equipment Supply',
+          natureOfContract: 'Goods',
+          category: 'Procurement of Goods & Services',
+          contractNumber: 'CON-2026-0089',
+          contractType: 'New',
+          status: 'Approved'
+        },
+        {
+          dateReceived: '2026-03-03',
+          originatingMDA: 'Ministry of Education',
+          subject: 'School Renovation Project Phase 2',
+          natureOfContract: 'Works',
+          category: 'Construction / Public Works',
+          contractNumber: 'CON-2026-0088',
+          contractType: 'Supplemental',
+          status: 'Pending Review'
+        },
+        {
+          dateReceived: '2026-03-03',
+          originatingMDA: 'Ministry of ICT',
+          subject: 'IT Infrastructure Upgrade',
+          natureOfContract: 'Goods',
+          category: 'Procurement of Goods & Services',
+          contractNumber: 'CON-2026-0087',
+          contractType: 'New',
+          status: 'Under Review'
+        },
+        {
+          dateReceived: '2026-03-04',
+          originatingMDA: 'Ministry of Works',
+          subject: 'Road Rehabilitation - Highway 1',
+          natureOfContract: 'Works',
+          category: 'Construction / Public Works',
+          contractNumber: 'CON-2026-0086',
+          contractType: 'New',
+          status: 'Pending'
+        },
+        {
+          dateReceived: '2026-03-05',
+          originatingMDA: 'Ministry of Finance',
+          subject: 'Financial Advisory Services',
+          natureOfContract: 'Consultancy/Services',
+          category: 'Consultancy / Professional Services',
+          contractNumber: 'CON-2026-0085',
+          contractType: 'Renewal',
+          status: 'Approved'
+        },
+      ]
+
+      const correspondenceThisWeek = [
+        {
+          dateReceived: '2026-03-02',
+          originatingMDA: 'Ministry of Finance',
+          subject: 'Budget Allocation Request FY2026',
+          referenceNumber: 'COR-2026-0156',
+          status: 'Pending'
+        },
+        {
+          dateReceived: '2026-03-03',
+          originatingMDA: 'Ministry of Education',
+          subject: 'Staff Training Program Approval',
+          referenceNumber: 'COR-2026-0157',
+          status: 'Approved'
+        },
+        {
+          dateReceived: '2026-03-04',
+          originatingMDA: 'Ministry of Health',
+          subject: 'Emergency Medical Supplies Request',
+          referenceNumber: 'COR-2026-0158',
+          status: 'Under Review'
+        },
+      ]
+
       return {
         reportGenerated: true,
         reportType,
         category,
-        summary: `${reportType} report for ${category} has been generated. There are 23 pending items requiring attention, 5 items are overdue by more than 7 days.`,
-        downloadUrl: '/api/reports/download?type=' + reportType,
+        period: period || 'this-week',
+        generatedAt: new Date().toISOString(),
+        contracts: category === 'correspondence' ? null : contractsThisWeek,
+        correspondence: category === 'contracts' ? null : correspondenceThisWeek,
+        summary: {
+          totalContracts: contractsThisWeek.length,
+          totalCorrespondence: correspondenceThisWeek.length,
+          byStatus: {
+            approved: 2,
+            pending: 2,
+            underReview: 1
+          },
+          byNature: {
+            Goods: 2,
+            Works: 2,
+            'Consultancy/Services': 1
+          }
+        },
+        message: `Report for ${period || 'this week'} generated successfully. Found ${category === 'contracts' ? contractsThisWeek.length + ' contracts' : category === 'correspondence' ? correspondenceThisWeek.length + ' correspondence items' : contractsThisWeek.length + ' contracts and ' + correspondenceThisWeek.length + ' correspondence items'}.`
       }
     },
   }),

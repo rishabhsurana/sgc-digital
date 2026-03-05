@@ -342,6 +342,76 @@ export function AskRex() {
                                   )}
                                 </div>
                               )}
+                              {toolPart.toolInvocation.toolName === "generateReport" && (
+                                <div className="space-y-3">
+                                  {/* Summary stats */}
+                                  <div className="grid grid-cols-3 gap-2 text-xs">
+                                    <div className="p-2 bg-white rounded border text-center">
+                                      <p className="text-muted-foreground">Total</p>
+                                      <p className="font-bold text-lg text-emerald-600">
+                                        {(toolPart.toolInvocation.result as { summary?: { totalContracts?: number } })?.summary?.totalContracts || 0}
+                                      </p>
+                                    </div>
+                                    <div className="p-2 bg-white rounded border text-center">
+                                      <p className="text-muted-foreground">Approved</p>
+                                      <p className="font-bold text-lg text-green-600">
+                                        {(toolPart.toolInvocation.result as { summary?: { byStatus?: { approved?: number } } })?.summary?.byStatus?.approved || 0}
+                                      </p>
+                                    </div>
+                                    <div className="p-2 bg-white rounded border text-center">
+                                      <p className="text-muted-foreground">Pending</p>
+                                      <p className="font-bold text-lg text-amber-600">
+                                        {(toolPart.toolInvocation.result as { summary?: { byStatus?: { pending?: number } } })?.summary?.byStatus?.pending || 0}
+                                      </p>
+                                    </div>
+                                  </div>
+                                  
+                                  {/* Contracts Table */}
+                                  {(toolPart.toolInvocation.result as { contracts?: Array<{ dateReceived: string; originatingMDA: string; subject: string; natureOfContract: string; category: string; contractNumber: string; contractType: string; status: string }> })?.contracts && (
+                                    <div className="overflow-x-auto">
+                                      <p className="text-xs font-medium text-emerald-700 mb-2">Contracts Submitted This Week:</p>
+                                      <table className="w-full text-xs border-collapse">
+                                        <thead>
+                                          <tr className="bg-emerald-100 text-emerald-800">
+                                            <th className="border border-emerald-200 px-2 py-1 text-left">Date Received</th>
+                                            <th className="border border-emerald-200 px-2 py-1 text-left">Originating MDA</th>
+                                            <th className="border border-emerald-200 px-2 py-1 text-left">Subject</th>
+                                            <th className="border border-emerald-200 px-2 py-1 text-left">Nature</th>
+                                            <th className="border border-emerald-200 px-2 py-1 text-left">Category</th>
+                                            <th className="border border-emerald-200 px-2 py-1 text-left">Contract #</th>
+                                            <th className="border border-emerald-200 px-2 py-1 text-left">Type</th>
+                                            <th className="border border-emerald-200 px-2 py-1 text-left">Status</th>
+                                          </tr>
+                                        </thead>
+                                        <tbody>
+                                          {((toolPart.toolInvocation.result as { contracts: Array<{ dateReceived: string; originatingMDA: string; subject: string; natureOfContract: string; category: string; contractNumber: string; contractType: string; status: string }> }).contracts || []).map((contract, i) => (
+                                            <tr key={i} className="bg-white hover:bg-emerald-50">
+                                              <td className="border border-emerald-200 px-2 py-1">{contract.dateReceived}</td>
+                                              <td className="border border-emerald-200 px-2 py-1 max-w-[100px] truncate" title={contract.originatingMDA}>{contract.originatingMDA}</td>
+                                              <td className="border border-emerald-200 px-2 py-1 max-w-[120px] truncate" title={contract.subject}>{contract.subject}</td>
+                                              <td className="border border-emerald-200 px-2 py-1">{contract.natureOfContract}</td>
+                                              <td className="border border-emerald-200 px-2 py-1 max-w-[100px] truncate" title={contract.category}>{contract.category}</td>
+                                              <td className="border border-emerald-200 px-2 py-1 font-mono">{contract.contractNumber}</td>
+                                              <td className="border border-emerald-200 px-2 py-1">{contract.contractType}</td>
+                                              <td className="border border-emerald-200 px-2 py-1">
+                                                <Badge variant="outline" className={cn(
+                                                  "text-[10px]",
+                                                  contract.status === "Approved" && "border-green-300 bg-green-50 text-green-700",
+                                                  contract.status === "Pending" && "border-amber-300 bg-amber-50 text-amber-700",
+                                                  contract.status === "Under Review" && "border-blue-300 bg-blue-50 text-blue-700",
+                                                  contract.status === "Pending Review" && "border-amber-300 bg-amber-50 text-amber-700"
+                                                )}>
+                                                  {contract.status}
+                                                </Badge>
+                                              </td>
+                                            </tr>
+                                          ))}
+                                        </tbody>
+                                      </table>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
                             </div>
                           )}
                           {toolPart.toolInvocation.state === "input-available" && (
