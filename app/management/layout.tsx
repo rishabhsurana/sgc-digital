@@ -305,22 +305,22 @@ export default function ManagementLayout({
                   <ChevronRight className="h-3.5 w-3.5" />
                 </BreadcrumbSeparator>
                 {getBreadcrumbs(pathname).map((crumb, index, arr) => (
-                  <span key={crumb.href} className="contents">
-                    <BreadcrumbItem>
-                      {crumb.isCurrentPage ? (
-                        <BreadcrumbPage className="font-medium">{crumb.label}</BreadcrumbPage>
-                      ) : (
+                  <BreadcrumbItem key={crumb.href}>
+                    {crumb.isCurrentPage ? (
+                      <BreadcrumbPage className="font-medium">{crumb.label}</BreadcrumbPage>
+                    ) : (
+                      <>
                         <BreadcrumbLink href={crumb.href} className="text-muted-foreground hover:text-primary">
                           {crumb.label}
                         </BreadcrumbLink>
-                      )}
-                    </BreadcrumbItem>
-                    {index < arr.length - 1 && (
-                      <BreadcrumbSeparator>
-                        <ChevronRight className="h-3.5 w-3.5" />
-                      </BreadcrumbSeparator>
+                        {index < arr.length - 1 && (
+                          <BreadcrumbSeparator>
+                            <ChevronRight className="h-3.5 w-3.5" />
+                          </BreadcrumbSeparator>
+                        )}
+                      </>
                     )}
-                  </span>
+                  </BreadcrumbItem>
                 ))}
               </BreadcrumbList>
             </Breadcrumb>

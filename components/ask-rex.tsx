@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { ScrollArea } from "@/components/ui/scroll-area"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import {
@@ -20,34 +21,40 @@ import {
   Loader2,
   User,
   Volume2,
-  VolumeX,
-  RefreshCw
+  VolumeX
 } from "lucide-react"
 
 interface Message {
   id: string
   role: "user" | "assistant"
   content: string
-  toolResult?: {
-    tool: string
-    result: unknown
-  }
+  timestamp: Date
+  type?: "text" | "file-result" | "report" | "search-result"
+  files?: { name: string; ref: string; type: string }[]
 }
 
 const SUGGESTED_PROMPTS = [
-  { icon: Search, label: "Search contracts", prompt: "Search for contracts related to infrastructure" },
-  { icon: FileText, label: "Find correspondence", prompt: "Find correspondence from Ministry of Finance" },
-  { icon: FileBarChart, label: "Weekly report", prompt: "Generate a report on contracts submitted this week" },
+  { icon: Search, label: "Find a file", prompt: "Find me file with FileNumber " },
+  { icon: FileText, label: "Retrieve documents", prompt: "Retrieve all documents on " },
+  { icon: FileBarChart, label: "Generate report", prompt: "Generate a report on " },
 ]
 
 export function AskRex() {
   const [isOpen, setIsOpen] = useState(false)
   const [isExpanded, setIsExpanded] = useState(false)
   const [input, setInput] = useState("")
-  const [messages, setMessages] = useState<Message[]>([])
-  const [isLoading, setIsLoading] = useState(false)
   const [isListening, setIsListening] = useState(false)
   const [isSpeaking, setIsSpeaking] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const [messages, setMessages] = useState<Message[]>([
+    {
+      id: "welcome",
+      role: "assistant",
+      content: "Hello! I'm Rex, your AI assistant. I can help you find files, retrieve documents, and generate reports. How can I assist you today?",
+      timestamp: new Date(),
+      type: "text"
+    }
+  ])
   const scrollRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -71,10 +78,7 @@ export function AskRex() {
       return
     }
 
-    const SpeechRecognition = (window as unknown as { SpeechRecognition?: new () => SpeechRecognition; webkitSpeechRecognition?: new () => SpeechRecognition }).SpeechRecognition || 
-      (window as unknown as { webkitSpeechRecognition?: new () => SpeechRecognition }).webkitSpeechRecognition
-    if (!SpeechRecognition) return
-    
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
     const recognition = new SpeechRecognition()
     
     recognition.continuous = false
@@ -85,7 +89,7 @@ export function AskRex() {
     recognition.onend = () => setIsListening(false)
     recognition.onerror = () => setIsListening(false)
 
-    recognition.onresult = (event: SpeechRecognitionEvent) => {
+    recognition.onresult = (event: any) => {
       const transcript = event.results[0][0].transcript
       setInput(transcript)
     }
@@ -113,47 +117,94 @@ export function AskRex() {
     window.speechSynthesis.speak(utterance)
   }
 
+  const simulateAIResponse = async (userMessage: string): Promise<Message> => {
+    // Simulate AI processing delay
+    await new Promise(resolve => setTimeout(resolve, 1500))
+
+    const lowerMessage = userMessage.toLowerCase()
+
+    // File search simulation
+    if (lowerMessage.includes("find") && lowerMessage.includes("file")) {
+      const fileMatch = userMessage.match(/[A-Z0-9]{4,}/i)
+      const fileNumber = fileMatch ? fileMatch[0].toUpperCase() : "X5556"
+      return {
+        id: Date.now().toString(),
+        role: "assistant",
+        content: `I found the file you requested. Here are the details for File Number ${fileNumber}:`,
+        timestamp: new Date(),
+        type: "file-result",
+        files: [
+          { name: `Contract Agreement - ${fileNumber}`, ref: fileNumber, type: "Contract" },
+        ]
+      }
+    }
+
+    // Document retrieval simulation
+    if (lowerMessage.includes("retrieve") && lowerMessage.includes("document")) {
+      const subject = userMessage.replace(/retrieve all documents on|retrieve documents on|retrieve/gi, "").trim() || "contracts"
+      return {
+        id: Date.now().toString(),
+        role: "assistant",
+        content: `I found several documents related to "${subject}" across the repository:`,
+        timestamp: new Date(),
+        type: "search-result",
+        files: [
+          { name: `${subject} - Policy Document 2024`, ref: "DOC-2024-001", type: "Policy" },
+          { name: `${subject} - Guidelines Update`, ref: "DOC-2024-015", type: "Guidelines" },
+          { name: `${subject} - Annual Review`, ref: "DOC-2023-089", type: "Report" },
+        ]
+      }
+    }
+
+    // Report generation simulation
+    if (lowerMessage.includes("generate") && lowerMessage.includes("report")) {
+      const subject = userMessage.replace(/generate a report on|generate report on|generate report/gi, "").trim() || "correspondence"
+      return {
+        id: Date.now().toString(),
+        role: "assistant",
+        content: `I've generated a summary report on "${subject}":\n\n**Executive Summary**\nBased on analysis of 47 documents in the repository, here are the key findings:\n\n• Total active items: 23\n• Pending review: 12\n• Completed this month: 8\n• Average processing time: 5.2 days\n\n**Key Insights**\nThe data shows a 15% improvement in processing efficiency compared to the previous quarter. Most items are being resolved within the standard SLA.\n\nWould you like me to export this as a detailed PDF report?`,
+        timestamp: new Date(),
+        type: "report"
+      }
+    }
+
+    // Default response
+    return {
+      id: Date.now().toString(),
+      role: "assistant",
+      content: `I understand you're asking about "${userMessage}". I can help you with:\n\n• **Finding files** - Just say "Find me file with FileNumber [number]"\n• **Retrieving documents** - Say "Retrieve all documents on [subject]"\n• **Generating reports** - Say "Generate a report on [subject]"\n\nHow would you like me to assist you?`,
+      timestamp: new Date(),
+      type: "text"
+    }
+  }
+
   const handleSubmit = async (e?: React.FormEvent) => {
     e?.preventDefault()
     if (!input.trim() || isLoading) return
 
-    const userInput = input.trim()
-    setInput("")
-    
-    // Add user message
     const userMessage: Message = {
-      id: `user_${Date.now()}`,
+      id: Date.now().toString(),
       role: "user",
-      content: userInput
+      content: input.trim(),
+      timestamp: new Date(),
+      type: "text"
     }
+
     setMessages(prev => [...prev, userMessage])
+    setInput("")
     setIsLoading(true)
 
     try {
-      const response = await fetch("/api/rex", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: userInput })
-      })
-      
-      const data = await response.json()
-      
-      // Add assistant message
-      const assistantMessage: Message = {
-        id: `assistant_${Date.now()}`,
-        role: "assistant",
-        content: data.response,
-        toolResult: data.toolResult
-      }
-      setMessages(prev => [...prev, assistantMessage])
+      const response = await simulateAIResponse(userMessage.content)
+      setMessages(prev => [...prev, response])
     } catch (error) {
-      console.error("Error:", error)
-      const errorMessage: Message = {
-        id: `error_${Date.now()}`,
+      setMessages(prev => [...prev, {
+        id: Date.now().toString(),
         role: "assistant",
-        content: "I apologize, but I encountered an error. Please try again."
-      }
-      setMessages(prev => [...prev, errorMessage])
+        content: "I apologize, but I encountered an error processing your request. Please try again.",
+        timestamp: new Date(),
+        type: "text"
+      }])
     } finally {
       setIsLoading(false)
     }
@@ -164,25 +215,21 @@ export function AskRex() {
     inputRef.current?.focus()
   }
 
-  const handleClearChat = () => {
-    setMessages([])
-  }
-
   if (!isOpen) {
     return (
-      <div className="fixed top-20 right-6 z-[100]">
-        <div className="flex items-center gap-3">
-          <div className="bg-gradient-to-r from-emerald-500 to-green-600 rounded-full px-5 py-2.5 shadow-lg flex items-center gap-2 border border-emerald-400/30">
-            <Sparkles className="h-4 w-4 text-white" />
-            <span className="text-sm font-semibold text-white">Ask Rex</span>
-          </div>
+      <div className="fixed bottom-6 right-6 z-[100]">
+        <div className="relative">
           <Button
             onClick={() => setIsOpen(true)}
-            className="h-14 w-14 rounded-full shadow-2xl bg-gradient-to-br from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 border-2 border-emerald-300/50 text-white"
+            className="h-16 w-16 rounded-full shadow-2xl bg-primary hover:bg-primary/90 border-4 border-accent animate-pulse hover:animate-none"
             size="icon"
           >
-            <Bot className="h-6 w-6" />
+            <Bot className="h-7 w-7" />
           </Button>
+          <div className="absolute -top-2 -right-2 bg-accent text-accent-foreground text-[10px] font-bold px-2 py-1 rounded-full shadow-lg">
+            Ask Rex
+          </div>
+          <Sparkles className="h-4 w-4 absolute -bottom-1 -left-1 text-accent animate-bounce" />
         </div>
       </div>
     )
@@ -191,40 +238,31 @@ export function AskRex() {
   return (
     <div
       className={cn(
-        "fixed z-[100] bg-card border-2 border-emerald-200 rounded-xl shadow-2xl flex flex-col transition-all duration-300",
+        "fixed z-[100] bg-card border-2 border-primary/30 rounded-xl shadow-2xl flex flex-col transition-all duration-300",
         isExpanded
           ? "bottom-4 right-4 left-4 top-4 md:left-auto md:w-[600px] md:top-4"
-          : "top-20 right-6 w-[400px] h-[550px]"
+          : "bottom-6 right-6 w-[400px] h-[550px]"
       )}
     >
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-emerald-200 bg-gradient-to-r from-emerald-500 to-green-600 rounded-t-xl">
+      <div className="flex items-center justify-between p-4 border-b border-primary/10 bg-primary/5 rounded-t-lg">
         <div className="flex items-center gap-3">
           <div className="relative">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur-sm">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground">
               <Bot className="h-5 w-5" />
             </div>
-            <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-emerald-300 border-2 border-emerald-600 animate-pulse" />
+            <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-green-500 border-2 border-card" />
           </div>
           <div>
-            <h3 className="font-semibold text-white">Ask Rex</h3>
-            <p className="text-xs text-emerald-100">AI Assistant {isLoading ? "• Thinking..." : "• Online"}</p>
+            <h3 className="font-semibold text-foreground">Ask Rex</h3>
+            <p className="text-xs text-muted-foreground">AI Assistant • Online</p>
           </div>
         </div>
         <div className="flex items-center gap-1">
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8 text-white/80 hover:text-white hover:bg-white/10"
-            onClick={handleClearChat}
-            title="Clear chat"
-          >
-            <RefreshCw className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 text-white/80 hover:text-white hover:bg-white/10"
+            className="h-8 w-8"
             onClick={() => setIsExpanded(!isExpanded)}
           >
             {isExpanded ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
@@ -232,7 +270,7 @@ export function AskRex() {
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8 text-white/80 hover:text-white hover:bg-white/10"
+            className="h-8 w-8"
             onClick={() => setIsOpen(false)}
           >
             <X className="h-4 w-4" />
@@ -241,36 +279,8 @@ export function AskRex() {
       </div>
 
       {/* Messages Area */}
-      <div 
-        ref={scrollRef}
-        className="flex-1 p-4 overflow-y-auto"
-        style={{
-          scrollbarWidth: 'thin',
-          scrollbarColor: '#6ee7b7 #f1f5f9'
-        }}
-      >
+      <ScrollArea className="flex-1 p-4" ref={scrollRef}>
         <div className="space-y-4">
-          {/* Welcome message if no messages */}
-          {messages.length === 0 && (
-            <div className="flex gap-3">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-green-600 text-white">
-                <Bot className="h-4 w-4" />
-              </div>
-              <div className="flex flex-col gap-2 max-w-[80%]">
-                <div className="rounded-lg px-3 py-2 text-sm bg-muted text-foreground">
-                  <p>Hello! I&apos;m Rex, your AI assistant for the SGC Portal. I can help you:</p>
-                  <ul className="mt-2 space-y-1 text-sm">
-                    <li>• Search correspondence and contracts</li>
-                    <li>• Generate reports and statistics</li>
-                    <li>• Answer questions about the portal</li>
-                    <li>• Guide you through processes</li>
-                  </ul>
-                  <p className="mt-2">How can I assist you today?</p>
-                </div>
-              </div>
-            </div>
-          )}
-
           {messages.map((message) => (
             <div
               key={message.id}
@@ -284,7 +294,7 @@ export function AskRex() {
                   "flex h-8 w-8 shrink-0 items-center justify-center rounded-full",
                   message.role === "user"
                     ? "bg-primary text-primary-foreground"
-                    : "bg-gradient-to-br from-emerald-500 to-green-600 text-white"
+                    : "bg-accent text-accent-foreground"
                 )}
               >
                 {message.role === "user" ? (
@@ -295,7 +305,7 @@ export function AskRex() {
               </div>
               <div
                 className={cn(
-                  "flex flex-col gap-2 max-w-[85%]",
+                  "flex flex-col gap-2 max-w-[80%]",
                   message.role === "user" ? "items-end" : "items-start"
                 )}
               >
@@ -309,332 +319,80 @@ export function AskRex() {
                 >
                   <p className="whitespace-pre-wrap">{message.content}</p>
                 </div>
-
-                {/* Tool result display */}
-                {message.toolResult && (
-                  <div className="w-full mt-2 p-3 rounded-lg bg-emerald-50 border border-emerald-200 text-sm">
-                    <div className="flex items-center gap-2 text-emerald-700 font-medium mb-2">
-                      <FileText className="h-4 w-4" />
-                      <span>
-                        {message.toolResult.tool === "searchCorrespondence" && "Correspondence Search Results"}
-                        {message.toolResult.tool === "searchContracts" && "Contract Search Results"}
-                        {message.toolResult.tool === "getStatistics" && "Statistics"}
-                        {message.toolResult.tool === "generateContractsReport" && "Contracts Report"}
-                        {message.toolResult.tool === "generateCorrespondenceReport" && "Correspondence Report"}
-                        {message.toolResult.tool === "generateCombinedReport" && "Combined Report"}
-                        {message.toolResult.tool === "getMDAList" && "MDA Information"}
-                        {message.toolResult.tool === "getHelp" && "Help & Guidance"}
-                      </span>
-                    </div>
-                    
-                    {/* Correspondence search results */}
-                    {message.toolResult.tool === "searchCorrespondence" && (
-                      <div className="space-y-2">
-                        {((message.toolResult.result as { results: Array<{ ref: string; subject: string; mda: string; status: string }> }).results || []).map((item, i) => (
-                          <div key={i} className="flex items-center gap-2 p-2 bg-white rounded border">
-                            <FileText className="h-4 w-4 text-emerald-600" />
-                            <div className="flex-1 min-w-0">
-                              <p className="font-medium text-sm truncate">{item.subject}</p>
-                              <p className="text-xs text-muted-foreground">{item.ref} - {item.mda}</p>
-                            </div>
-                            <Badge variant="outline" className="text-xs">{item.status}</Badge>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* Contract search results */}
-                    {message.toolResult.tool === "searchContracts" && (
-                      <div className="space-y-2">
-                        {((message.toolResult.result as { results: Array<{ ref: string; subject: string; nature: string; mda: string; status: string; value: number }> }).results || []).map((item, i) => (
-                          <div key={i} className="flex items-center gap-2 p-2 bg-white rounded border">
-                            <FileText className="h-4 w-4 text-emerald-600" />
-                            <div className="flex-1 min-w-0">
-                              <p className="font-medium text-sm truncate">{item.subject}</p>
-                              <p className="text-xs text-muted-foreground">{item.ref} - ${item.value?.toLocaleString()}</p>
-                            </div>
-                            <Badge variant="outline" className="text-xs">{item.nature}</Badge>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* Statistics */}
-                    {message.toolResult.tool === "getStatistics" && (
-                      <div className="grid grid-cols-2 gap-2 text-xs">
-                        {(message.toolResult.result as { correspondence?: { total: number; pending: number } }).correspondence && (
-                          <>
-                            <div className="p-2 bg-white rounded border">
-                              <p className="text-muted-foreground">Total Correspondence</p>
-                              <p className="font-bold text-lg">{(message.toolResult.result as { correspondence: { total: number } }).correspondence.total}</p>
-                            </div>
-                            <div className="p-2 bg-white rounded border">
-                              <p className="text-muted-foreground">Pending</p>
-                              <p className="font-bold text-lg">{(message.toolResult.result as { correspondence: { pending: number } }).correspondence.pending}</p>
-                            </div>
-                          </>
-                        )}
-                        {(message.toolResult.result as { contracts?: { total: number; totalValue: number } }).contracts && (
-                          <>
-                            <div className="p-2 bg-white rounded border">
-                              <p className="text-muted-foreground">Total Contracts</p>
-                              <p className="font-bold text-lg">{(message.toolResult.result as { contracts: { total: number } }).contracts.total}</p>
-                            </div>
-                            <div className="p-2 bg-white rounded border">
-                              <p className="text-muted-foreground">Total Value</p>
-                              <p className="font-bold text-lg">${((message.toolResult.result as { contracts: { totalValue: number } }).contracts.totalValue / 1000000).toFixed(1)}M</p>
-                            </div>
-                          </>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Contracts Report */}
-                    {message.toolResult.tool === "generateContractsReport" && (
-                      <div className="space-y-3">
-                        {/* Summary stats */}
-                        <div className="grid grid-cols-3 gap-2 text-xs">
-                          <div className="p-2 bg-white rounded border text-center">
-                            <p className="text-muted-foreground">Total</p>
-                            <p className="font-bold text-lg text-emerald-600">
-                              {(message.toolResult.result as { summary?: { totalContracts?: number } })?.summary?.totalContracts || 0}
-                            </p>
-                          </div>
-                          <div className="p-2 bg-white rounded border text-center">
-                            <p className="text-muted-foreground">Approved</p>
-                            <p className="font-bold text-lg text-green-600">
-                              {(message.toolResult.result as { summary?: { byStatus?: { approved?: number } } })?.summary?.byStatus?.approved || 0}
-                            </p>
-                          </div>
-                          <div className="p-2 bg-white rounded border text-center">
-                            <p className="text-muted-foreground">Pending</p>
-                            <p className="font-bold text-lg text-amber-600">
-                              {(message.toolResult.result as { summary?: { byStatus?: { pending?: number } } })?.summary?.byStatus?.pending || 0}
-                            </p>
-                          </div>
+                
+                {/* File Results */}
+                {message.files && message.files.length > 0 && (
+                  <div className="w-full space-y-2">
+                    {message.files.map((file, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 border border-primary/10 hover:bg-muted transition-colors cursor-pointer"
+                      >
+                        <FileText className="h-5 w-5 text-primary" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">{file.name}</p>
+                          <p className="text-xs text-muted-foreground">Ref: {file.ref}</p>
                         </div>
-                        
-                        {/* Contracts Table */}
-                        {(message.toolResult.result as { contracts?: Array<{ dateReceived: string; originatingMDA: string; subject: string; natureOfContract: string; category: string; contractNumber: string; contractType: string; status: string }> })?.contracts && (
-                          <div className="overflow-x-auto">
-                            <p className="text-xs font-medium text-emerald-700 mb-2">Contracts Submitted This Week:</p>
-                            <table className="w-full text-xs border-collapse">
-                              <thead>
-                                <tr className="bg-emerald-100 text-emerald-800">
-                                  <th className="border border-emerald-200 px-2 py-1 text-left">Date Received</th>
-                                  <th className="border border-emerald-200 px-2 py-1 text-left">Originating MDA</th>
-                                  <th className="border border-emerald-200 px-2 py-1 text-left">Subject</th>
-                                  <th className="border border-emerald-200 px-2 py-1 text-left">Nature</th>
-                                  <th className="border border-emerald-200 px-2 py-1 text-left">Category</th>
-                                  <th className="border border-emerald-200 px-2 py-1 text-left">Contract #</th>
-                                  <th className="border border-emerald-200 px-2 py-1 text-left">Type</th>
-                                  <th className="border border-emerald-200 px-2 py-1 text-left">Status</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {((message.toolResult.result as { contracts: Array<{ dateReceived: string; originatingMDA: string; subject: string; natureOfContract: string; category: string; contractNumber: string; contractType: string; status: string }> }).contracts || []).map((contract, i) => (
-                                  <tr key={i} className="bg-white hover:bg-emerald-50">
-                                    <td className="border border-emerald-200 px-2 py-1">{contract.dateReceived}</td>
-                                    <td className="border border-emerald-200 px-2 py-1 max-w-[100px] truncate" title={contract.originatingMDA}>{contract.originatingMDA}</td>
-                                    <td className="border border-emerald-200 px-2 py-1 max-w-[120px] truncate" title={contract.subject}>{contract.subject}</td>
-                                    <td className="border border-emerald-200 px-2 py-1">{contract.natureOfContract}</td>
-                                    <td className="border border-emerald-200 px-2 py-1 max-w-[100px] truncate" title={contract.category}>{contract.category}</td>
-                                    <td className="border border-emerald-200 px-2 py-1 font-mono">{contract.contractNumber}</td>
-                                    <td className="border border-emerald-200 px-2 py-1">{contract.contractType}</td>
-                                    <td className="border border-emerald-200 px-2 py-1">
-                                      <Badge variant="outline" className={cn(
-                                        "text-[10px]",
-                                        contract.status === "Approved" && "border-green-300 bg-green-50 text-green-700",
-                                        contract.status === "Pending" && "border-amber-300 bg-amber-50 text-amber-700",
-                                        contract.status === "Under Review" && "border-blue-300 bg-blue-50 text-blue-700",
-                                        contract.status === "Pending Review" && "border-amber-300 bg-amber-50 text-amber-700"
-                                      )}>
-                                        {contract.status}
-                                      </Badge>
-                                    </td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          </div>
-                        )}
+                        <Badge variant="outline" className="shrink-0">{file.type}</Badge>
                       </div>
-                    )}
-
-                    {/* Correspondence Report */}
-                    {message.toolResult.tool === "generateCorrespondenceReport" && (
-                      <div className="space-y-3">
-                        {/* Summary stats */}
-                        <div className="grid grid-cols-3 gap-2 text-xs">
-                          <div className="p-2 bg-white rounded border text-center">
-                            <p className="text-muted-foreground">Total</p>
-                            <p className="font-bold text-lg text-emerald-600">
-                              {(message.toolResult.result as { summary?: { totalCorrespondence?: number } })?.summary?.totalCorrespondence || 0}
-                            </p>
-                          </div>
-                          <div className="p-2 bg-white rounded border text-center">
-                            <p className="text-muted-foreground">Approved</p>
-                            <p className="font-bold text-lg text-green-600">
-                              {(message.toolResult.result as { summary?: { byStatus?: { approved?: number } } })?.summary?.byStatus?.approved || 0}
-                            </p>
-                          </div>
-                          <div className="p-2 bg-white rounded border text-center">
-                            <p className="text-muted-foreground">Pending</p>
-                            <p className="font-bold text-lg text-amber-600">
-                              {(message.toolResult.result as { summary?: { byStatus?: { pending?: number } } })?.summary?.byStatus?.pending || 0}
-                            </p>
-                          </div>
-                        </div>
-                        
-                        {/* Correspondence Table */}
-                        {(message.toolResult.result as { correspondence?: Array<{ dateReceived: string; originatingMDA: string; subject: string; referenceNumber: string; category: string; correspondenceType: string; status: string; dateCompleted: string | null }> })?.correspondence && (
-                          <div className="overflow-x-auto">
-                            <p className="text-xs font-medium text-emerald-700 mb-2">Correspondence Submitted This Week:</p>
-                            <table className="w-full text-xs border-collapse">
-                              <thead>
-                                <tr className="bg-blue-100 text-blue-800">
-                                  <th className="border border-blue-200 px-2 py-1 text-left">Date Received</th>
-                                  <th className="border border-blue-200 px-2 py-1 text-left">Originating MDA</th>
-                                  <th className="border border-blue-200 px-2 py-1 text-left">Subject</th>
-                                  <th className="border border-blue-200 px-2 py-1 text-left">Reference #</th>
-                                  <th className="border border-blue-200 px-2 py-1 text-left">Category</th>
-                                  <th className="border border-blue-200 px-2 py-1 text-left">Type</th>
-                                  <th className="border border-blue-200 px-2 py-1 text-left">Status</th>
-                                  <th className="border border-blue-200 px-2 py-1 text-left">Date Completed</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {((message.toolResult.result as { correspondence: Array<{ dateReceived: string; originatingMDA: string; subject: string; referenceNumber: string; category: string; correspondenceType: string; status: string; dateCompleted: string | null }> }).correspondence || []).map((item, i) => (
-                                  <tr key={i} className="bg-white hover:bg-blue-50">
-                                    <td className="border border-blue-200 px-2 py-1">{item.dateReceived}</td>
-                                    <td className="border border-blue-200 px-2 py-1 max-w-[100px] truncate" title={item.originatingMDA}>{item.originatingMDA}</td>
-                                    <td className="border border-blue-200 px-2 py-1 max-w-[120px] truncate" title={item.subject}>{item.subject}</td>
-                                    <td className="border border-blue-200 px-2 py-1 font-mono">{item.referenceNumber}</td>
-                                    <td className="border border-blue-200 px-2 py-1">{item.category}</td>
-                                    <td className="border border-blue-200 px-2 py-1">{item.correspondenceType}</td>
-                                    <td className="border border-blue-200 px-2 py-1">
-                                      <Badge variant="outline" className={cn(
-                                        "text-[10px]",
-                                        item.status === "Approved" && "border-green-300 bg-green-50 text-green-700",
-                                        item.status === "Pending" && "border-amber-300 bg-amber-50 text-amber-700",
-                                        item.status === "Under Review" && "border-blue-300 bg-blue-50 text-blue-700"
-                                      )}>
-                                        {item.status}
-                                      </Badge>
-                                    </td>
-                                    <td className="border border-blue-200 px-2 py-1">{item.dateCompleted || "-"}</td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Combined Report */}
-                    {message.toolResult.tool === "generateCombinedReport" && (
-                      <div className="space-y-4">
-                        <p className="text-xs font-medium text-emerald-700">Combined Contracts & Correspondence Report:</p>
-                        
-                        {/* Contracts section */}
-                        {(message.toolResult.result as { contracts?: Array<{ dateReceived: string; originatingMDA: string; subject: string; contractNumber: string; status: string }> })?.contracts && (
-                          <div>
-                            <p className="text-xs font-medium text-emerald-600 mb-1">Contracts ({((message.toolResult.result as { contracts: unknown[] }).contracts || []).length})</p>
-                            <div className="space-y-1">
-                              {((message.toolResult.result as { contracts: Array<{ dateReceived: string; originatingMDA: string; subject: string; contractNumber: string; status: string }> }).contracts || []).slice(0, 5).map((contract, i) => (
-                                <div key={i} className="flex items-center gap-2 p-2 bg-white rounded border text-xs">
-                                  <span className="font-mono text-emerald-600">{contract.contractNumber}</span>
-                                  <span className="flex-1 truncate">{contract.subject}</span>
-                                  <Badge variant="outline" className="text-[10px]">{contract.status}</Badge>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                        
-                        {/* Correspondence section */}
-                        {(message.toolResult.result as { correspondence?: Array<{ dateReceived: string; originatingMDA: string; subject: string; referenceNumber: string; status: string }> })?.correspondence && (
-                          <div>
-                            <p className="text-xs font-medium text-blue-600 mb-1">Correspondence ({((message.toolResult.result as { correspondence: unknown[] }).correspondence || []).length})</p>
-                            <div className="space-y-1">
-                              {((message.toolResult.result as { correspondence: Array<{ dateReceived: string; originatingMDA: string; subject: string; referenceNumber: string; status: string }> }).correspondence || []).slice(0, 5).map((item, i) => (
-                                <div key={i} className="flex items-center gap-2 p-2 bg-white rounded border text-xs">
-                                  <span className="font-mono text-blue-600">{item.referenceNumber}</span>
-                                  <span className="flex-1 truncate">{item.subject}</span>
-                                  <Badge variant="outline" className="text-[10px]">{item.status}</Badge>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {/* MDA List */}
-                    {message.toolResult.tool === "getMDAList" && (
-                      <div className="space-y-2">
-                        <div className="grid grid-cols-2 gap-2 text-xs">
-                          {((message.toolResult.result as { contractsByMDA?: Array<{ name: string; contracts: number; correspondence: number }> })?.contractsByMDA || []).map((mda, i) => (
-                            <div key={i} className="p-2 bg-white rounded border">
-                              <p className="font-medium truncate" title={mda.name}>{mda.name}</p>
-                              <div className="flex gap-2 mt-1 text-muted-foreground">
-                                <span>{mda.contracts} contracts</span>
-                                <span>{mda.correspondence} correspondence</span>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
+                    ))}
                   </div>
                 )}
 
-                {/* Speaker button for assistant messages */}
+                {/* Actions for assistant messages */}
                 {message.role === "assistant" && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6"
-                    onClick={() => speakResponse(message.content)}
-                  >
-                    {isSpeaking ? <VolumeX className="h-3 w-3" /> : <Volume2 className="h-3 w-3" />}
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6"
+                      onClick={() => speakResponse(message.content)}
+                    >
+                      {isSpeaking ? (
+                        <VolumeX className="h-3 w-3" />
+                      ) : (
+                        <Volume2 className="h-3 w-3" />
+                      )}
+                    </Button>
+                    <span className="text-xs text-muted-foreground">
+                      {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  </div>
                 )}
               </div>
             </div>
           ))}
-
+          
           {/* Loading indicator */}
           {isLoading && (
             <div className="flex gap-3">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-green-600 text-white">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent text-accent-foreground">
                 <Bot className="h-4 w-4" />
               </div>
-              <div className="rounded-lg px-3 py-2 text-sm bg-muted text-foreground flex items-center gap-2">
+              <div className="flex items-center gap-2 rounded-lg bg-muted px-3 py-2">
                 <Loader2 className="h-4 w-4 animate-spin" />
-                <span>Rex is thinking...</span>
+                <span className="text-sm text-muted-foreground">Rex is thinking...</span>
               </div>
             </div>
           )}
         </div>
-      </div>
+      </ScrollArea>
 
-      {/* Suggestions */}
-      {messages.length === 0 && (
+      {/* Suggested Prompts */}
+      {messages.length <= 1 && (
         <div className="px-4 pb-2">
-          <p className="text-xs text-muted-foreground mb-2">Quick actions:</p>
+          <p className="text-xs text-muted-foreground mb-2">Suggested actions:</p>
           <div className="flex flex-wrap gap-2">
-            {SUGGESTED_PROMPTS.map((item, i) => (
+            {SUGGESTED_PROMPTS.map((suggestion, index) => (
               <Button
-                key={i}
+                key={index}
                 variant="outline"
                 size="sm"
-                className="text-xs h-7 border-emerald-200 hover:bg-emerald-50 hover:border-emerald-300"
-                onClick={() => handleSuggestionClick(item.prompt)}
+                className="h-8 text-xs"
+                onClick={() => handleSuggestionClick(suggestion.prompt)}
               >
-                <item.icon className="h-3 w-3 mr-1 text-emerald-600" />
-                {item.label}
+                <suggestion.icon className="mr-1.5 h-3 w-3" />
+                {suggestion.label}
               </Button>
             ))}
           </div>
@@ -642,37 +400,41 @@ export function AskRex() {
       )}
 
       {/* Input Area */}
-      <div className="p-4 border-t border-emerald-100">
-        <form onSubmit={handleSubmit} className="flex gap-2">
+      <div className="p-4 border-t border-primary/10">
+        <form onSubmit={handleSubmit} className="flex items-center gap-2">
           <Button
             type="button"
-            variant="ghost"
+            variant={isListening ? "default" : "outline"}
             size="icon"
-            className={cn(
-              "h-10 w-10 shrink-0",
-              isListening && "text-red-500 bg-red-50"
-            )}
+            className={cn("h-10 w-10 shrink-0", isListening && "bg-red-500 hover:bg-red-600")}
             onClick={handleVoiceInput}
           >
-            {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+            {isListening ? (
+              <MicOff className="h-4 w-4" />
+            ) : (
+              <Mic className="h-4 w-4" />
+            )}
           </Button>
           <Input
             ref={inputRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Ask Rex anything..."
-            className="flex-1 border-emerald-200 focus-visible:ring-emerald-500"
+            className="flex-1"
             disabled={isLoading}
           />
           <Button
             type="submit"
             size="icon"
-            className="h-10 w-10 shrink-0 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white"
+            className="h-10 w-10 shrink-0"
             disabled={!input.trim() || isLoading}
           >
             <Send className="h-4 w-4" />
           </Button>
         </form>
+        <p className="text-xs text-muted-foreground mt-2 text-center">
+          Rex can find files, retrieve documents, and generate reports
+        </p>
       </div>
     </div>
   )
