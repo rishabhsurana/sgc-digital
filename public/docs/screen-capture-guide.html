@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SGC Portal - Screen Capture Reference Guide</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      line-height: 1.6;
+      color: #1a1a2e;
+      background: #f8f9fa;
+      padding: 40px;
+    }
+    
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      background: white;
+      padding: 50px;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    }
+    
+    .header {
+      text-align: center;
+      margin-bottom: 40px;
+      padding-bottom: 30px;
+      border-bottom: 3px solid #1a1a2e;
+    }
+    
+    .header h1 {
+      font-size: 28px;
+      color: #1a1a2e;
+      margin-bottom: 10px;
+    }
+    
+    .header p {
+      color: #666;
+      font-size: 14px;
+    }
+    
+    .section {
+      margin-bottom: 40px;
+    }
+    
+    .section h2 {
+      font-size: 18px;
+      color: #1a1a2e;
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #c9a227;
+    }
+    
+    .screen-card {
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      page-break-inside: avoid;
+    }
+    
+    .screen-header {
+      background: #f5f5f5;
+      padding: 15px 20px;
+      border-bottom: 1px solid #e0e0e0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .screen-header h3 {
+      font-size: 16px;
+      color: #1a1a2e;
+    }
+    
+    .screen-url {
+      font-family: 'Consolas', monospace;
+      background: #1a1a2e;
+      color: #c9a227;
+      padding: 4px 12px;
+      border-radius: 4px;
+      font-size: 12px;
+    }
+    
+    .screen-body {
+      padding: 20px;
+    }
+    
+    .screen-description {
+      margin-bottom: 15px;
+      color: #444;
+      font-size: 14px;
+    }
+    
+    .screen-features {
+      margin-bottom: 15px;
+    }
+    
+    .screen-features h4 {
+      font-size: 13px;
+      color: #666;
+      margin-bottom: 8px;
+    }
+    
+    .screen-features ul {
+      list-style: none;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    
+    .screen-features li {
+      background: #e8f4f8;
+      color: #1a1a2e;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+    }
+    
+    .screenshot-placeholder {
+      border: 2px dashed #ccc;
+      border-radius: 8px;
+      padding: 40px;
+      text-align: center;
+      color: #999;
+      background: #fafafa;
+    }
+    
+    .screenshot-placeholder p {
+      font-size: 14px;
+    }
+    
+    .checkbox-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 15px;
+      padding-top: 15px;
+      border-top: 1px solid #eee;
+    }
+    
+    .checkbox {
+      width: 20px;
+      height: 20px;
+      border: 2px solid #1a1a2e;
+      border-radius: 4px;
+    }
+    
+    .checkbox-label {
+      font-size: 13px;
+      color: #666;
+    }
+    
+    .checklist {
+      background: #f9f9f9;
+      padding: 25px;
+      border-radius: 8px;
+      margin-bottom: 30px;
+    }
+    
+    .checklist h3 {
+      font-size: 16px;
+      margin-bottom: 15px;
+      color: #1a1a2e;
+    }
+    
+    .checklist-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 0;
+      border-bottom: 1px solid #eee;
+    }
+    
+    .checklist-item:last-child {
+      border-bottom: none;
+    }
+    
+    .check-box {
+      width: 18px;
+      height: 18px;
+      border: 2px solid #1a1a2e;
+      border-radius: 3px;
+      flex-shrink: 0;
+    }
+    
+    .screen-num {
+      background: #1a1a2e;
+      color: white;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: bold;
+      flex-shrink: 0;
+    }
+    
+    .instructions {
+      background: #fffbeb;
+      border: 1px solid #c9a227;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 30px;
+    }
+    
+    .instructions h3 {
+      color: #1a1a2e;
+      margin-bottom: 12px;
+      font-size: 15px;
+    }
+    
+    .instructions ol {
+      margin-left: 20px;
+      color: #555;
+      font-size: 14px;
+    }
+    
+    .instructions li {
+      margin-bottom: 8px;
+    }
+    
+    .footer {
+      text-align: center;
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 1px solid #eee;
+      color: #999;
+      font-size: 12px;
+    }
+    
+    @media print {
+      body { padding: 20px; background: white; }
+      .container { box-shadow: none; padding: 0; }
+      .screen-card { break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>SGC Portal - Screen Capture Reference Guide</h1>
+      <p>Solicitor General's Chambers Contract & Correspondence Management System</p>
+      <p style="margin-top: 10px; font-size: 12px;">Document Version 1.0 | March 2026</p>
+    </div>
+
+    <div class="instructions">
+      <h3>How to Capture Screenshots</h3>
+      <ol>
+        <li>Navigate to each URL listed below in the v0 preview panel</li>
+        <li>Use <strong>Win + Shift + S</strong> (Windows) or <strong>Cmd + Shift + 4</strong> (Mac) to capture</li>
+        <li>For full-page screenshots: Right-click > Inspect > Ctrl+Shift+P > Type "screenshot" > Select "Capture full size screenshot"</li>
+        <li>Check off each screen as you capture it</li>
+      </ol>
+    </div>
+
+    <div class="checklist">
+      <h3>Quick Checklist (9 Screens Total)</h3>
+      <div class="checklist-item">
+        <div class="check-box"></div>
+        <div class="screen-num">1</div>
+        <span>Landing Page</span>
+        <code style="margin-left: auto; font-size: 11px; color: #666;">/</code>
+      </div>
+      <div class="checklist-item">
+        <div class="check-box"></div>
+        <div class="screen-num">2</div>
+        <span>Management Dashboard</span>
+        <code style="margin-left: auto; font-size: 11px; color: #666;">/management</code>
+      </div>
+      <div class="checklist-item">
+        <div class="check-box"></div>
+        <div class="screen-num">3</div>
+        <span>Correspondence Register</span>
+        <code style="margin-left: auto; font-size: 11px; color: #666;">/management/correspondence-register</code>
+      </div>
+      <div class="checklist-item">
+        <div class="check-box"></div>
+        <div class="screen-num">4</div>
+        <span>Contracts Register</span>
+        <code style="margin-left: auto; font-size: 11px; color: #666;">/management/contracts-register</code>
+      </div>
+      <div class="checklist-item">
+        <div class="check-box"></div>
+        <div class="screen-num">5</div>
+        <span>Reports & Analytics</span>
+        <code style="margin-left: auto; font-size: 11px; color: #666;">/management/reports</code>
+      </div>
+      <div class="checklist-item">
+        <div class="check-box"></div>
+        <div class="screen-num">6</div>
+        <span>MDA Management</span>
+        <code style="margin-left: auto; font-size: 11px; color: #666;">/management/mda</code>
+      </div>
+      <div class="checklist-item">
+        <div class="check-box"></div>
+        <div class="screen-num">7</div>
+        <span>User Management</span>
+        <code style="margin-left: auto; font-size: 11px; color: #666;">/management/users</code>
+      </div>
+      <div class="checklist-item">
+        <div class="check-box"></div>
+        <div class="screen-num">8</div>
+        <span>Settings</span>
+        <code style="margin-left: auto; font-size: 11px; color: #666;">/management/settings</code>
+      </div>
+      <div class="checklist-item">
+        <div class="check-box"></div>
+        <div class="screen-num">9</div>
+        <span>Ask Rex AI Assistant (Open on any management page)</span>
+        <code style="margin-left: auto; font-size: 11px; color: #666;">Click green button</code>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>1. Public Facing</h2>
+      
+      <div class="screen-card">
+        <div class="screen-header">
+          <h3>Landing Page</h3>
+          <span class="screen-url">/</span>
+        </div>
+        <div class="screen-body">
+          <p class="screen-description">
+            The main entry point for the SGC Portal. Features a hero section with animated background, 
+            key features showcase, and call-to-action buttons for accessing the management portal.
+          </p>
+          <div class="screen-features">
+            <h4>Key Elements to Capture:</h4>
+            <ul>
+              <li>Hero Section</li>
+              <li>Navigation Header</li>
+              <li>Features Grid</li>
+              <li>CTA Buttons</li>
+              <li>Footer</li>
+            </ul>
+          </div>
+          <div class="screenshot-placeholder">
+            <p>Paste screenshot here</p>
+          </div>
+          <div class="checkbox-row">
+            <div class="checkbox"></div>
+            <span class="checkbox-label">Screenshot captured</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>2. Management Portal</h2>
+      
+      <div class="screen-card">
+        <div class="screen-header">
+          <h3>Management Dashboard</h3>
+          <span class="screen-url">/management</span>
+        </div>
+        <div class="screen-body">
+          <p class="screen-description">
+            The main dashboard showing key statistics, recent activity, pending actions, and quick access cards. 
+            Includes the sidebar navigation and Ask Rex AI button.
+          </p>
+          <div class="screen-features">
+            <h4>Key Elements to Capture:</h4>
+            <ul>
+              <li>Sidebar Navigation</li>
+              <li>Statistics Cards</li>
+              <li>Recent Activity Table</li>
+              <li>Pending Actions</li>
+              <li>Breadcrumbs</li>
+              <li>Ask Rex Button (Green)</li>
+            </ul>
+          </div>
+          <div class="screenshot-placeholder">
+            <p>Paste screenshot here</p>
+          </div>
+          <div class="checkbox-row">
+            <div class="checkbox"></div>
+            <span class="checkbox-label">Screenshot captured</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="screen-card">
+        <div class="screen-header">
+          <h3>Correspondence Register</h3>
+          <span class="screen-url">/management/correspondence-register</span>
+        </div>
+        <div class="screen-body">
+          <p class="screen-description">
+            Registry of all correspondence items with search, filter, and sorting capabilities. 
+            Shows file numbers, subjects, originating MDAs, dates, and status indicators.
+          </p>
+          <div class="screen-features">
+            <h4>Key Elements to Capture:</h4>
+            <ul>
+              <li>Search Bar</li>
+              <li>Filter Dropdowns</li>
+              <li>Data Table</li>
+              <li>Status Badges</li>
+              <li>Action Buttons</li>
+              <li>Pagination</li>
+            </ul>
+          </div>
+          <div class="screenshot-placeholder">
+            <p>Paste screenshot here</p>
+          </div>
+          <div class="checkbox-row">
+            <div class="checkbox"></div>
+            <span class="checkbox-label">Screenshot captured</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="screen-card">
+        <div class="screen-header">
+          <h3>Contracts Register</h3>
+          <span class="screen-url">/management/contracts-register</span>
+        </div>
+        <div class="screen-body">
+          <p class="screen-description">
+            Registry of all contracts with comprehensive filtering by nature, category, type, and status. 
+            Displays contract numbers, parties, values, and approval stages.
+          </p>
+          <div class="screen-features">
+            <h4>Key Elements to Capture:</h4>
+            <ul>
+              <li>Advanced Filters</li>
+              <li>Contract Table</li>
+              <li>Contract Type Badges</li>
+              <li>Value Column</li>
+              <li>Stage/Status Indicators</li>
+              <li>Export Options</li>
+            </ul>
+          </div>
+          <div class="screenshot-placeholder">
+            <p>Paste screenshot here</p>
+          </div>
+          <div class="checkbox-row">
+            <div class="checkbox"></div>
+            <span class="checkbox-label">Screenshot captured</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="screen-card">
+        <div class="screen-header">
+          <h3>Reports & Analytics</h3>
+          <span class="screen-url">/management/reports</span>
+        </div>
+        <div class="screen-body">
+          <p class="screen-description">
+            Comprehensive reporting dashboard with charts, graphs, and exportable reports. 
+            Shows trends, statistics by MDA, status breakdowns, and performance metrics.
+          </p>
+          <div class="screen-features">
+            <h4>Key Elements to Capture:</h4>
+            <ul>
+              <li>Summary Statistics</li>
+              <li>Bar Charts</li>
+              <li>Pie Charts</li>
+              <li>Trend Lines</li>
+              <li>Report Generation</li>
+              <li>Date Range Selector</li>
+            </ul>
+          </div>
+          <div class="screenshot-placeholder">
+            <p>Paste screenshot here</p>
+          </div>
+          <div class="checkbox-row">
+            <div class="checkbox"></div>
+            <span class="checkbox-label">Screenshot captured</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="screen-card">
+        <div class="screen-header">
+          <h3>MDA Management</h3>
+          <span class="screen-url">/management/mda</span>
+        </div>
+        <div class="screen-body">
+          <p class="screen-description">
+            Management interface for Ministries, Departments, and Agencies. 
+            Allows adding, editing, and viewing MDA details including contact information and activity stats.
+          </p>
+          <div class="screen-features">
+            <h4>Key Elements to Capture:</h4>
+            <ul>
+              <li>MDA Cards/List</li>
+              <li>Add MDA Button</li>
+              <li>Search/Filter</li>
+              <li>Activity Statistics</li>
+              <li>Contact Details</li>
+              <li>Edit Actions</li>
+            </ul>
+          </div>
+          <div class="screenshot-placeholder">
+            <p>Paste screenshot here</p>
+          </div>
+          <div class="checkbox-row">
+            <div class="checkbox"></div>
+            <span class="checkbox-label">Screenshot captured</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="screen-card">
+        <div class="screen-header">
+          <h3>User Management</h3>
+          <span class="screen-url">/management/users</span>
+        </div>
+        <div class="screen-body">
+          <p class="screen-description">
+            Admin interface for managing system users. Includes user roles, permissions, 
+            department assignments, and account status management.
+          </p>
+          <div class="screen-features">
+            <h4>Key Elements to Capture:</h4>
+            <ul>
+              <li>User Table</li>
+              <li>Role Badges</li>
+              <li>Add User Button</li>
+              <li>Status Toggles</li>
+              <li>Permission Settings</li>
+              <li>Search/Filter</li>
+            </ul>
+          </div>
+          <div class="screenshot-placeholder">
+            <p>Paste screenshot here</p>
+          </div>
+          <div class="checkbox-row">
+            <div class="checkbox"></div>
+            <span class="checkbox-label">Screenshot captured</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="screen-card">
+        <div class="screen-header">
+          <h3>Settings</h3>
+          <span class="screen-url">/management/settings</span>
+        </div>
+        <div class="screen-body">
+          <p class="screen-description">
+            System configuration page with tabs for General, Notifications, Security, and System settings. 
+            Allows administrators to customize portal behavior.
+          </p>
+          <div class="screen-features">
+            <h4>Key Elements to Capture:</h4>
+            <ul>
+              <li>Settings Tabs</li>
+              <li>Form Fields</li>
+              <li>Toggle Switches</li>
+              <li>Save Buttons</li>
+              <li>Configuration Options</li>
+            </ul>
+          </div>
+          <div class="screenshot-placeholder">
+            <p>Paste screenshot here</p>
+          </div>
+          <div class="checkbox-row">
+            <div class="checkbox"></div>
+            <span class="checkbox-label">Screenshot captured</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>3. AI Assistant</h2>
+      
+      <div class="screen-card">
+        <div class="screen-header">
+          <h3>Ask Rex AI Assistant</h3>
+          <span class="screen-url">Click green button on any management page</span>
+        </div>
+        <div class="screen-body">
+          <p class="screen-description">
+            The AI-powered assistant "Rex" that helps users search records, generate reports, 
+            and get statistics. Features voice input, suggested prompts, and rich data displays.
+          </p>
+          <div class="screen-features">
+            <h4>Key Elements to Capture:</h4>
+            <ul>
+              <li>Chat Interface</li>
+              <li>Green Button (Closed)</li>
+              <li>Message Bubbles</li>
+              <li>Suggested Prompts</li>
+              <li>Voice Input Button</li>
+              <li>Report Tables</li>
+            </ul>
+          </div>
+          <div class="screenshot-placeholder">
+            <p>Paste screenshot here (show chat open with a conversation)</p>
+          </div>
+          <div class="checkbox-row">
+            <div class="checkbox"></div>
+            <span class="checkbox-label">Screenshot captured</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <p>SGC Portal Design Documentation | Solicitor General's Chambers</p>
+      <p>Generated by v0 | March 2026</p>
+    </div>
+  </div>
+</body>
+</html>
