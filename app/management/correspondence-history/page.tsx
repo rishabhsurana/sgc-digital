@@ -5,7 +5,6 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Label } from "@/components/ui/label"
 import {
   Select,
   SelectContent,
@@ -28,159 +27,176 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   History,
   Search,
   Download,
   Eye,
-  CheckCircle,
-  Clock,
-  XCircle,
   ChevronLeft,
   ChevronRight,
   RefreshCw,
-  ArrowUpRight,
-  ArrowDownRight,
   FileText,
-  Calendar
+  Calendar,
+  File,
+  FileImage,
+  FileSpreadsheet,
+  Paperclip,
+  ExternalLink
 } from "lucide-react"
 
-// Sample transaction history data for correspondence
+// Sample correspondence history data
 const CORRESPONDENCE_HISTORY = [
   { 
     id: 1, 
+    dateReceived: "2026-03-05",
     ref: "COR-2026-0234", 
     subject: "Request for Legal Opinion on Property Acquisition",
     ministry: "Ministry of Finance",
-    action: "Status Changed",
-    previousValue: "Pending",
-    newValue: "Under Review",
-    performedBy: "Sarah Johnson",
-    performedAt: "2026-03-05 14:32",
-    notes: "Assigned to legal review team"
+    submitter: "John Smith",
+    submitterEmail: "john.smith@finance.gov.bb",
+    submitterPhone: "(246) 555-0101",
+    status: "Under Review",
+    documents: [
+      { name: "Legal_Opinion_Request.pdf", type: "pdf", size: "1.2 MB", uploadedAt: "2026-03-05 09:15" },
+      { name: "Property_Deed_Copy.pdf", type: "pdf", size: "2.4 MB", uploadedAt: "2026-03-05 09:15" },
+      { name: "Valuation_Report.pdf", type: "pdf", size: "856 KB", uploadedAt: "2026-03-05 09:20" },
+    ]
   },
   { 
     id: 2, 
+    dateReceived: "2026-03-04",
     ref: "COR-2026-0233", 
     subject: "Crown Proceedings Act Matter - Case #45892",
     ministry: "Ministry of Health",
-    action: "Document Added",
-    previousValue: "-",
-    newValue: "Supporting_Evidence.pdf",
-    performedBy: "Michael Brown",
-    performedAt: "2026-03-05 11:15",
-    notes: "Additional documentation received"
+    submitter: "Mary Johnson",
+    submitterEmail: "mary.johnson@health.gov.bb",
+    submitterPhone: "(246) 555-0102",
+    status: "Pending",
+    documents: [
+      { name: "Case_Summary.docx", type: "doc", size: "458 KB", uploadedAt: "2026-03-04 11:30" },
+      { name: "Supporting_Evidence.pdf", type: "pdf", size: "3.1 MB", uploadedAt: "2026-03-04 11:35" },
+      { name: "Medical_Records.pdf", type: "pdf", size: "5.2 MB", uploadedAt: "2026-03-04 11:40" },
+      { name: "Witness_Statements.pdf", type: "pdf", size: "1.8 MB", uploadedAt: "2026-03-04 11:45" },
+    ]
   },
   { 
     id: 3, 
+    dateReceived: "2026-03-04",
     ref: "COR-2026-0232", 
     subject: "Constitutional Amendment Review",
     ministry: "Cabinet Office",
-    action: "Status Changed",
-    previousValue: "Under Review",
-    newValue: "Completed",
-    performedBy: "Admin User",
-    performedAt: "2026-03-04 16:45",
-    notes: "Review completed and approved"
+    submitter: "Robert Williams",
+    submitterEmail: "robert.williams@cabinet.gov.bb",
+    submitterPhone: "(246) 555-0103",
+    status: "Completed",
+    documents: [
+      { name: "Draft_Amendment.pdf", type: "pdf", size: "2.1 MB", uploadedAt: "2026-03-04 08:00" },
+      { name: "Legal_Analysis.docx", type: "doc", size: "890 KB", uploadedAt: "2026-03-04 08:05" },
+    ]
   },
   { 
     id: 4, 
+    dateReceived: "2026-03-03",
     ref: "COR-2026-0231", 
     subject: "Land Compensation Claim - Lot 456",
     ministry: "Ministry of Housing",
-    action: "Priority Changed",
-    previousValue: "Low",
-    newValue: "High",
-    performedBy: "Jennifer Taylor",
-    performedAt: "2026-03-04 09:20",
-    notes: "Urgent deadline approaching"
+    submitter: "Patricia Davis",
+    submitterEmail: "patricia.davis@housing.gov.bb",
+    submitterPhone: "(246) 555-0104",
+    status: "Under Review",
+    documents: [
+      { name: "Compensation_Claim_Form.pdf", type: "pdf", size: "456 KB", uploadedAt: "2026-03-03 14:20" },
+      { name: "Land_Survey.pdf", type: "pdf", size: "8.9 MB", uploadedAt: "2026-03-03 14:25" },
+      { name: "Property_Photos.zip", type: "zip", size: "15.2 MB", uploadedAt: "2026-03-03 14:30" },
+      { name: "Valuation_Certificate.pdf", type: "pdf", size: "234 KB", uploadedAt: "2026-03-03 14:35" },
+      { name: "Ownership_Proof.pdf", type: "pdf", size: "1.1 MB", uploadedAt: "2026-03-03 14:40" },
+    ]
   },
   { 
     id: 5, 
+    dateReceived: "2026-03-02",
     ref: "COR-2026-0230", 
-    subject: "Trade Agreement Review",
+    subject: "Trade Agreement Review - CARICOM Partnership",
     ministry: "Ministry of Foreign Affairs",
-    action: "Assigned To",
-    previousValue: "Unassigned",
-    newValue: "Legal Team A",
-    performedBy: "System",
-    performedAt: "2026-03-03 15:00",
-    notes: "Auto-assigned based on category"
+    submitter: "James Wilson",
+    submitterEmail: "james.wilson@foreignaffairs.gov.bb",
+    submitterPhone: "(246) 555-0105",
+    status: "Pending",
+    documents: [
+      { name: "Draft_Agreement.pdf", type: "pdf", size: "4.5 MB", uploadedAt: "2026-03-02 10:00" },
+      { name: "Terms_Analysis.xlsx", type: "excel", size: "1.2 MB", uploadedAt: "2026-03-02 10:05" },
+    ]
   },
   { 
     id: 6, 
+    dateReceived: "2026-03-01",
     ref: "COR-2026-0229", 
     subject: "Employment Contract Template Review",
     ministry: "Ministry of Labour",
-    action: "Comment Added",
-    previousValue: "-",
-    newValue: "Requires minor amendments",
-    performedBy: "David Williams",
-    performedAt: "2026-03-03 10:30",
-    notes: "Internal review comment"
+    submitter: "Elizabeth Brown",
+    submitterEmail: "elizabeth.brown@labour.gov.bb",
+    submitterPhone: "(246) 555-0106",
+    status: "Completed",
+    documents: [
+      { name: "Contract_Template.docx", type: "doc", size: "345 KB", uploadedAt: "2026-03-01 09:00" },
+      { name: "Legal_Requirements.pdf", type: "pdf", size: "678 KB", uploadedAt: "2026-03-01 09:05" },
+    ]
   },
   { 
     id: 7, 
+    dateReceived: "2026-02-28",
     ref: "COR-2026-0228", 
     subject: "Judicial Review Application - Planning Decision",
     ministry: "Ministry of Planning",
-    action: "Status Changed",
-    previousValue: "New",
-    newValue: "Pending",
-    performedBy: "System",
-    performedAt: "2026-03-02 08:00",
-    notes: "Initial processing complete"
+    submitter: "Michael Taylor",
+    submitterEmail: "michael.taylor@planning.gov.bb",
+    submitterPhone: "(246) 555-0107",
+    status: "Under Review",
+    documents: [
+      { name: "Review_Application.pdf", type: "pdf", size: "2.3 MB", uploadedAt: "2026-02-28 15:00" },
+      { name: "Planning_Decision.pdf", type: "pdf", size: "1.5 MB", uploadedAt: "2026-02-28 15:05" },
+      { name: "Appeal_Grounds.docx", type: "doc", size: "567 KB", uploadedAt: "2026-02-28 15:10" },
+    ]
   },
   { 
     id: 8, 
+    dateReceived: "2026-02-27",
     ref: "COR-2026-0227", 
     subject: "Regulatory Framework for Digital Services",
     ministry: "Ministry of ICT",
-    action: "Document Added",
-    previousValue: "-",
-    newValue: "Draft_Framework_v2.docx",
-    performedBy: "Lisa Anderson",
-    performedAt: "2026-03-01 14:22",
-    notes: "Updated draft submitted"
-  },
-  { 
-    id: 9, 
-    ref: "COR-2026-0234", 
-    subject: "Request for Legal Opinion on Property Acquisition",
-    ministry: "Ministry of Finance",
-    action: "Created",
-    previousValue: "-",
-    newValue: "New Correspondence",
-    performedBy: "John Smith",
-    performedAt: "2026-03-01 09:15",
-    notes: "Initial submission"
-  },
-  { 
-    id: 10, 
-    ref: "COR-2026-0226", 
-    subject: "MOU Review - International Partnership",
-    ministry: "Ministry of Tourism",
-    action: "Status Changed",
-    previousValue: "Pending",
-    newValue: "Rejected",
-    performedBy: "Admin User",
-    performedAt: "2026-02-28 16:00",
-    notes: "Incomplete documentation"
+    submitter: "Sarah Anderson",
+    submitterEmail: "sarah.anderson@ict.gov.bb",
+    submitterPhone: "(246) 555-0108",
+    status: "Pending",
+    documents: [
+      { name: "Draft_Framework_v2.docx", type: "doc", size: "1.8 MB", uploadedAt: "2026-02-27 11:00" },
+      { name: "Stakeholder_Comments.pdf", type: "pdf", size: "3.4 MB", uploadedAt: "2026-02-27 11:10" },
+      { name: "Impact_Assessment.xlsx", type: "excel", size: "890 KB", uploadedAt: "2026-02-27 11:15" },
+    ]
   },
 ]
 
-const ACTION_CONFIG: Record<string, { color: string; icon: typeof CheckCircle }> = {
-  "Status Changed": { color: "bg-blue-100 text-blue-700 border-blue-200", icon: RefreshCw },
-  "Document Added": { color: "bg-green-100 text-green-700 border-green-200", icon: FileText },
-  "Priority Changed": { color: "bg-amber-100 text-amber-700 border-amber-200", icon: ArrowUpRight },
-  "Assigned To": { color: "bg-purple-100 text-purple-700 border-purple-200", icon: ArrowDownRight },
-  "Comment Added": { color: "bg-gray-100 text-gray-700 border-gray-200", icon: FileText },
-  "Created": { color: "bg-emerald-100 text-emerald-700 border-emerald-200", icon: CheckCircle },
+const STATUS_CONFIG: Record<string, string> = {
+  "Pending": "bg-amber-100 text-amber-700 border-amber-200",
+  "Under Review": "bg-blue-100 text-blue-700 border-blue-200",
+  "Completed": "bg-green-100 text-green-700 border-green-200",
+  "Rejected": "bg-red-100 text-red-700 border-red-200",
+}
+
+const getFileIcon = (type: string) => {
+  switch (type) {
+    case "pdf": return <FileText className="h-4 w-4 text-red-500" />
+    case "doc": return <File className="h-4 w-4 text-blue-500" />
+    case "excel": return <FileSpreadsheet className="h-4 w-4 text-green-500" />
+    case "image": return <FileImage className="h-4 w-4 text-purple-500" />
+    default: return <Paperclip className="h-4 w-4 text-gray-500" />
+  }
 }
 
 export default function CorrespondenceHistoryPage() {
   const [searchQuery, setSearchQuery] = useState("")
-  const [actionFilter, setActionFilter] = useState("all")
+  const [statusFilter, setStatusFilter] = useState("all")
   const [dateFilter, setDateFilter] = useState("all")
   const [selectedItem, setSelectedItem] = useState<typeof CORRESPONDENCE_HISTORY[0] | null>(null)
 
@@ -189,24 +205,24 @@ export default function CorrespondenceHistoryPage() {
       item.ref.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.ministry.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.performedBy.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesAction = actionFilter === "all" || item.action === actionFilter
-    return matchesSearch && matchesAction
+      item.submitter.toLowerCase().includes(searchQuery.toLowerCase())
+    const matchesStatus = statusFilter === "all" || item.status === statusFilter
+    return matchesSearch && matchesStatus
   })
 
   return (
-    <div className="p-6 lg:p-8">
+    <div className="space-y-6">
       {/* Page Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-500 to-cyan-600 text-white shadow-lg">
               <History className="h-6 w-6" />
             </div>
-            Correspondence Transaction History
+            Correspondence History
           </h1>
           <p className="mt-2 text-muted-foreground">
-            View audit trail and transaction history for all correspondence.
+            View all submitted correspondence with documents and submitter details.
           </p>
         </div>
         <div className="flex gap-2">
@@ -222,14 +238,14 @@ export default function CorrespondenceHistoryPage() {
       </div>
 
       {/* Filters */}
-      <Card className="mb-6 border-primary/20">
+      <Card className="border-primary/20">
         <CardContent className="pt-6">
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex-1">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
-                  placeholder="Search by reference, subject, ministry, or user..."
+                  placeholder="Search by reference, subject, ministry, or submitter..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-10"
@@ -237,18 +253,16 @@ export default function CorrespondenceHistoryPage() {
               </div>
             </div>
             <div className="flex gap-2">
-              <Select value={actionFilter} onValueChange={setActionFilter}>
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Action Type" />
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-[150px]">
+                  <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Actions</SelectItem>
-                  <SelectItem value="Status Changed">Status Changed</SelectItem>
-                  <SelectItem value="Document Added">Document Added</SelectItem>
-                  <SelectItem value="Priority Changed">Priority Changed</SelectItem>
-                  <SelectItem value="Assigned To">Assigned To</SelectItem>
-                  <SelectItem value="Comment Added">Comment Added</SelectItem>
-                  <SelectItem value="Created">Created</SelectItem>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="Pending">Pending</SelectItem>
+                  <SelectItem value="Under Review">Under Review</SelectItem>
+                  <SelectItem value="Completed">Completed</SelectItem>
+                  <SelectItem value="Rejected">Rejected</SelectItem>
                 </SelectContent>
               </Select>
               <Select value={dateFilter} onValueChange={setDateFilter}>
@@ -268,13 +282,35 @@ export default function CorrespondenceHistoryPage() {
       </Card>
 
       {/* Summary Stats */}
-      <div className="grid gap-4 sm:grid-cols-4 mb-6">
+      <div className="grid gap-4 sm:grid-cols-4">
+        <Card className="bg-muted/50 border-primary/10">
+          <CardContent className="pt-4 pb-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium text-muted-foreground">Total Records</p>
+                <p className="text-2xl font-bold text-foreground">{CORRESPONDENCE_HISTORY.length}</p>
+              </div>
+              <History className="h-8 w-8 text-primary/50" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="bg-amber-50 border-amber-200">
+          <CardContent className="pt-4 pb-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium text-amber-700">Pending</p>
+                <p className="text-2xl font-bold text-amber-900">{CORRESPONDENCE_HISTORY.filter(i => i.status === 'Pending').length}</p>
+              </div>
+              <Calendar className="h-8 w-8 text-amber-500" />
+            </div>
+          </CardContent>
+        </Card>
         <Card className="bg-blue-50 border-blue-200">
           <CardContent className="pt-4 pb-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-medium text-blue-700">Status Changes</p>
-                <p className="text-2xl font-bold text-blue-900">{CORRESPONDENCE_HISTORY.filter(i => i.action === 'Status Changed').length}</p>
+                <p className="text-xs font-medium text-blue-700">Under Review</p>
+                <p className="text-2xl font-bold text-blue-900">{CORRESPONDENCE_HISTORY.filter(i => i.status === 'Under Review').length}</p>
               </div>
               <RefreshCw className="h-8 w-8 text-blue-500" />
             </div>
@@ -284,32 +320,10 @@ export default function CorrespondenceHistoryPage() {
           <CardContent className="pt-4 pb-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-medium text-green-700">Documents Added</p>
-                <p className="text-2xl font-bold text-green-900">{CORRESPONDENCE_HISTORY.filter(i => i.action === 'Document Added').length}</p>
+                <p className="text-xs font-medium text-green-700">Completed</p>
+                <p className="text-2xl font-bold text-green-900">{CORRESPONDENCE_HISTORY.filter(i => i.status === 'Completed').length}</p>
               </div>
               <FileText className="h-8 w-8 text-green-500" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="bg-purple-50 border-purple-200">
-          <CardContent className="pt-4 pb-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-medium text-purple-700">Assignments</p>
-                <p className="text-2xl font-bold text-purple-900">{CORRESPONDENCE_HISTORY.filter(i => i.action === 'Assigned To').length}</p>
-              </div>
-              <ArrowDownRight className="h-8 w-8 text-purple-500" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="bg-emerald-50 border-emerald-200">
-          <CardContent className="pt-4 pb-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-medium text-emerald-700">New Items</p>
-                <p className="text-2xl font-bold text-emerald-900">{CORRESPONDENCE_HISTORY.filter(i => i.action === 'Created').length}</p>
-              </div>
-              <CheckCircle className="h-8 w-8 text-emerald-500" />
             </div>
           </CardContent>
         </Card>
@@ -322,44 +336,43 @@ export default function CorrespondenceHistoryPage() {
             <Table>
               <TableHeader>
                 <TableRow className="bg-muted/50">
-                  <TableHead className="font-semibold">Date/Time</TableHead>
-                  <TableHead className="font-semibold">Reference</TableHead>
+                  <TableHead className="font-semibold">Date</TableHead>
+                  <TableHead className="font-semibold">Reference #</TableHead>
                   <TableHead className="font-semibold">Subject</TableHead>
                   <TableHead className="font-semibold">Ministry/MDA</TableHead>
-                  <TableHead className="font-semibold">Action</TableHead>
-                  <TableHead className="font-semibold">Previous Value</TableHead>
-                  <TableHead className="font-semibold">New Value</TableHead>
-                  <TableHead className="font-semibold">Performed By</TableHead>
-                  <TableHead className="font-semibold w-[50px]">Details</TableHead>
+                  <TableHead className="font-semibold">Submitter</TableHead>
+                  <TableHead className="font-semibold">Status</TableHead>
+                  <TableHead className="font-semibold">Documents</TableHead>
+                  <TableHead className="font-semibold w-[80px]">View</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredData.map((item) => {
-                  const actionConfig = ACTION_CONFIG[item.action] || { color: "bg-gray-100 text-gray-700", icon: Clock }
-                  const ActionIcon = actionConfig.icon
-                  return (
-                    <TableRow key={item.id} className="hover:bg-muted/30">
-                      <TableCell className="text-sm text-muted-foreground whitespace-nowrap">{item.performedAt}</TableCell>
-                      <TableCell className="font-mono text-sm font-medium text-primary">{item.ref}</TableCell>
-                      <TableCell className="max-w-[200px] truncate" title={item.subject}>{item.subject}</TableCell>
-                      <TableCell className="text-sm max-w-[150px] truncate" title={item.ministry}>{item.ministry}</TableCell>
-                      <TableCell>
-                        <Badge className={actionConfig.color} variant="secondary">
-                          <ActionIcon className="mr-1 h-3 w-3" />
-                          {item.action}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground max-w-[120px] truncate">{item.previousValue}</TableCell>
-                      <TableCell className="text-sm font-medium max-w-[120px] truncate">{item.newValue}</TableCell>
-                      <TableCell className="text-sm">{item.performedBy}</TableCell>
-                      <TableCell>
-                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setSelectedItem(item)}>
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  )
-                })}
+                {filteredData.map((item) => (
+                  <TableRow key={item.id} className="hover:bg-muted/30">
+                    <TableCell className="text-sm text-muted-foreground whitespace-nowrap">{item.dateReceived}</TableCell>
+                    <TableCell className="font-mono text-sm font-medium text-primary">{item.ref}</TableCell>
+                    <TableCell className="max-w-[250px] truncate" title={item.subject}>{item.subject}</TableCell>
+                    <TableCell className="text-sm max-w-[150px] truncate" title={item.ministry}>{item.ministry}</TableCell>
+                    <TableCell className="text-sm">{item.submitter}</TableCell>
+                    <TableCell>
+                      <Badge className={STATUS_CONFIG[item.status]} variant="secondary">
+                        {item.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className="font-mono">
+                        <Paperclip className="mr-1 h-3 w-3" />
+                        {item.documents.length}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Button variant="ghost" size="sm" className="h-8" onClick={() => setSelectedItem(item)}>
+                        <Eye className="h-4 w-4 mr-1" />
+                        View
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
               </TableBody>
             </Table>
           </div>
@@ -383,57 +396,111 @@ export default function CorrespondenceHistoryPage() {
         </CardContent>
       </Card>
 
-      {/* Detail Dialog */}
+      {/* Detail Dialog with Tabs */}
       <Dialog open={!!selectedItem} onOpenChange={() => setSelectedItem(null)}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <History className="h-5 w-5 text-cyan-600" />
-              Transaction Details
+              Correspondence Details
             </DialogTitle>
             <DialogDescription>
               Reference: {selectedItem?.ref}
             </DialogDescription>
           </DialogHeader>
+          
           {selectedItem && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-xs text-muted-foreground">Action Type</Label>
-                  <Badge className={ACTION_CONFIG[selectedItem.action]?.color || "bg-gray-100"}>
-                    {selectedItem.action}
-                  </Badge>
+            <Tabs defaultValue="details" className="flex-1 overflow-hidden flex flex-col">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="details">Details</TabsTrigger>
+                <TabsTrigger value="documents">
+                  Documents ({selectedItem.documents.length})
+                </TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="details" className="flex-1 overflow-auto mt-4">
+                <div className="space-y-6">
+                  {/* Basic Info */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <p className="text-xs font-medium text-muted-foreground">Date Received</p>
+                      <p className="font-medium">{selectedItem.dateReceived}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-xs font-medium text-muted-foreground">Reference Number</p>
+                      <p className="font-mono font-medium text-primary">{selectedItem.ref}</p>
+                    </div>
+                    <div className="space-y-1 col-span-2">
+                      <p className="text-xs font-medium text-muted-foreground">Subject</p>
+                      <p className="font-medium">{selectedItem.subject}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-xs font-medium text-muted-foreground">Ministry/MDA</p>
+                      <p className="font-medium">{selectedItem.ministry}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-xs font-medium text-muted-foreground">Status</p>
+                      <Badge className={STATUS_CONFIG[selectedItem.status]}>
+                        {selectedItem.status}
+                      </Badge>
+                    </div>
+                  </div>
+
+                  {/* Submitter Info */}
+                  <div className="border-t pt-4">
+                    <h4 className="text-sm font-semibold mb-3">Submitter Information</h4>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <p className="text-xs font-medium text-muted-foreground">Name</p>
+                        <p className="font-medium">{selectedItem.submitter}</p>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-xs font-medium text-muted-foreground">Email</p>
+                        <p className="font-medium text-primary">{selectedItem.submitterEmail}</p>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-xs font-medium text-muted-foreground">Phone</p>
+                        <p className="font-medium">{selectedItem.submitterPhone}</p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <Label className="text-xs text-muted-foreground">Date/Time</Label>
-                  <p className="font-medium">{selectedItem.performedAt}</p>
+              </TabsContent>
+              
+              <TabsContent value="documents" className="flex-1 overflow-auto mt-4">
+                <div className="space-y-3">
+                  <p className="text-sm text-muted-foreground mb-4">
+                    {selectedItem.documents.length} document(s) uploaded by the applicant
+                  </p>
+                  {selectedItem.documents.map((doc, index) => (
+                    <div 
+                      key={index}
+                      className="flex items-center justify-between p-3 bg-muted/50 rounded-lg border hover:bg-muted/70 transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        {getFileIcon(doc.type)}
+                        <div>
+                          <p className="font-medium text-sm">{doc.name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {doc.size} - Uploaded {doc.uploadedAt}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button variant="outline" size="sm">
+                          <Eye className="h-4 w-4 mr-1" />
+                          Preview
+                        </Button>
+                        <Button variant="outline" size="sm">
+                          <Download className="h-4 w-4 mr-1" />
+                          Download
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-                <div>
-                  <Label className="text-xs text-muted-foreground">Ministry/MDA</Label>
-                  <p className="font-medium">{selectedItem.ministry}</p>
-                </div>
-                <div>
-                  <Label className="text-xs text-muted-foreground">Performed By</Label>
-                  <p className="font-medium">{selectedItem.performedBy}</p>
-                </div>
-                <div>
-                  <Label className="text-xs text-muted-foreground">Previous Value</Label>
-                  <p className="font-medium text-muted-foreground">{selectedItem.previousValue}</p>
-                </div>
-                <div>
-                  <Label className="text-xs text-muted-foreground">New Value</Label>
-                  <p className="font-medium text-primary">{selectedItem.newValue}</p>
-                </div>
-              </div>
-              <div>
-                <Label className="text-xs text-muted-foreground">Subject</Label>
-                <p className="font-medium">{selectedItem.subject}</p>
-              </div>
-              <div>
-                <Label className="text-xs text-muted-foreground">Notes</Label>
-                <p className="font-medium">{selectedItem.notes}</p>
-              </div>
-            </div>
+              </TabsContent>
+            </Tabs>
           )}
         </DialogContent>
       </Dialog>
