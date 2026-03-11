@@ -23,7 +23,9 @@ import {
   Home,
   LogOut,
   User,
-  History
+  History,
+  PieChart,
+  Activity,
 } from "lucide-react"
 import {
   Breadcrumb,
@@ -51,6 +53,8 @@ const breadcrumbConfig: Record<string, { label: string; parent?: string }> = {
   "/management/contracts-register": { label: "Contracts Register", parent: "/management/registers" },
   "/management/correspondence-history": { label: "Correspondence History", parent: "/management" },
   "/management/contracts-history": { label: "Contracts History", parent: "/management" },
+  "/management/status": { label: "Status Overview", parent: "/management" },
+  "/management/activity": { label: "Activity Monitor", parent: "/management" },
   "/management/reports": { label: "Reports & Analytics", parent: "/management" },
   "/management/users": { label: "User Management", parent: "/management" },
   "/management/mda": { label: "MDA Management", parent: "/management" },
@@ -113,6 +117,16 @@ const sidebarNavItems = [
     href: "/management/contracts-history",
     icon: FileSignature,
     indent: true,
+  },
+  {
+    title: "Status Overview",
+    href: "/management/status",
+    icon: PieChart,
+  },
+  {
+    title: "Activity Monitor",
+    href: "/management/activity",
+    icon: Activity,
   },
   {
     title: "Reports & Analytics",
