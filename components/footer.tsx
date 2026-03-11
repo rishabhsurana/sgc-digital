@@ -24,20 +24,10 @@ export function Footer() {
                   <p className="text-sm text-primary font-medium">Solicitor General{"'"}s Chambers</p>
                 </div>
               </div>
-              <p className="text-sm text-muted-foreground leading-relaxed mb-4">
+              <p className="text-sm text-muted-foreground leading-relaxed">
                 The official digital portal for the Solicitor General{"'"}s Chambers of Barbados, 
                 enabling secure submission and tracking of Registry Correspondence and Government Contracts.
               </p>
-              <div className="flex items-center gap-2">
-                <Image
-                  src="/images/barbados-coat-of-arms.png"
-                  alt="Barbados Coat of Arms - Pride and Industry"
-                  width={48}
-                  height={48}
-                  style={{ width: 'auto', height: 'auto' }}
-                />
-                <span className="text-xs text-muted-foreground">Government of Barbados</span>
-              </div>
             </div>
             
             {/* Services */}
@@ -130,24 +120,44 @@ export function Footer() {
       {/* Bottom Bar */}
       <div className="bg-primary text-primary-foreground">
         <div className="container mx-auto px-4 py-4 lg:px-8">
-          <div className="flex flex-col sm:flex-row justify-between items-center gap-3 text-xs">
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-4 text-xs">
+            {/* Left: Government Logo */}
             <div className="flex items-center gap-3">
               <Image
                 src="/images/barbados-coat-of-arms.png"
                 alt="Barbados Coat of Arms"
-                width={28}
-                height={28}
-                className="hidden sm:block"
+                width={32}
+                height={32}
                 style={{ width: 'auto', height: 'auto' }}
               />
-              <p>
-                © {new Date().getFullYear()} Government of Barbados. All rights reserved.
-              </p>
+              <div>
+                <p className="font-medium">Government of Barbados</p>
+                <p className="text-primary-foreground/70">
+                  © {new Date().getFullYear()} All rights reserved.
+                </p>
+              </div>
             </div>
+            
+            {/* Center: Links */}
             <div className="flex items-center gap-4">
               <Link href="/terms" className="hover:underline">Terms of Use</Link>
               <Link href="/accessibility" className="hover:underline">Accessibility</Link>
               <Link href="/sitemap" className="hover:underline">Sitemap</Link>
+            </div>
+            
+            {/* Right: SGC Digital Logo */}
+            <div className="flex items-center gap-3">
+              <div className="text-right">
+                <p className="font-medium">SGC Digital</p>
+                <p className="text-primary-foreground/70">Solicitor General{"'"}s Chambers</p>
+              </div>
+              <Image
+                src="/images/sgc-digital-logo.png"
+                alt="SGC Digital"
+                width={40}
+                height={36}
+                style={{ width: 'auto', height: 'auto' }}
+              />
             </div>
           </div>
         </div>
