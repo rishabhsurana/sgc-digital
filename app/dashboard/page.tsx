@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import React, { useState, useEffect } from "react"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
@@ -41,8 +41,15 @@ import {
   RefreshCw,
   User,
   LogOut,
-  Settings
+  Settings,
+  Upload,
+  Paperclip,
+  X,
+  FileIcon,
+  Send
 } from "lucide-react"
+import { Textarea } from "@/components/ui/textarea"
+import { Label } from "@/components/ui/label"
 import Link from "next/link"
 
 // User info interface
@@ -66,6 +73,15 @@ const SUBMITTER_TYPE_LABELS: Record<string, string> = {
 
 type SubmissionStatus = "pending" | "in-review" | "clarification" | "approved" | "completed" | "rejected"
 
+interface SGCDocument {
+  id: string
+  name: string
+  type: string
+  size: string
+  uploadedDate: string
+  uploadedBy: string
+}
+
 interface Submission {
   id: string
   transactionNumber: string
@@ -77,6 +93,7 @@ interface Submission {
   ministry?: string
   stage: string
   history: { date: string; stage: string; note?: string }[]
+  sgcDocuments?: SGCDocument[]
 }
 
 // Mock data for demonstration
@@ -94,6 +111,9 @@ const MOCK_SUBMISSIONS: Submission[] = [
       { date: "2026-02-28", stage: "Submitted", note: "Initial submission received" },
       { date: "2026-02-28", stage: "Registry Intake", note: "Verified and assigned" },
       { date: "2026-03-01", stage: "SGC Legal Review", note: "Under review by legal officer" }
+    ],
+    sgcDocuments: [
+      { id: "doc1", name: "Initial Review Notes.pdf", type: "PDF", size: "245 KB", uploadedDate: "2026-03-01", uploadedBy: "SGC Legal Officer" }
     ]
   },
   {
@@ -111,6 +131,10 @@ const MOCK_SUBMISSIONS: Submission[] = [
       { date: "2026-02-26", stage: "Intake Validation", note: "Documents verified" },
       { date: "2026-02-28", stage: "Legal Review", note: "Initial review completed" },
       { date: "2026-03-01", stage: "Returned for Clarification", note: "Missing performance bond documentation" }
+    ],
+    sgcDocuments: [
+      { id: "doc2", name: "Clarification Request Letter.pdf", type: "PDF", size: "156 KB", uploadedDate: "2026-03-01", uploadedBy: "SGC Registry" },
+      { id: "doc3", name: "Required Documents Checklist.docx", type: "DOCX", size: "45 KB", uploadedDate: "2026-03-01", uploadedBy: "SGC Legal Officer" }
     ]
   },
   {
@@ -128,6 +152,10 @@ const MOCK_SUBMISSIONS: Submission[] = [
       { date: "2026-02-23", stage: "Legal Review", note: "Review completed" },
       { date: "2026-02-25", stage: "SG Approval", note: "Approved by Solicitor General" },
       { date: "2026-02-27", stage: "Completed", note: "Response document available" }
+    ],
+    sgcDocuments: [
+      { id: "doc4", name: "Legal Opinion - Housing Policy.pdf", type: "PDF", size: "520 KB", uploadedDate: "2026-02-27", uploadedBy: "Solicitor General" },
+      { id: "doc5", name: "Cabinet Paper Approval.pdf", type: "PDF", size: "180 KB", uploadedDate: "2026-02-27", uploadedBy: "SGC Registry" }
     ]
   },
   {
@@ -171,6 +199,294 @@ const STATUS_CONFIG: Record<SubmissionStatus, { label: string; color: string; ic
   approved: { label: "Approved", color: "bg-green-100 text-green-800 border-green-200", icon: CheckCircle },
   completed: { label: "Completed", color: "bg-green-100 text-green-800 border-green-200", icon: CheckCircle },
   rejected: { label: "Rejected", color: "bg-red-100 text-red-800 border-red-200", icon: AlertCircle }
+}
+
+// Submission Detail Dialog with tabs
+function SubmissionDetailDialog({ 
+  submission, 
+  status 
+}: { 
+  submission: Submission
+  status: { label: string; color: string; icon: typeof Clock }
+}) {
+  const [uploadedFiles, setUploadedFiles] = useState<File[]>([])
+  const [responseMessage, setResponseMessage] = useState("")
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const fileInputRef = React.useRef<HTMLInputElement>(null)
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      setUploadedFiles(prev => [...prev, ...Array.from(e.target.files!)])
+    }
+  }
+
+  const removeFile = (index: number) => {
+    setUploadedFiles(prev => prev.filter((_, i) => i !== index))
+  }
+
+  const handleSubmitResponse = async () => {
+    setIsSubmitting(true)
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 1500))
+    setIsSubmitting(false)
+    setUploadedFiles([])
+    setResponseMessage("")
+    alert("Response submitted successfully! The SGC will be notified.")
+  }
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes < 1024) return bytes + ' B'
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB'
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB'
+  }
+
+  return (
+    <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
+      <DialogHeader>
+        <DialogTitle className="flex items-center gap-2">
+          <span className="font-mono text-sm text-muted-foreground">
+            {submission.transactionNumber}
+          </span>
+          <Badge variant="outline" className={status.color}>
+            {status.label}
+          </Badge>
+        </DialogTitle>
+        <DialogDescription>{submission.title}</DialogDescription>
+      </DialogHeader>
+      
+      <Tabs defaultValue="details" className="flex-1 overflow-hidden flex flex-col">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="details">Details</TabsTrigger>
+          <TabsTrigger value="documents" className="relative">
+            SGC Documents
+            {submission.sgcDocuments && submission.sgcDocuments.length > 0 && (
+              <span className="ml-1.5 bg-primary text-primary-foreground text-xs rounded-full px-1.5 py-0.5">
+                {submission.sgcDocuments.length}
+              </span>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="respond">Respond</TabsTrigger>
+        </TabsList>
+        
+        {/* Details Tab */}
+        <TabsContent value="details" className="flex-1 overflow-y-auto mt-4">
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <p className="text-muted-foreground">Type</p>
+                <p className="font-medium capitalize">{submission.type}</p>
+              </div>
+              <div>
+                <p className="text-muted-foreground">Status</p>
+                <Badge variant="outline" className={status.color}>
+                  {status.label}
+                </Badge>
+              </div>
+              <div>
+                <p className="text-muted-foreground">Submitted</p>
+                <p className="font-medium">{submission.submittedDate}</p>
+              </div>
+              <div>
+                <p className="text-muted-foreground">Last Updated</p>
+                <p className="font-medium">{submission.lastUpdated}</p>
+              </div>
+            </div>
+            
+            <div>
+              <p className="text-sm font-medium text-foreground mb-2">Current Stage</p>
+              <p className="text-sm text-muted-foreground">{submission.stage}</p>
+            </div>
+            
+            <div>
+              <p className="text-sm font-medium text-foreground mb-3">History</p>
+              <div className="space-y-3">
+                {submission.history.map((event, index) => (
+                  <div key={index} className="flex gap-3">
+                    <div className="flex flex-col items-center">
+                      <div className={`h-2 w-2 rounded-full ${
+                        index === submission.history.length - 1 ? "bg-primary" : "bg-muted-foreground/30"
+                      }`} />
+                      {index < submission.history.length - 1 && (
+                        <div className="w-px flex-1 bg-muted-foreground/20" />
+                      )}
+                    </div>
+                    <div className="pb-3">
+                      <p className="text-sm font-medium text-foreground">{event.stage}</p>
+                      <p className="text-xs text-muted-foreground">{event.date}</p>
+                      {event.note && (
+                        <p className="text-xs text-muted-foreground mt-1">{event.note}</p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </TabsContent>
+        
+        {/* SGC Documents Tab */}
+        <TabsContent value="documents" className="flex-1 overflow-y-auto mt-4">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-medium text-foreground">Documents from SGC</p>
+              <p className="text-xs text-muted-foreground">
+                {submission.sgcDocuments?.length || 0} document(s) available
+              </p>
+            </div>
+            
+            {submission.sgcDocuments && submission.sgcDocuments.length > 0 ? (
+              <div className="space-y-2">
+                {submission.sgcDocuments.map((doc) => (
+                  <div 
+                    key={doc.id} 
+                    className="flex items-center justify-between p-3 border rounded-lg bg-card hover:bg-accent/5 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                        <FileIcon className="h-5 w-5 text-primary" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-foreground">{doc.name}</p>
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <span>{doc.type}</span>
+                          <span>•</span>
+                          <span>{doc.size}</span>
+                          <span>•</span>
+                          <span>{doc.uploadedDate}</span>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          Uploaded by: {doc.uploadedBy}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button size="sm" variant="outline">
+                        <Eye className="h-4 w-4 mr-1" />
+                        Preview
+                      </Button>
+                      <Button size="sm" variant="default">
+                        <Download className="h-4 w-4 mr-1" />
+                        Download
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-8 text-center border rounded-lg bg-muted/20">
+                <FileText className="h-12 w-12 text-muted-foreground/50 mb-3" />
+                <p className="text-sm font-medium text-muted-foreground">No documents available</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Documents from the SGC will appear here when available
+                </p>
+              </div>
+            )}
+          </div>
+        </TabsContent>
+        
+        {/* Respond Tab */}
+        <TabsContent value="respond" className="flex-1 overflow-y-auto mt-4">
+          <div className="space-y-4">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <p className="text-sm text-blue-800">
+                Use this section to respond to the SGC or upload additional documents. 
+                Your response will be sent directly to the SGC for review.
+              </p>
+            </div>
+            
+            {/* Message */}
+            <div className="space-y-2">
+              <Label htmlFor="response-message">Response Message (Optional)</Label>
+              <Textarea
+                id="response-message"
+                placeholder="Enter any comments or explanations for the SGC..."
+                value={responseMessage}
+                onChange={(e) => setResponseMessage(e.target.value)}
+                rows={4}
+              />
+            </div>
+            
+            {/* File Upload */}
+            <div className="space-y-2">
+              <Label>Upload Documents</Label>
+              <div 
+                className="border-2 border-dashed rounded-lg p-6 text-center hover:border-primary/50 transition-colors cursor-pointer"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  className="hidden"
+                  onChange={handleFileSelect}
+                  accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
+                />
+                <Upload className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                <p className="text-sm font-medium text-foreground">
+                  Click to upload or drag and drop
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  PDF, DOC, DOCX, XLS, XLSX, JPG, PNG (max 10MB each)
+                </p>
+              </div>
+            </div>
+            
+            {/* Uploaded Files List */}
+            {uploadedFiles.length > 0 && (
+              <div className="space-y-2">
+                <Label>Files to Upload ({uploadedFiles.length})</Label>
+                <div className="space-y-2">
+                  {uploadedFiles.map((file, index) => (
+                    <div 
+                      key={index} 
+                      className="flex items-center justify-between p-3 border rounded-lg bg-card"
+                    >
+                      <div className="flex items-center gap-3">
+                        <Paperclip className="h-4 w-4 text-muted-foreground" />
+                        <div>
+                          <p className="text-sm font-medium text-foreground">{file.name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {formatFileSize(file.size)}
+                          </p>
+                        </div>
+                      </div>
+                      <Button 
+                        size="sm" 
+                        variant="ghost" 
+                        onClick={() => removeFile(index)}
+                        className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {/* Submit Button */}
+            <Button 
+              className="w-full" 
+              onClick={handleSubmitResponse}
+              disabled={isSubmitting || (uploadedFiles.length === 0 && !responseMessage.trim())}
+            >
+              {isSubmitting ? (
+                <>
+                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                  Submitting...
+                </>
+              ) : (
+                <>
+                  <Send className="h-4 w-4 mr-2" />
+                  Submit Response to SGC
+                </>
+              )}
+            </Button>
+          </div>
+        </TabsContent>
+      </Tabs>
+    </DialogContent>
+  )
 }
 
 function SubmissionCard({ submission }: { submission: Submission }) {
@@ -237,68 +553,7 @@ function SubmissionCard({ submission }: { submission: Submission }) {
                   Details
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-lg">
-                <DialogHeader>
-                  <DialogTitle className="flex items-center gap-2">
-                    <span className="font-mono text-sm text-muted-foreground">
-                      {submission.transactionNumber}
-                    </span>
-                  </DialogTitle>
-                  <DialogDescription>{submission.title}</DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <p className="text-muted-foreground">Type</p>
-                      <p className="font-medium capitalize">{submission.type}</p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">Status</p>
-                      <Badge variant="outline" className={status.color}>
-                        {status.label}
-                      </Badge>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">Submitted</p>
-                      <p className="font-medium">{submission.submittedDate}</p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">Last Updated</p>
-                      <p className="font-medium">{submission.lastUpdated}</p>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <p className="text-sm font-medium text-foreground mb-2">Current Stage</p>
-                    <p className="text-sm text-muted-foreground">{submission.stage}</p>
-                  </div>
-                  
-                  <div>
-                    <p className="text-sm font-medium text-foreground mb-3">History</p>
-                    <div className="space-y-3">
-                      {submission.history.map((event, index) => (
-                        <div key={index} className="flex gap-3">
-                          <div className="flex flex-col items-center">
-                            <div className={`h-2 w-2 rounded-full ${
-                              index === submission.history.length - 1 ? "bg-primary" : "bg-muted-foreground/30"
-                            }`} />
-                            {index < submission.history.length - 1 && (
-                              <div className="w-px flex-1 bg-muted-foreground/20" />
-                            )}
-                          </div>
-                          <div className="pb-3">
-                            <p className="text-sm font-medium text-foreground">{event.stage}</p>
-                            <p className="text-xs text-muted-foreground">{event.date}</p>
-                            {event.note && (
-                              <p className="text-xs text-muted-foreground mt-1">{event.note}</p>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </DialogContent>
+              <SubmissionDetailDialog submission={submission} status={status} />
             </Dialog>
           </div>
         </div>
