@@ -127,78 +127,78 @@ export default function HomePage() {
             </div>
             
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              <Card className="bg-card border-border">
+              <Card className="bg-gradient-to-br from-sky-500 to-sky-600 border-sky-600 shadow-lg">
                 <CardContent className="pt-6">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary mb-4">
-                    <Shield className="h-6 w-6" />
+                  <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-white/20 backdrop-blur-sm mb-4">
+                    <Shield className="h-6 w-6 text-white" />
                   </div>
-                  <h3 className="font-semibold text-foreground mb-2">Secure Submissions</h3>
-                  <p className="text-sm text-muted-foreground">
+                  <h3 className="font-semibold text-white mb-2">Secure Submissions</h3>
+                  <p className="text-sm text-sky-100">
                     All submissions are encrypted and securely stored. Your documents are protected 
                     with enterprise-grade security.
                   </p>
                 </CardContent>
               </Card>
               
-              <Card className="bg-card border-border">
+              <Card className="bg-gradient-to-br from-emerald-500 to-emerald-600 border-emerald-600 shadow-lg">
                 <CardContent className="pt-6">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary mb-4">
-                    <Search className="h-6 w-6" />
+                  <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-white/20 backdrop-blur-sm mb-4">
+                    <Search className="h-6 w-6 text-white" />
                   </div>
-                  <h3 className="font-semibold text-foreground mb-2">Real-time Tracking</h3>
-                  <p className="text-sm text-muted-foreground">
+                  <h3 className="font-semibold text-white mb-2">Real-time Tracking</h3>
+                  <p className="text-sm text-emerald-100">
                     Monitor the status of your submissions in real-time through your personal 
                     dashboard with detailed stage history.
                   </p>
                 </CardContent>
               </Card>
               
-              <Card className="bg-card border-border">
+              <Card className="bg-gradient-to-br from-amber-500 to-amber-600 border-amber-600 shadow-lg">
                 <CardContent className="pt-6">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary mb-4">
-                    <Clock className="h-6 w-6" />
+                  <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-white/20 backdrop-blur-sm mb-4">
+                    <Clock className="h-6 w-6 text-white" />
                   </div>
-                  <h3 className="font-semibold text-foreground mb-2">Save & Resume</h3>
-                  <p className="text-sm text-muted-foreground">
+                  <h3 className="font-semibold text-white mb-2">Save & Resume</h3>
+                  <p className="text-sm text-amber-100">
                     Save your progress as a draft and return later to complete your submission 
                     when convenient.
                   </p>
                 </CardContent>
               </Card>
               
-              <Card className="bg-card border-border">
+              <Card className="bg-gradient-to-br from-purple-500 to-purple-600 border-purple-600 shadow-lg">
                 <CardContent className="pt-6">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary mb-4">
-                    <CheckCircle className="h-6 w-6" />
+                  <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-white/20 backdrop-blur-sm mb-4">
+                    <CheckCircle className="h-6 w-6 text-white" />
                   </div>
-                  <h3 className="font-semibold text-foreground mb-2">Guided Process</h3>
-                  <p className="text-sm text-muted-foreground">
+                  <h3 className="font-semibold text-white mb-2">Guided Process</h3>
+                  <p className="text-sm text-purple-100">
                     Step-by-step wizards guide you through each submission with validation 
                     to ensure completeness.
                   </p>
                 </CardContent>
               </Card>
               
-              <Card className="bg-card border-border">
+              <Card className="bg-gradient-to-br from-rose-500 to-rose-600 border-rose-600 shadow-lg">
                 <CardContent className="pt-6">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary mb-4">
-                    <FileText className="h-6 w-6" />
+                  <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-white/20 backdrop-blur-sm mb-4">
+                    <FileText className="h-6 w-6 text-white" />
                   </div>
-                  <h3 className="font-semibold text-foreground mb-2">Document Management</h3>
-                  <p className="text-sm text-muted-foreground">
+                  <h3 className="font-semibold text-white mb-2">Document Management</h3>
+                  <p className="text-sm text-rose-100">
                     Upload and classify supporting documents with automatic validation 
                     of required files based on submission type.
                   </p>
                 </CardContent>
               </Card>
               
-              <Card className="bg-card border-border">
+              <Card className="bg-gradient-to-br from-teal-500 to-teal-600 border-teal-600 shadow-lg">
                 <CardContent className="pt-6">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary mb-4">
-                    <ArrowRight className="h-6 w-6" />
+                  <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-white/20 backdrop-blur-sm mb-4">
+                    <ArrowRight className="h-6 w-6 text-white" />
                   </div>
-                  <h3 className="font-semibold text-foreground mb-2">Clarification Loop</h3>
-                  <p className="text-sm text-muted-foreground">
+                  <h3 className="font-semibold text-white mb-2">Clarification Loop</h3>
+                  <p className="text-sm text-teal-100">
                     Respond to requests for additional information directly through 
                     the portal without starting over.
                   </p>
@@ -222,85 +222,85 @@ export default function HomePage() {
             </div>
             
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 max-w-5xl mx-auto">
-              <Card className="bg-card border-border">
+              <Card className="bg-gradient-to-br from-sky-500 to-sky-600 border-sky-600 shadow-lg">
                 <CardContent className="p-6">
                   <div className="flex items-center gap-4">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                      <Building2 className="h-5 w-5" />
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/20 backdrop-blur-sm">
+                      <Building2 className="h-5 w-5 text-white" />
                     </div>
                     <div>
-                      <h3 className="font-semibold text-foreground">Ministry / MDA</h3>
-                      <p className="text-xs text-muted-foreground">Correspondence & Contracts</p>
+                      <h3 className="font-semibold text-white">Ministry / MDA</h3>
+                      <p className="text-xs text-sky-100">Correspondence & Contracts</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
               
-              <Card className="bg-card border-border">
+              <Card className="bg-gradient-to-br from-indigo-500 to-indigo-600 border-indigo-600 shadow-lg">
                 <CardContent className="p-6">
                   <div className="flex items-center gap-4">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                      <Scale className="h-5 w-5" />
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/20 backdrop-blur-sm">
+                      <Scale className="h-5 w-5 text-white" />
                     </div>
                     <div>
-                      <h3 className="font-semibold text-foreground">Court</h3>
-                      <p className="text-xs text-muted-foreground">Correspondence Only</p>
+                      <h3 className="font-semibold text-white">Court</h3>
+                      <p className="text-xs text-indigo-100">Correspondence Only</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
               
-              <Card className="bg-card border-border">
+              <Card className="bg-gradient-to-br from-emerald-500 to-emerald-600 border-emerald-600 shadow-lg">
                 <CardContent className="p-6">
                   <div className="flex items-center gap-4">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                      <Building2 className="h-5 w-5" />
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/20 backdrop-blur-sm">
+                      <Building2 className="h-5 w-5 text-white" />
                     </div>
                     <div>
-                      <h3 className="font-semibold text-foreground">Statutory Body</h3>
-                      <p className="text-xs text-muted-foreground">Correspondence Only</p>
+                      <h3 className="font-semibold text-white">Statutory Body</h3>
+                      <p className="text-xs text-emerald-100">Correspondence Only</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
               
-              <Card className="bg-card border-border">
+              <Card className="bg-gradient-to-br from-amber-500 to-amber-600 border-amber-600 shadow-lg">
                 <CardContent className="p-6">
                   <div className="flex items-center gap-4">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                      <Users className="h-5 w-5" />
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/20 backdrop-blur-sm">
+                      <Users className="h-5 w-5 text-white" />
                     </div>
                     <div>
-                      <h3 className="font-semibold text-foreground">Member of Public</h3>
-                      <p className="text-xs text-muted-foreground">Correspondence Only</p>
+                      <h3 className="font-semibold text-white">Member of Public</h3>
+                      <p className="text-xs text-amber-100">Correspondence Only</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
               
-              <Card className="bg-card border-border">
+              <Card className="bg-gradient-to-br from-purple-500 to-purple-600 border-purple-600 shadow-lg">
                 <CardContent className="p-6">
                   <div className="flex items-center gap-4">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                      <Scale className="h-5 w-5" />
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/20 backdrop-blur-sm">
+                      <Scale className="h-5 w-5 text-white" />
                     </div>
                     <div>
-                      <h3 className="font-semibold text-foreground">Attorney-at-Law</h3>
-                      <p className="text-xs text-muted-foreground">Correspondence Only</p>
+                      <h3 className="font-semibold text-white">Attorney-at-Law</h3>
+                      <p className="text-xs text-purple-100">Correspondence Only</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
               
-              <Card className="bg-card border-border">
+              <Card className="bg-gradient-to-br from-slate-500 to-slate-600 border-slate-600 shadow-lg">
                 <CardContent className="p-6">
                   <div className="flex items-center gap-4">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                      <Users className="h-5 w-5" />
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/20 backdrop-blur-sm">
+                      <Users className="h-5 w-5 text-white" />
                     </div>
                     <div>
-                      <h3 className="font-semibold text-foreground">Other</h3>
-                      <p className="text-xs text-muted-foreground">Correspondence Only</p>
+                      <h3 className="font-semibold text-white">Other</h3>
+                      <p className="text-xs text-slate-100">Correspondence Only</p>
                     </div>
                   </div>
                 </CardContent>
