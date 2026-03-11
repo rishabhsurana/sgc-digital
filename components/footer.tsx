@@ -11,19 +11,10 @@ export function Footer() {
           <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
             {/* Brand */}
             <div className="lg:col-span-1">
-              <div className="flex items-center gap-3 mb-4">
-                <Image
-                  src="/images/sgc-digital-logo.png"
-                  alt="SGC Digital"
-                  width={56}
-                  height={50}
-                  style={{ width: 'auto', height: 'auto' }}
-                />
-                <div>
-                  <p className="font-bold text-foreground">SGC Digital</p>
-                  <p className="text-sm text-primary font-medium">Solicitor General{"'"}s Chambers</p>
-                </div>
-              </div>
+              <h4 className="font-bold text-foreground mb-4 flex items-center gap-2">
+                <div className="h-1 w-4 bg-accent rounded" />
+                About SGC Digital
+              </h4>
               <p className="text-sm text-muted-foreground leading-relaxed">
                 The official digital portal for the Solicitor General{"'"}s Chambers of Barbados, 
                 enabling secure submission and tracking of Registry Correspondence and Government Contracts.
