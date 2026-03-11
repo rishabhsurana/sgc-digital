@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SGC Portal - Features and Functions Guide</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      line-height: 1.6;
+      color: #1a1a2e;
+      background: #f8fafc;
+    }
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 40px 20px;
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 50px;
+      padding: 40px;
+      background: linear-gradient(135deg, #1e3a5f 0%, #0d1b2a 100%);
+      color: white;
+      border-radius: 16px;
+    }
+    .header h1 {
+      font-size: 2.5rem;
+      margin-bottom: 10px;
+    }
+    .header .subtitle {
+      font-size: 1.1rem;
+      opacity: 0.9;
+    }
+    .header .version {
+      margin-top: 15px;
+      padding: 8px 16px;
+      background: rgba(255,255,255,0.15);
+      border-radius: 20px;
+      display: inline-block;
+      font-size: 0.9rem;
+    }
+    .toc {
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      margin-bottom: 40px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    .toc h2 {
+      margin-bottom: 20px;
+      color: #1e3a5f;
+      font-size: 1.3rem;
+    }
+    .toc ul {
+      list-style: none;
+    }
+    .toc li {
+      margin-bottom: 10px;
+    }
+    .toc a {
+      color: #3b82f6;
+      text-decoration: none;
+      font-weight: 500;
+    }
+    .toc a:hover {
+      text-decoration: underline;
+    }
+    .toc .sub-item {
+      margin-left: 20px;
+      font-size: 0.9rem;
+    }
+    .section {
+      background: white;
+      padding: 35px;
+      border-radius: 12px;
+      margin-bottom: 30px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    .section h2 {
+      color: #1e3a5f;
+      font-size: 1.5rem;
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 3px solid #3b82f6;
+    }
+    .section h3 {
+      color: #334155;
+      font-size: 1.2rem;
+      margin: 25px 0 15px 0;
+    }
+    .section h4 {
+      color: #475569;
+      font-size: 1rem;
+      margin: 20px 0 10px 0;
+    }
+    .section p {
+      margin-bottom: 15px;
+      color: #475569;
+    }
+    .section ul, .section ol {
+      margin: 15px 0 15px 25px;
+      color: #475569;
+    }
+    .section li {
+      margin-bottom: 8px;
+    }
+    .feature-card {
+      background: #f1f5f9;
+      padding: 20px;
+      border-radius: 10px;
+      margin: 15px 0;
+      border-left: 4px solid #3b82f6;
+    }
+    .feature-card.green {
+      border-left-color: #10b981;
+    }
+    .feature-card.amber {
+      border-left-color: #f59e0b;
+    }
+    .feature-card.purple {
+      border-left-color: #8b5cf6;
+    }
+    .feature-card.rose {
+      border-left-color: #f43f5e;
+    }
+    .feature-card.teal {
+      border-left-color: #14b8a6;
+    }
+    .feature-card h4 {
+      margin-top: 0;
+      color: #1e3a5f;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+    }
+    th, td {
+      padding: 12px 15px;
+      text-align: left;
+      border: 1px solid #e2e8f0;
+    }
+    th {
+      background: #1e3a5f;
+      color: white;
+      font-weight: 600;
+    }
+    tr:nth-child(even) {
+      background: #f8fafc;
+    }
+    .badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .badge-blue { background: #dbeafe; color: #1e40af; }
+    .badge-green { background: #d1fae5; color: #065f46; }
+    .badge-amber { background: #fef3c7; color: #92400e; }
+    .badge-purple { background: #ede9fe; color: #5b21b6; }
+    .screenshot-placeholder {
+      background: #e2e8f0;
+      border: 2px dashed #94a3b8;
+      border-radius: 8px;
+      padding: 40px;
+      text-align: center;
+      color: #64748b;
+      margin: 20px 0;
+    }
+    .navigation-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 15px;
+      margin: 20px 0;
+    }
+    .nav-item {
+      background: #f8fafc;
+      padding: 15px;
+      border-radius: 8px;
+      border: 1px solid #e2e8f0;
+    }
+    .nav-item strong {
+      color: #1e3a5f;
+    }
+    .nav-item p {
+      font-size: 0.9rem;
+      margin-top: 5px;
+      margin-bottom: 0;
+    }
+    @media print {
+      body { background: white; }
+      .container { max-width: 100%; }
+      .section { box-shadow: none; border: 1px solid #e2e8f0; }
+      .header { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    }
+    @media (max-width: 600px) {
+      .navigation-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>SGC Portal</h1>
+      <p class="subtitle">Solicitor General's Chambers - Correspondence & Contracts Management System</p>
+      <span class="version">Features and Functions Guide v1.0</span>
+    </div>
+
+    <div class="toc">
+      <h2>Table of Contents</h2>
+      <ul>
+        <li><a href="#overview">1. System Overview</a></li>
+        <li><a href="#landing">2. Public Landing Page</a></li>
+        <li><a href="#authentication">3. Authentication & Access Control</a></li>
+        <li><a href="#dashboard">4. Management Dashboard</a></li>
+        <li><a href="#registers">5. Registers</a>
+          <ul>
+            <li class="sub-item"><a href="#correspondence">5.1 Correspondence Register</a></li>
+            <li class="sub-item"><a href="#contracts">5.2 Contracts Register</a></li>
+          </ul>
+        </li>
+        <li><a href="#history">6. Transaction History</a></li>
+        <li><a href="#status">7. Status Overview</a></li>
+        <li><a href="#activity">8. Activity Monitor</a></li>
+        <li><a href="#reports">9. Reports & Analytics</a></li>
+        <li><a href="#users">10. User Management</a></li>
+        <li><a href="#mda">11. MDA Management</a></li>
+        <li><a href="#settings">12. Settings</a></li>
+        <li><a href="#rex">13. Ask Rex AI Assistant</a></li>
+        <li><a href="#navigation">14. Navigation & UI Components</a></li>
+      </ul>
+    </div>
+
+    <!-- Section 1: Overview -->
+    <div class="section" id="overview">
+      <h2>1. System Overview</h2>
+      <p>The SGC Portal is a comprehensive digital management system designed for the Solicitor General's Chambers of Barbados. It provides a centralized platform for managing correspondence and contracts between government ministries, departments, and agencies (MDAs).</p>
+      
+      <h3>Key Objectives</h3>
+      <ul>
+        <li>Digitize and streamline correspondence management workflows</li>
+        <li>Centralize contract registration and tracking</li>
+        <li>Provide real-time visibility into document status and processing</li>
+        <li>Enable comprehensive reporting and analytics</li>
+        <li>Maintain complete audit trails for compliance</li>
+      </ul>
+
+      <h3>System Architecture</h3>
+      <div class="feature-card">
+        <h4>Technology Stack</h4>
+        <ul>
+          <li><strong>Frontend:</strong> Next.js 16 with React 19</li>
+          <li><strong>Styling:</strong> Tailwind CSS v4 with shadcn/ui components</li>
+          <li><strong>Authentication:</strong> Role-based access control</li>
+          <li><strong>AI Assistant:</strong> Ask Rex intelligent chatbot</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Section 2: Landing Page -->
+    <div class="section" id="landing">
+      <h2>2. Public Landing Page</h2>
+      <p>The public-facing landing page serves as the entry point to the SGC Portal, providing information about the system and access to the management portal.</p>
+
+      <h3>Features</h3>
+      <div class="feature-card green">
+        <h4>Hero Section</h4>
+        <p>Prominent welcome banner with official government branding, including the Barbados coat of arms and SGC Digital logo.</p>
+      </div>
+      <div class="feature-card">
+        <h4>Access Portal Button</h4>
+        <p>Direct link to the Management Portal login for authorized users.</p>
+      </div>
+      <div class="feature-card amber">
+        <h4>Information Sections</h4>
+        <p>Overview of system capabilities, benefits, and contact information.</p>
+      </div>
+      <div class="feature-card purple">
+        <h4>Footer</h4>
+        <p>Official government footer with copyright, links, and branding compliance.</p>
+      </div>
+
+      <p><strong>URL:</strong> <code>/</code></p>
+    </div>
+
+    <!-- Section 3: Authentication -->
+    <div class="section" id="authentication">
+      <h2>3. Authentication & Access Control</h2>
+      <p>The system implements role-based access control to ensure secure access to management functions.</p>
+
+      <h3>User Roles</h3>
+      <table>
+        <tr>
+          <th>Role</th>
+          <th>Access Level</th>
+          <th>Permissions</th>
+        </tr>
+        <tr>
+          <td><span class="badge badge-purple">Super Admin</span></td>
+          <td>Full System Access</td>
+          <td>All features, user management, system settings</td>
+        </tr>
+        <tr>
+          <td><span class="badge badge-blue">Admin</span></td>
+          <td>Management Access</td>
+          <td>Registers, reports, MDA management</td>
+        </tr>
+        <tr>
+          <td><span class="badge badge-green">User</span></td>
+          <td>Standard Access</td>
+          <td>View and process assigned items</td>
+        </tr>
+      </table>
+
+      <h3>Login Process</h3>
+      <ol>
+        <li>Navigate to the Management Portal</li>
+        <li>Enter authorized email address</li>
+        <li>Enter password</li>
+        <li>System validates credentials and grants role-based access</li>
+      </ol>
+
+      <h3>Authorized Users</h3>
+      <table>
+        <tr>
+          <th>Email</th>
+          <th>Role</th>
+          <th>Name</th>
+        </tr>
+        <tr>
+          <td>admin@sgc.gov.bb</td>
+          <td>Super Admin</td>
+          <td>System Administrator</td>
+        </tr>
+        <tr>
+          <td>manager@sgc.gov.bb</td>
+          <td>Admin</td>
+          <td>Registry Manager</td>
+        </tr>
+        <tr>
+          <td>user@example.com</td>
+          <td>Admin</td>
+          <td>Management User</td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- Section 4: Dashboard -->
+    <div class="section" id="dashboard">
+      <h2>4. Management Dashboard</h2>
+      <p>The Management Dashboard serves as the central hub for navigating all portal features. It provides quick access to all major system functions through color-coded navigation cards.</p>
+
+      <h3>Quick Navigation Cards</h3>
+      <div class="navigation-grid">
+        <div class="nav-item" style="border-left: 4px solid #10b981;">
+          <strong>Registers</strong>
+          <p>Access Correspondence and Contracts Registers</p>
+        </div>
+        <div class="nav-item" style="border-left: 4px solid #3b82f6;">
+          <strong>Transaction History</strong>
+          <p>View historical records and audit trails</p>
+        </div>
+        <div class="nav-item" style="border-left: 4px solid #f59e0b;">
+          <strong>Status Overview</strong>
+          <p>System statistics and performance metrics</p>
+        </div>
+        <div class="nav-item" style="border-left: 4px solid #f43f5e;">
+          <strong>Activity Monitor</strong>
+          <p>Pending actions and recent activity</p>
+        </div>
+        <div class="nav-item" style="border-left: 4px solid #8b5cf6;">
+          <strong>Reports & Analytics</strong>
+          <p>Generate reports and view dashboards</p>
+        </div>
+        <div class="nav-item" style="border-left: 4px solid #6366f1;">
+          <strong>User Management</strong>
+          <p>Manage user accounts and permissions</p>
+        </div>
+        <div class="nav-item" style="border-left: 4px solid #14b8a6;">
+          <strong>MDA Management</strong>
+          <p>Manage ministries and departments</p>
+        </div>
+        <div class="nav-item" style="border-left: 4px solid #64748b;">
+          <strong>Settings</strong>
+          <p>System configuration and preferences</p>
+        </div>
+      </div>
+
+      <p><strong>URL:</strong> <code>/management</code></p>
+    </div>
+
+    <!-- Section 5: Registers -->
+    <div class="section" id="registers">
+      <h2>5. Registers</h2>
+      <p>The Registers module provides comprehensive management of correspondence and contracts received by the Solicitor General's Chambers.</p>
+
+      <h3 id="correspondence">5.1 Correspondence Register</h3>
+      <div class="feature-card green">
+        <h4>Purpose</h4>
+        <p>Track and manage all incoming and outgoing correspondence from government ministries, departments, and agencies.</p>
+      </div>
+
+      <h4>Features</h4>
+      <ul>
+        <li><strong>Search & Filter:</strong> Search by reference number, subject, or MDA with status filters</li>
+        <li><strong>Add New Correspondence:</strong> Register new correspondence with full details</li>
+        <li><strong>Status Tracking:</strong> Monitor status (Pending, Under Review, Approved, Completed, Archived)</li>
+        <li><strong>Priority Levels:</strong> Assign priority (Low, Normal, High, Urgent)</li>
+        <li><strong>Document Attachments:</strong> Upload and manage supporting documents</li>
+        <li><strong>Export:</strong> Export correspondence data for external use</li>
+      </ul>
+
+      <h4>Data Fields</h4>
+      <table>
+        <tr>
+          <th>Field</th>
+          <th>Description</th>
+        </tr>
+        <tr><td>Reference Number</td><td>Unique identifier (e.g., COR-2026-0001)</td></tr>
+        <tr><td>Date Received</td><td>Date correspondence was received</td></tr>
+        <tr><td>Subject</td><td>Brief description of the correspondence</td></tr>
+        <tr><td>Originating MDA</td><td>Ministry/Department/Agency that sent the correspondence</td></tr>
+        <tr><td>Category</td><td>Classification of correspondence type</td></tr>
+        <tr><td>Status</td><td>Current processing status</td></tr>
+        <tr><td>Priority</td><td>Urgency level</td></tr>
+        <tr><td>Assigned To</td><td>Staff member responsible for processing</td></tr>
+      </table>
+
+      <p><strong>URL:</strong> <code>/management/correspondence-register</code></p>
+
+      <h3 id="contracts">5.2 Contracts Register</h3>
+      <div class="feature-card">
+        <h4>Purpose</h4>
+        <p>Manage government contracts submitted for legal review and approval by the Solicitor General's Chambers.</p>
+      </div>
+
+      <h4>Features</h4>
+      <ul>
+        <li><strong>Search & Filter:</strong> Search by contract number, subject, or MDA with nature/status filters</li>
+        <li><strong>Add New Contract:</strong> Register new contracts with comprehensive details</li>
+        <li><strong>Status Tracking:</strong> Monitor contract status through approval workflow</li>
+        <li><strong>Contract Types:</strong> Support for New, Renewal, Amendment, and Supplemental contracts</li>
+        <li><strong>Value Tracking:</strong> Record and track contract values</li>
+        <li><strong>Document Management:</strong> Attach contract documents and supporting materials</li>
+      </ul>
+
+      <h4>Data Fields</h4>
+      <table>
+        <tr>
+          <th>Field</th>
+          <th>Description</th>
+        </tr>
+        <tr><td>Contract Number</td><td>Unique identifier (e.g., CON-2026-0001)</td></tr>
+        <tr><td>Date Received</td><td>Date contract was received</td></tr>
+        <tr><td>Subject</td><td>Contract description</td></tr>
+        <tr><td>Originating MDA</td><td>Ministry/Department/Agency submitting the contract</td></tr>
+        <tr><td>Nature of Contract</td><td>Goods, Works, or Consultancy/Services</td></tr>
+        <tr><td>Category</td><td>Contract classification</td></tr>
+        <tr><td>Contract Type</td><td>New, Renewal, Amendment, Supplemental</td></tr>
+        <tr><td>Contract Value</td><td>Monetary value of the contract</td></tr>
+        <tr><td>Contractor</td><td>Name of the contracting party</td></tr>
+        <tr><td>Status</td><td>Current processing status</td></tr>
+      </table>
+
+      <p><strong>URL:</strong> <code>/management/contracts-register</code></p>
+    </div>
+
+    <!-- Section 6: Transaction History -->
+    <div class="section" id="history">
+      <h2>6. Transaction History</h2>
+      <p>The Transaction History module provides comprehensive audit trails for all correspondence and contracts processed through the system.</p>
+
+      <h3>6.1 Correspondence History</h3>
+      <div class="feature-card">
+        <h4>Features</h4>
+        <ul>
+          <li>View all correspondence records sorted by date</li>
+          <li>Search by reference number, subject, or MDA</li>
+          <li>Filter by date range</li>
+          <li>Access uploaded documents for each record</li>
+          <li>View submitter contact details</li>
+        </ul>
+      </div>
+
+      <h4>Data Columns</h4>
+      <ul>
+        <li>Date Received</li>
+        <li>Reference Number</li>
+        <li>Subject</li>
+        <li>Ministry/MDA</li>
+        <li>Submitter</li>
+        <li>Documents (View/Download)</li>
+      </ul>
+
+      <p><strong>URL:</strong> <code>/management/correspondence-history</code></p>
+
+      <h3>6.2 Contracts History</h3>
+      <div class="feature-card green">
+        <h4>Features</h4>
+        <ul>
+          <li>View all contract records sorted by date</li>
+          <li>Search by contract number, subject, or MDA</li>
+          <li>Filter by date range and contract type</li>
+          <li>Access all uploaded contract documents</li>
+          <li>View contractor and submitter details</li>
+        </ul>
+      </div>
+
+      <h4>Data Columns</h4>
+      <ul>
+        <li>Date Received</li>
+        <li>Contract Number</li>
+        <li>Subject</li>
+        <li>Ministry/MDA</li>
+        <li>Contract Value</li>
+        <li>Contract Type</li>
+        <li>Submitter</li>
+        <li>Documents (View/Download)</li>
+      </ul>
+
+      <p><strong>URL:</strong> <code>/management/contracts-history</code></p>
+    </div>
+
+    <!-- Section 7: Status Overview -->
+    <div class="section" id="status">
+      <h2>7. Status Overview</h2>
+      <p>The Status Overview page provides a comprehensive view of system statistics and performance metrics.</p>
+
+      <h3>Statistics Cards</h3>
+      <div class="feature-card amber">
+        <ul>
+          <li><strong>Total Correspondence:</strong> Count of all correspondence records</li>
+          <li><strong>Total Contracts:</strong> Count of all contract records</li>
+          <li><strong>Pending Review:</strong> Items awaiting processing</li>
+          <li><strong>Completed This Month:</strong> Items processed in current month</li>
+          <li><strong>Active MDAs:</strong> Number of participating ministries/agencies</li>
+          <li><strong>Average Processing Time:</strong> Mean time to process items</li>
+        </ul>
+      </div>
+
+      <h3>Status Breakdown</h3>
+      <p>Visual progress bars showing the distribution of items by status:</p>
+      <ul>
+        <li>Pending</li>
+        <li>Under Review</li>
+        <li>Approved</li>
+        <li>Completed</li>
+      </ul>
+
+      <h3>Top MDAs by Volume</h3>
+      <p>Ranking of ministries/agencies by number of submissions.</p>
+
+      <p><strong>URL:</strong> <code>/management/status</code></p>
+    </div>
+
+    <!-- Section 8: Activity Monitor -->
+    <div class="section" id="activity">
+      <h2>8. Activity Monitor</h2>
+      <p>The Activity Monitor provides real-time visibility into pending actions and recent system activity.</p>
+
+      <h3>Pending Actions</h3>
+      <div class="feature-card rose">
+        <h4>Features</h4>
+        <ul>
+          <li>List of items requiring immediate attention</li>
+          <li>Priority-coded indicators (High, Normal, Low)</li>
+          <li>Time elapsed since submission</li>
+          <li>Quick action buttons for Review, Assign, and Escalate</li>
+          <li>Direct links to detailed records</li>
+        </ul>
+      </div>
+
+      <h3>Recent Activity</h3>
+      <div class="feature-card">
+        <h4>Activity Types Tracked</h4>
+        <ul>
+          <li>New submissions</li>
+          <li>Status changes</li>
+          <li>Document uploads</li>
+          <li>Approvals and completions</li>
+          <li>User assignments</li>
+        </ul>
+      </div>
+
+      <p><strong>URL:</strong> <code>/management/activity</code></p>
+    </div>
+
+    <!-- Section 9: Reports -->
+    <div class="section" id="reports">
+      <h2>9. Reports & Analytics</h2>
+      <p>The Reports & Analytics module enables generation of comprehensive reports and visualization of system data.</p>
+
+      <h3>Report Types</h3>
+      <div class="feature-card purple">
+        <h4>Correspondence Reports</h4>
+        <ul>
+          <li>Daily/Weekly/Monthly summaries</li>
+          <li>Status distribution reports</li>
+          <li>MDA activity reports</li>
+          <li>Processing time analytics</li>
+        </ul>
+      </div>
+
+      <div class="feature-card">
+        <h4>Contract Reports</h4>
+        <ul>
+          <li>Contract value summaries</li>
+          <li>Contract type distribution</li>
+          <li>MDA contract activity</li>
+          <li>Approval workflow analytics</li>
+        </ul>
+      </div>
+
+      <h3>Export Options</h3>
+      <ul>
+        <li>PDF format for printing and sharing</li>
+        <li>Excel/CSV for data analysis</li>
+        <li>Scheduled report generation</li>
+      </ul>
+
+      <p><strong>URL:</strong> <code>/management/reports</code></p>
+    </div>
+
+    <!-- Section 10: User Management -->
+    <div class="section" id="users">
+      <h2>10. User Management</h2>
+      <p>The User Management module enables administrators to manage system users, roles, and permissions.</p>
+
+      <h3>Features</h3>
+      <div class="feature-card">
+        <ul>
+          <li><strong>Add Users:</strong> Create new user accounts with role assignment</li>
+          <li><strong>Edit Users:</strong> Modify user details and permissions</li>
+          <li><strong>Deactivate Users:</strong> Disable user access without deleting records</li>
+          <li><strong>Role Assignment:</strong> Assign Super Admin, Admin, or User roles</li>
+          <li><strong>Activity Tracking:</strong> View user login and activity history</li>
+        </ul>
+      </div>
+
+      <h3>User Data Fields</h3>
+      <table>
+        <tr>
+          <th>Field</th>
+          <th>Description</th>
+        </tr>
+        <tr><td>Name</td><td>User's full name</td></tr>
+        <tr><td>Email</td><td>Login email address</td></tr>
+        <tr><td>Role</td><td>Access level (Super Admin, Admin, User)</td></tr>
+        <tr><td>Department</td><td>Associated MDA or department</td></tr>
+        <tr><td>Status</td><td>Active or Inactive</td></tr>
+        <tr><td>Last Login</td><td>Most recent system access</td></tr>
+      </table>
+
+      <p><strong>URL:</strong> <code>/management/users</code></p>
+    </div>
+
+    <!-- Section 11: MDA Management -->
+    <div class="section" id="mda">
+      <h2>11. MDA Management</h2>
+      <p>The MDA Management module allows administration of ministries, departments, and agencies registered in the system.</p>
+
+      <h3>Features</h3>
+      <div class="feature-card teal">
+        <ul>
+          <li><strong>Add MDA:</strong> Register new ministries, departments, or agencies</li>
+          <li><strong>Edit MDA:</strong> Update MDA details and contact information</li>
+          <li><strong>MDA Statistics:</strong> View submission counts and activity metrics</li>
+          <li><strong>Contact Management:</strong> Maintain primary contact details for each MDA</li>
+          <li><strong>Status Control:</strong> Activate or deactivate MDAs</li>
+        </ul>
+      </div>
+
+      <h3>MDA Data Fields</h3>
+      <table>
+        <tr>
+          <th>Field</th>
+          <th>Description</th>
+        </tr>
+        <tr><td>Name</td><td>Full name of the MDA</td></tr>
+        <tr><td>Abbreviation</td><td>Short code (e.g., MOF, MOH)</td></tr>
+        <tr><td>Type</td><td>Ministry, Department, or Agency</td></tr>
+        <tr><td>Primary Contact</td><td>Main contact person</td></tr>
+        <tr><td>Email</td><td>Official email address</td></tr>
+        <tr><td>Phone</td><td>Contact telephone number</td></tr>
+        <tr><td>Status</td><td>Active or Inactive</td></tr>
+      </table>
+
+      <p><strong>URL:</strong> <code>/management/mda</code></p>
+    </div>
+
+    <!-- Section 12: Settings -->
+    <div class="section" id="settings">
+      <h2>12. Settings</h2>
+      <p>The Settings module provides system configuration options and user preferences.</p>
+
+      <h3>Configuration Options</h3>
+      <div class="feature-card">
+        <ul>
+          <li><strong>General Settings:</strong> System name, timezone, date format</li>
+          <li><strong>Notification Preferences:</strong> Email alerts and system notifications</li>
+          <li><strong>Workflow Configuration:</strong> Approval workflows and routing rules</li>
+          <li><strong>Document Settings:</strong> Allowed file types and size limits</li>
+          <li><strong>Audit Settings:</strong> Retention periods and logging options</li>
+        </ul>
+      </div>
+
+      <p><strong>URL:</strong> <code>/management/settings</code></p>
+    </div>
+
+    <!-- Section 13: Ask Rex -->
+    <div class="section" id="rex">
+      <h2>13. Ask Rex AI Assistant</h2>
+      <p>Ask Rex is an intelligent AI assistant integrated into the SGC Portal to help users navigate the system and find information quickly.</p>
+
+      <h3>Appearance</h3>
+      <div class="feature-card green">
+        <p>Rex appears as a green floating button in the top-right corner of all management pages. Click to open the chat interface.</p>
+      </div>
+
+      <h3>Capabilities</h3>
+      <ul>
+        <li><strong>Report Generation:</strong> Request correspondence or contract reports for specific time periods</li>
+        <li><strong>Search Assistance:</strong> Help finding specific records by reference number, subject, or MDA</li>
+        <li><strong>Statistics Queries:</strong> Ask about system statistics and metrics</li>
+        <li><strong>Navigation Help:</strong> Get guidance on using portal features</li>
+        <li><strong>General Questions:</strong> Answer questions about SGC processes and procedures</li>
+      </ul>
+
+      <h3>Example Queries</h3>
+      <div class="feature-card">
+        <ul>
+          <li>"Generate a report on contracts submitted this week"</li>
+          <li>"Show me correspondence from Ministry of Finance"</li>
+          <li>"What are the current system statistics?"</li>
+          <li>"How do I add a new contract?"</li>
+          <li>"List all pending items"</li>
+        </ul>
+      </div>
+
+      <h3>Response Display</h3>
+      <p>Rex displays responses with:</p>
+      <ul>
+        <li>Formatted text responses</li>
+        <li>Data tables for reports</li>
+        <li>Statistics cards</li>
+        <li>Searchable result lists</li>
+      </ul>
+    </div>
+
+    <!-- Section 14: Navigation -->
+    <div class="section" id="navigation">
+      <h2>14. Navigation & UI Components</h2>
+      
+      <h3>Sidebar Navigation</h3>
+      <p>The left sidebar provides access to all management modules with icons and labels. The sidebar can be collapsed on mobile devices.</p>
+
+      <h3>Breadcrumb Navigation</h3>
+      <p>Breadcrumbs at the top of each page show the current location and provide links to parent pages for easy navigation.</p>
+
+      <h3>Header</h3>
+      <p>The header includes:</p>
+      <ul>
+        <li>Mobile menu toggle</li>
+        <li>Page title</li>
+        <li>User profile dropdown</li>
+        <li>Logout option</li>
+      </ul>
+
+      <h3>Common UI Elements</h3>
+      <table>
+        <tr>
+          <th>Element</th>
+          <th>Usage</th>
+        </tr>
+        <tr><td>Cards</td><td>Container for grouped content</td></tr>
+        <tr><td>Tables</td><td>Data display with sorting and filtering</td></tr>
+        <tr><td>Badges</td><td>Status indicators (Pending, Approved, etc.)</td></tr>
+        <tr><td>Buttons</td><td>Primary actions (Add, Save, Export)</td></tr>
+        <tr><td>Dialogs</td><td>Modal forms and confirmations</td></tr>
+        <tr><td>Tabs</td><td>Organize related content</td></tr>
+        <tr><td>Search</td><td>Filter and find records</td></tr>
+      </table>
+    </div>
+
+    <div style="text-align: center; padding: 40px 0; color: #64748b; font-size: 0.9rem;">
+      <p>SGC Portal - Features and Functions Guide</p>
+      <p>Version 1.0 | March 2026</p>
+      <p>Solicitor General's Chambers, Government of Barbados</p>
+    </div>
+  </div>
+</body>
+</html>
