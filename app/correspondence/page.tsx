@@ -30,43 +30,57 @@ const CORRESPONDENCE_TYPES = [
     value: "general", 
     label: "General", 
     description: "General enquiries and correspondence to the SGC",
-    icon: FileText 
+    icon: FileText,
+    bgColor: "from-blue-500 to-blue-600",
+    borderColor: "border-blue-600"
   },
   { 
     value: "litigation", 
     label: "Litigation", 
     description: "Court-related matters and litigation correspondence",
-    icon: Gavel 
+    icon: Gavel,
+    bgColor: "from-rose-500 to-rose-600",
+    borderColor: "border-rose-600"
   },
   { 
     value: "compensation", 
     label: "Compensation", 
     description: "Compensation claims and related matters",
-    icon: Scale 
+    icon: Scale,
+    bgColor: "from-amber-500 to-amber-600",
+    borderColor: "border-amber-600"
   },
   { 
     value: "public-trustee", 
     label: "Public Trustee", 
     description: "Matters relating to the Public Trustee",
-    icon: UserCheck 
+    icon: UserCheck,
+    bgColor: "from-emerald-500 to-emerald-600",
+    borderColor: "border-emerald-600"
   },
   { 
     value: "advisory", 
     label: "Advisory", 
     description: "Requests for legal opinions and advice",
-    icon: HelpCircle 
+    icon: HelpCircle,
+    bgColor: "from-purple-500 to-purple-600",
+    borderColor: "border-purple-600"
   },
   { 
     value: "international-law", 
     label: "International Law", 
     description: "International law and treaty matters",
-    icon: Globe 
+    icon: Globe,
+    bgColor: "from-teal-500 to-teal-600",
+    borderColor: "border-teal-600"
   },
   { 
     value: "cabinet", 
     label: "Cabinet / Confidential", 
     description: "Cabinet-level documents requiring restricted access",
-    icon: Lock 
+    icon: Lock,
+    bgColor: "from-slate-600 to-slate-700",
+    borderColor: "border-slate-700"
   }
 ]
 
@@ -291,23 +305,24 @@ export default function CorrespondencePage() {
                   >
                     {CORRESPONDENCE_TYPES.map((type) => {
                       const Icon = type.icon
+                      const isSelected = formData.correspondenceType === type.value
                       return (
                         <Label
                           key={type.value}
                           htmlFor={type.value}
-                          className={`flex cursor-pointer items-start gap-4 rounded-lg border p-4 transition-colors hover:bg-muted/50 ${
-                            formData.correspondenceType === type.value 
-                              ? "border-primary bg-primary/5" 
-                              : "border-border"
+                          className={`flex cursor-pointer items-start gap-4 rounded-lg border-2 p-4 transition-all ${
+                            isSelected 
+                              ? `bg-gradient-to-br ${type.bgColor} ${type.borderColor} shadow-lg` 
+                              : "border-border hover:border-primary/50 hover:shadow-md"
                           }`}
                         >
-                          <RadioGroupItem value={type.value} id={type.value} className="mt-1" />
+                          <RadioGroupItem value={type.value} id={type.value} className={`mt-1 ${isSelected ? "border-white text-white" : ""}`} />
                           <div className="flex-1">
                             <div className="flex items-center gap-2 mb-1">
-                              <Icon className="h-4 w-4 text-primary" />
-                              <span className="font-medium text-foreground">{type.label}</span>
+                              <Icon className={`h-4 w-4 ${isSelected ? "text-white" : "text-primary"}`} />
+                              <span className={`font-medium ${isSelected ? "text-white" : "text-foreground"}`}>{type.label}</span>
                             </div>
-                            <p className="text-sm text-muted-foreground">{type.description}</p>
+                            <p className={`text-sm ${isSelected ? "text-white/90" : "text-muted-foreground"}`}>{type.description}</p>
                           </div>
                         </Label>
                       )

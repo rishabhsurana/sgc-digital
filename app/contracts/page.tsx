@@ -38,19 +38,25 @@ const CONTRACT_NATURES = [
     value: "goods", 
     label: "Goods", 
     description: "Procurement of goods, supplies, and equipment",
-    icon: Package 
+    icon: Package,
+    bgColor: "from-blue-500 to-blue-600",
+    borderColor: "border-blue-600"
   },
   { 
     value: "consultancy", 
     label: "Consultancy / Services", 
     description: "Professional services, consulting, and service contracts",
-    icon: Briefcase 
+    icon: Briefcase,
+    bgColor: "from-purple-500 to-purple-600",
+    borderColor: "border-purple-600"
   },
   { 
     value: "works", 
     label: "Works", 
     description: "Construction, infrastructure, and public works projects",
-    icon: HardHat 
+    icon: HardHat,
+    bgColor: "from-amber-500 to-amber-600",
+    borderColor: "border-amber-600"
   }
 ]
 
@@ -564,34 +570,28 @@ export default function ContractsPage() {
                       {CONTRACT_NATURES.map((nature) => {
                         const Icon = nature.icon
                         const isSelected = formData.contractNature === nature.value
-                        const colorClasses = {
-                          goods: { bg: "from-blue-500/10 to-blue-600/5", icon: "text-blue-600", border: "border-blue-300" },
-                          consultancy: { bg: "from-purple-500/10 to-purple-600/5", icon: "text-purple-600", border: "border-purple-300" },
-                          works: { bg: "from-orange-500/10 to-orange-600/5", icon: "text-orange-600", border: "border-orange-300" }
-                        }
-                        const colors = colorClasses[nature.value as keyof typeof colorClasses]
                         return (
                           <Label
                             key={nature.value}
                             htmlFor={`nature-${nature.value}`}
                             className={`relative flex cursor-pointer flex-col items-center gap-4 rounded-xl border-2 p-6 text-center transition-all duration-200 hover:scale-[1.02] hover:shadow-lg ${
                               isSelected 
-                                ? `${colors.border} bg-gradient-to-br ${colors.bg} shadow-md` 
+                                ? `bg-gradient-to-br ${nature.bgColor} ${nature.borderColor} shadow-lg` 
                                 : "border-border hover:border-muted-foreground/30"
                             }`}
                           >
                             <RadioGroupItem value={nature.value} id={`nature-${nature.value}`} className="sr-only" />
                             {isSelected && (
                               <div className="absolute top-3 right-3">
-                                <CheckCircle className={`h-5 w-5 ${colors.icon}`} />
+                                <CheckCircle className="h-5 w-5 text-white" />
                               </div>
                             )}
-                            <div className={`flex h-16 w-16 items-center justify-center rounded-full ${isSelected ? `bg-white shadow-sm` : "bg-muted"}`}>
-                              <Icon className={`h-8 w-8 ${isSelected ? colors.icon : "text-muted-foreground"}`} />
+                            <div className={`flex h-16 w-16 items-center justify-center rounded-full ${isSelected ? "bg-white/20 backdrop-blur-sm" : "bg-muted"}`}>
+                              <Icon className={`h-8 w-8 ${isSelected ? "text-white" : "text-muted-foreground"}`} />
                             </div>
                             <div>
-                              <span className={`text-lg font-semibold ${isSelected ? "text-foreground" : "text-foreground"}`}>{nature.label}</span>
-                              <p className="text-xs text-muted-foreground mt-2 leading-relaxed">{nature.description}</p>
+                              <span className={`text-lg font-semibold ${isSelected ? "text-white" : "text-foreground"}`}>{nature.label}</span>
+                              <p className={`text-xs mt-2 leading-relaxed ${isSelected ? "text-white/90" : "text-muted-foreground"}`}>{nature.description}</p>
                             </div>
                           </Label>
                         )
