@@ -22,7 +22,8 @@ import {
   ChevronRight,
   Home,
   LogOut,
-  User
+  User,
+  History
 } from "lucide-react"
 import {
   Breadcrumb,
@@ -48,6 +49,8 @@ const breadcrumbConfig: Record<string, { label: string; parent?: string }> = {
   "/management/registers": { label: "Registers", parent: "/management" },
   "/management/correspondence-register": { label: "Correspondence Register", parent: "/management/registers" },
   "/management/contracts-register": { label: "Contracts Register", parent: "/management/registers" },
+  "/management/correspondence-history": { label: "Correspondence History", parent: "/management" },
+  "/management/contracts-history": { label: "Contracts History", parent: "/management" },
   "/management/reports": { label: "Reports & Analytics", parent: "/management" },
   "/management/users": { label: "User Management", parent: "/management" },
   "/management/mda": { label: "MDA Management", parent: "/management" },
@@ -91,6 +94,23 @@ const sidebarNavItems = [
   {
     title: "Contracts Register",
     href: "/management/contracts-register",
+    icon: FileSignature,
+    indent: true,
+  },
+  {
+    title: "Transaction History",
+    href: "#",
+    icon: History,
+  },
+  {
+    title: "Correspondence History",
+    href: "/management/correspondence-history",
+    icon: FileText,
+    indent: true,
+  },
+  {
+    title: "Contracts History",
+    href: "/management/contracts-history",
     icon: FileSignature,
     indent: true,
   },
