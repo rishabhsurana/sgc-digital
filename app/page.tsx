@@ -36,7 +36,7 @@ export default function HomePage() {
               <h1 className="font-serif text-4xl font-bold tracking-tight text-primary-foreground sm:text-5xl lg:text-6xl text-balance">
                 SGC Digital
               </h1>
-              <p className="mt-3 text-xl text-accent font-semibold">
+              <p className="mt-3 text-xl text-amber-300 font-semibold">
                 Correspondence & Contract Management Portal
               </p>
               <p className="mt-6 text-lg text-primary-foreground/80 leading-relaxed max-w-2xl mx-auto text-pretty">
