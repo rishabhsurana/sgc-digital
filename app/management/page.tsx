@@ -22,10 +22,12 @@ const NAVIGATION_CARDS = [
     title: "Registers",
     description: "Access and manage correspondence and contracts registers",
     icon: FolderOpen,
-    bgGradient: "from-emerald-50 to-emerald-100/50",
-    borderColor: "border-emerald-200 hover:border-emerald-300",
-    iconBg: "bg-emerald-100",
-    iconColor: "text-emerald-600",
+    bgGradient: "from-emerald-500 to-emerald-600",
+    borderColor: "border-emerald-600 hover:border-emerald-400",
+    iconBg: "bg-white/20",
+    iconColor: "text-white",
+    textColor: "text-white",
+    descColor: "text-emerald-100",
     links: [
       { title: "Correspondence Register", href: "/management/correspondence-register", icon: FileText },
       { title: "Contracts Register", href: "/management/contracts-register", icon: FileSignature },
@@ -35,10 +37,12 @@ const NAVIGATION_CARDS = [
     title: "Transaction History",
     description: "View historical records and audit trails",
     icon: History,
-    bgGradient: "from-blue-50 to-blue-100/50",
-    borderColor: "border-blue-200 hover:border-blue-300",
-    iconBg: "bg-blue-100",
-    iconColor: "text-blue-600",
+    bgGradient: "from-blue-500 to-blue-600",
+    borderColor: "border-blue-600 hover:border-blue-400",
+    iconBg: "bg-white/20",
+    iconColor: "text-white",
+    textColor: "text-white",
+    descColor: "text-blue-100",
     links: [
       { title: "Correspondence History", href: "/management/correspondence-history", icon: FileText },
       { title: "Contracts History", href: "/management/contracts-history", icon: FileSignature },
@@ -48,60 +52,72 @@ const NAVIGATION_CARDS = [
     title: "Status Overview",
     description: "View system statistics and performance metrics",
     icon: PieChart,
-    bgGradient: "from-amber-50 to-amber-100/50",
-    borderColor: "border-amber-200 hover:border-amber-300",
-    iconBg: "bg-amber-100",
-    iconColor: "text-amber-600",
+    bgGradient: "from-amber-500 to-amber-600",
+    borderColor: "border-amber-600 hover:border-amber-400",
+    iconBg: "bg-white/20",
+    iconColor: "text-white",
+    textColor: "text-white",
+    descColor: "text-amber-100",
     href: "/management/status"
   },
   {
     title: "Activity Monitor",
     description: "Track pending actions and recent system activity",
     icon: Activity,
-    bgGradient: "from-rose-50 to-rose-100/50",
-    borderColor: "border-rose-200 hover:border-rose-300",
-    iconBg: "bg-rose-100",
-    iconColor: "text-rose-600",
+    bgGradient: "from-rose-500 to-rose-600",
+    borderColor: "border-rose-600 hover:border-rose-400",
+    iconBg: "bg-white/20",
+    iconColor: "text-white",
+    textColor: "text-white",
+    descColor: "text-rose-100",
     href: "/management/activity"
   },
   {
     title: "Reports & Analytics",
     description: "Generate reports and view analytics dashboards",
     icon: BarChart3,
-    bgGradient: "from-purple-50 to-purple-100/50",
-    borderColor: "border-purple-200 hover:border-purple-300",
-    iconBg: "bg-purple-100",
-    iconColor: "text-purple-600",
+    bgGradient: "from-purple-500 to-purple-600",
+    borderColor: "border-purple-600 hover:border-purple-400",
+    iconBg: "bg-white/20",
+    iconColor: "text-white",
+    textColor: "text-white",
+    descColor: "text-purple-100",
     href: "/management/reports"
   },
   {
     title: "User Management",
     description: "Manage user accounts, roles, and permissions",
     icon: Users,
-    bgGradient: "from-indigo-50 to-indigo-100/50",
-    borderColor: "border-indigo-200 hover:border-indigo-300",
-    iconBg: "bg-indigo-100",
-    iconColor: "text-indigo-600",
+    bgGradient: "from-indigo-500 to-indigo-600",
+    borderColor: "border-indigo-600 hover:border-indigo-400",
+    iconBg: "bg-white/20",
+    iconColor: "text-white",
+    textColor: "text-white",
+    descColor: "text-indigo-100",
     href: "/management/users"
   },
   {
     title: "MDA Management",
     description: "Manage ministries, departments, and agencies",
     icon: Building2,
-    bgGradient: "from-teal-50 to-teal-100/50",
-    borderColor: "border-teal-200 hover:border-teal-300",
-    iconBg: "bg-teal-100",
-    iconColor: "text-teal-600",
+    bgGradient: "from-teal-500 to-teal-600",
+    borderColor: "border-teal-600 hover:border-teal-400",
+    iconBg: "bg-white/20",
+    iconColor: "text-white",
+    textColor: "text-white",
+    descColor: "text-teal-100",
     href: "/management/mda"
   },
   {
     title: "Settings",
     description: "Configure system preferences and options",
     icon: Settings,
-    bgGradient: "from-slate-50 to-slate-100/50",
-    borderColor: "border-slate-200 hover:border-slate-300",
-    iconBg: "bg-slate-100",
-    iconColor: "text-slate-600",
+    bgGradient: "from-slate-600 to-slate-700",
+    borderColor: "border-slate-700 hover:border-slate-500",
+    iconBg: "bg-white/20",
+    iconColor: "text-white",
+    textColor: "text-white",
+    descColor: "text-slate-200",
     href: "/management/settings"
   },
 ]
@@ -126,33 +142,33 @@ export default function ManagementDashboardPage() {
           >
             <CardHeader className="pb-3">
               <div className="flex items-center gap-3">
-                <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${card.iconBg} shadow-sm`}>
+                <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${card.iconBg} shadow-sm backdrop-blur-sm`}>
                   <card.icon className={`h-6 w-6 ${card.iconColor}`} />
                 </div>
                 <div>
-                  <CardTitle className="text-lg">{card.title}</CardTitle>
+                  <CardTitle className={`text-lg ${card.textColor}`}>{card.title}</CardTitle>
                 </div>
               </div>
-              <CardDescription className="text-sm mt-2">{card.description}</CardDescription>
+              <CardDescription className={`text-sm mt-2 ${card.descColor}`}>{card.description}</CardDescription>
             </CardHeader>
             <CardContent className="pt-0">
               {card.links ? (
                 <div className="space-y-2">
                   {card.links.map((link) => (
                     <Link key={link.href} href={link.href}>
-                      <div className="flex items-center justify-between p-3 rounded-lg bg-white/70 hover:bg-white transition-colors border border-transparent hover:border-primary/10 cursor-pointer group">
+                      <div className="flex items-center justify-between p-3 rounded-lg bg-white/20 hover:bg-white/30 transition-colors border border-white/20 hover:border-white/40 cursor-pointer group backdrop-blur-sm">
                         <div className="flex items-center gap-2">
-                          <link.icon className={`h-4 w-4 ${card.iconColor}`} />
-                          <span className="text-sm font-medium">{link.title}</span>
+                          <link.icon className="h-4 w-4 text-white" />
+                          <span className="text-sm font-medium text-white">{link.title}</span>
                         </div>
-                        <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                        <ArrowRight className="h-4 w-4 text-white/70 group-hover:text-white transition-colors" />
                       </div>
                     </Link>
                   ))}
                 </div>
               ) : (
                 <Link href={card.href!}>
-                  <Button variant="secondary" className="w-full justify-between group">
+                  <Button className="w-full justify-between group bg-white/20 hover:bg-white/30 text-white border border-white/20">
                     Open
                     <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
                   </Button>
