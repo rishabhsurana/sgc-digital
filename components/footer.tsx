@@ -17,6 +17,7 @@ export function Footer() {
                   alt="SGC Digital"
                   width={56}
                   height={50}
+                  style={{ width: 'auto', height: 'auto' }}
                 />
                 <div>
                   <p className="font-bold text-foreground">SGC Digital</p>
@@ -33,6 +34,7 @@ export function Footer() {
                   alt="Barbados Coat of Arms - Pride and Industry"
                   width={48}
                   height={48}
+                  style={{ width: 'auto', height: 'auto' }}
                 />
                 <span className="text-xs text-muted-foreground">Government of Barbados</span>
               </div>
@@ -136,6 +138,7 @@ export function Footer() {
                 width={28}
                 height={28}
                 className="hidden sm:block"
+                style={{ width: 'auto', height: 'auto' }}
               />
               <p>
                 © {new Date().getFullYear()} Government of Barbados. All rights reserved.
