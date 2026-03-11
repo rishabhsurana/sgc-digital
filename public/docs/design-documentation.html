@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SGC Portal - Design Documentation</title>
+  <style>
+    @media print {
+      body { font-size: 11pt; }
+      .page-break { page-break-before: always; }
+      .no-print { display: none; }
+      h1, h2, h3 { page-break-after: avoid; }
+      table { page-break-inside: avoid; }
+    }
+    
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      line-height: 1.6;
+      color: #1a1a1a;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 40px 20px;
+      background: #fff;
+    }
+    
+    h1 {
+      font-size: 32px;
+      color: #0f172a;
+      border-bottom: 3px solid #0ea5e9;
+      padding-bottom: 16px;
+      margin-bottom: 24px;
+    }
+    
+    h2 {
+      font-size: 24px;
+      color: #1e40af;
+      margin-top: 40px;
+      margin-bottom: 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    
+    h3 {
+      font-size: 18px;
+      color: #334155;
+      margin-top: 24px;
+      margin-bottom: 12px;
+    }
+    
+    h4 {
+      font-size: 16px;
+      color: #475569;
+      margin-top: 16px;
+      margin-bottom: 8px;
+    }
+    
+    p { margin-bottom: 12px; }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 14px;
+    }
+    
+    th, td {
+      border: 1px solid #e2e8f0;
+      padding: 10px 12px;
+      text-align: left;
+    }
+    
+    th {
+      background: #f1f5f9;
+      font-weight: 600;
+      color: #334155;
+    }
+    
+    tr:nth-child(even) { background: #f8fafc; }
+    
+    .toc {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 24px;
+      margin: 24px 0;
+    }
+    
+    .toc h3 { margin-top: 0; }
+    
+    .toc ol {
+      margin-left: 24px;
+      color: #1e40af;
+    }
+    
+    .toc li { margin: 8px 0; }
+    
+    .screenshot-placeholder {
+      background: #f1f5f9;
+      border: 2px dashed #cbd5e1;
+      border-radius: 8px;
+      padding: 40px;
+      text-align: center;
+      color: #64748b;
+      margin: 16px 0;
+    }
+    
+    .screenshot-placeholder p {
+      margin: 0;
+      font-style: italic;
+    }
+    
+    .color-swatch {
+      display: inline-block;
+      width: 24px;
+      height: 24px;
+      border-radius: 4px;
+      vertical-align: middle;
+      margin-right: 8px;
+      border: 1px solid #e2e8f0;
+    }
+    
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+      margin: 16px 0;
+    }
+    
+    .feature-card {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 16px;
+    }
+    
+    .feature-card h4 { margin-top: 0; }
+    
+    ul, ol { margin-left: 24px; margin-bottom: 16px; }
+    li { margin: 6px 0; }
+    
+    code {
+      background: #f1f5f9;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: 'SF Mono', Consolas, monospace;
+      font-size: 13px;
+      color: #0f766e;
+    }
+    
+    pre {
+      background: #1e293b;
+      color: #e2e8f0;
+      padding: 16px;
+      border-radius: 8px;
+      overflow-x: auto;
+      margin: 16px 0;
+      font-size: 13px;
+    }
+    
+    pre code {
+      background: none;
+      color: inherit;
+      padding: 0;
+    }
+    
+    .badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+    
+    .badge-blue { background: #dbeafe; color: #1e40af; }
+    .badge-green { background: #dcfce7; color: #166534; }
+    .badge-amber { background: #fef3c7; color: #92400e; }
+    
+    .header-info {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 32px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    
+    .header-info .date { color: #64748b; font-size: 14px; }
+    
+    .export-buttons {
+      background: #f0fdf4;
+      border: 1px solid #86efac;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 24px;
+    }
+    
+    .export-buttons h4 { margin-top: 0; color: #166534; }
+    .export-buttons ul { margin-bottom: 0; }
+    
+    .section-divider {
+      height: 2px;
+      background: linear-gradient(to right, #0ea5e9, #10b981);
+      margin: 40px 0;
+      border: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="no-print export-buttons">
+    <h4>Export Options</h4>
+    <ul>
+      <li><strong>PDF:</strong> Press Ctrl+P (or Cmd+P on Mac) and select "Save as PDF"</li>
+      <li><strong>Word:</strong> Select all (Ctrl+A), copy (Ctrl+C), and paste into Microsoft Word</li>
+      <li><strong>Print:</strong> Press Ctrl+P to print directly</li>
+    </ul>
+  </div>
+
+  <div class="header-info">
+    <div>
+      <h1>SGC Portal</h1>
+      <p style="font-size: 18px; color: #64748b;">Design Documentation</p>
+    </div>
+    <div class="date">
+      <p>Version: 1.0</p>
+      <p>Date: March 2026</p>
+    </div>
+  </div>
+
+  <h2>Project Overview</h2>
+  <p>The <strong>Solicitors General Chambers (SGC) Portal</strong> is a comprehensive government document management system designed for tracking, managing, and processing correspondence and contracts across various Ministries, Departments, and Agencies (MDAs).</p>
+
+  <div class="toc">
+    <h3>Table of Contents</h3>
+    <ol>
+      <li>Design System</li>
+      <li>Landing Page</li>
+      <li>Management Portal</li>
+      <li>Ask Rex AI Assistant</li>
+      <li>Component Library</li>
+      <li>Navigation & Breadcrumbs</li>
+      <li>Responsive Design</li>
+      <li>File Structure</li>
+    </ol>
+  </div>
+
+  <hr class="section-divider">
+
+  <h2>1. Design System</h2>
+  
+  <h3>Color Palette</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>Token</th>
+        <th>Usage</th>
+        <th>Visual</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>--primary</code></td>
+        <td>Primary brand color, buttons, links</td>
+        <td><span class="color-swatch" style="background: #1e40af;"></span>Deep Blue</td>
+      </tr>
+      <tr>
+        <td><code>--secondary</code></td>
+        <td>Secondary elements</td>
+        <td><span class="color-swatch" style="background: #64748b;"></span>Muted Blue</td>
+      </tr>
+      <tr>
+        <td><code>--accent</code></td>
+        <td>Highlights, badges, notifications</td>
+        <td><span class="color-swatch" style="background: #d97706;"></span>Gold/Amber</td>
+      </tr>
+      <tr>
+        <td><code>--background</code></td>
+        <td>Page backgrounds</td>
+        <td><span class="color-swatch" style="background: #f8fafc;"></span>Light Gray</td>
+      </tr>
+      <tr>
+        <td><code>--foreground</code></td>
+        <td>Primary text</td>
+        <td><span class="color-swatch" style="background: #0f172a;"></span>Dark Gray</td>
+      </tr>
+      <tr>
+        <td><code>--card</code></td>
+        <td>Card backgrounds</td>
+        <td><span class="color-swatch" style="background: #ffffff;"></span>White</td>
+      </tr>
+      <tr>
+        <td><code>--destructive</code></td>
+        <td>Error states, delete actions</td>
+        <td><span class="color-swatch" style="background: #dc2626;"></span>Red</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Typography</h3>
+  <ul>
+    <li><strong>Headings:</strong> Geist Sans (system font stack fallback)</li>
+    <li><strong>Body:</strong> System font stack with relaxed line-height (1.6)</li>
+    <li><strong>Monospace:</strong> Geist Mono for reference numbers and codes</li>
+  </ul>
+
+  <h3>Spacing & Layout</h3>
+  <ul>
+    <li>Uses Tailwind CSS v4 spacing scale</li>
+    <li>Flexbox-first layout approach</li>
+    <li>Responsive breakpoints: <code>sm</code>, <code>md</code>, <code>lg</code>, <code>xl</code></li>
+    <li>Consistent padding: <code>p-4</code>, <code>p-6</code> for containers</li>
+    <li>Gap utilities: <code>gap-4</code>, <code>gap-6</code> for spacing</li>
+  </ul>
+
+  <hr class="section-divider">
+  <div class="page-break"></div>
+
+  <h2>2. Landing Page</h2>
+  <p><strong>Route:</strong> <code>/</code></p>
+
+  <h3>Hero Section</h3>
+  <ul>
+    <li>Full-width hero with gradient background</li>
+    <li>Government emblem/logo display</li>
+    <li>Main headline: "Solicitors General Chambers Portal"</li>
+    <li>Subheadline describing the portal's purpose</li>
+    <li>Call-to-action buttons for login/registration</li>
+  </ul>
+
+  <h3>Features Section</h3>
+  <div class="feature-grid">
+    <div class="feature-card">
+      <h4>Correspondence Management</h4>
+      <p>Track and manage all incoming and outgoing correspondence</p>
+    </div>
+    <div class="feature-card">
+      <h4>Contracts Register</h4>
+      <p>Comprehensive contract tracking and approval workflows</p>
+    </div>
+    <div class="feature-card">
+      <h4>MDA Tracking</h4>
+      <p>Monitor activity across all government agencies</p>
+    </div>
+    <div class="feature-card">
+      <h4>Reports & Analytics</h4>
+      <p>Generate insights and exportable reports</p>
+    </div>
+  </div>
+
+  <div class="screenshot-placeholder">
+    <p>[Insert Landing Page Screenshot]</p>
+    <p>Recommended size: 1440x900px</p>
+  </div>
+
+  <hr class="section-divider">
+  <div class="page-break"></div>
+
+  <h2>3. Management Portal</h2>
+  <p><strong>Route:</strong> <code>/management</code></p>
+
+  <h3>Layout Structure</h3>
+  <p>The management portal uses a persistent layout with:</p>
+
+  <h4>Sidebar Navigation (Left)</h4>
+  <ul>
+    <li>Logo and portal branding</li>
+    <li>Navigation menu items:
+      <ul>
+        <li>Dashboard</li>
+        <li>Correspondence Register</li>
+        <li>Contracts Register</li>
+        <li>Reports & Analytics</li>
+        <li>MDA Management</li>
+        <li>User Management</li>
+        <li>Settings</li>
+      </ul>
+    </li>
+    <li>Collapsible on mobile (hamburger menu)</li>
+    <li>User profile section at bottom</li>
+  </ul>
+
+  <h4>Header (Top)</h4>
+  <ul>
+    <li>Search functionality</li>
+    <li>Notification bell</li>
+    <li>User dropdown menu</li>
+    <li>Logout option</li>
+  </ul>
+
+  <h4>Breadcrumbs (Below header)</h4>
+  <ul>
+    <li>Shows current location in portal hierarchy</li>
+    <li>Home > Dashboard > [Current Page]</li>
+    <li>Clickable navigation links</li>
+  </ul>
+
+  <div class="screenshot-placeholder">
+    <p>[Insert Management Dashboard Screenshot]</p>
+    <p>Recommended size: 1440x900px</p>
+  </div>
+
+  <h3>Dashboard Page</h3>
+  <p><strong>Route:</strong> <code>/management</code></p>
+
+  <h4>Statistics Cards</h4>
+  <table>
+    <tr>
+      <td><span class="badge badge-blue">Total Correspondence</span></td>
+      <td>Displays count with trend indicator</td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-amber">Pending Items</span></td>
+      <td>Items awaiting action</td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-green">Approved Items</span></td>
+      <td>Successfully processed items</td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-blue">Total Contracts</span></td>
+      <td>Overall contract count</td>
+    </tr>
+  </table>
+
+  <h4>Recent Activity</h4>
+  <ul>
+    <li>List of recent correspondence and contracts</li>
+    <li>Quick status indicators</li>
+    <li>Action buttons for each item</li>
+  </ul>
+
+  <div class="page-break"></div>
+
+  <h3>Correspondence Register</h3>
+  <p><strong>Route:</strong> <code>/management/correspondence-register</code></p>
+
+  <h4>Data Table Columns</h4>
+  <table>
+    <thead>
+      <tr>
+        <th>Column</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>File Number</td><td>Unique identifier</td></tr>
+      <tr><td>Date Received</td><td>When correspondence was received</td></tr>
+      <tr><td>Originating MDA</td><td>Source ministry/department</td></tr>
+      <tr><td>Subject</td><td>Brief description</td></tr>
+      <tr><td>Category</td><td>Classification type</td></tr>
+      <tr><td>Status</td><td>Current processing stage</td></tr>
+      <tr><td>Actions</td><td>View, Edit, Download</td></tr>
+    </tbody>
+  </table>
+
+  <h4>Filtering Options</h4>
+  <ul>
+    <li>Search by subject or file number</li>
+    <li>Filter by status (Pending, Approved, Under Review)</li>
+    <li>Filter by MDA</li>
+    <li>Date range picker</li>
+  </ul>
+
+  <div class="screenshot-placeholder">
+    <p>[Insert Correspondence Register Screenshot]</p>
+    <p>Recommended size: 1440x900px</p>
+  </div>
+
+  <h3>Contracts Register</h3>
+  <p><strong>Route:</strong> <code>/management/contracts-register</code></p>
+
+  <h4>Data Table Columns</h4>
+  <table>
+    <thead>
+      <tr>
+        <th>Column</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>Contract Number</td><td>Unique contract ID</td></tr>
+      <tr><td>Date Received</td><td>Submission date</td></tr>
+      <tr><td>Originating MDA</td><td>Submitting agency</td></tr>
+      <tr><td>Subject</td><td>Contract description</td></tr>
+      <tr><td>Nature of Contract</td><td>Goods / Works / Consultancy</td></tr>
+      <tr><td>Category</td><td>Classification</td></tr>
+      <tr><td>Contract Type</td><td>New / Renewal / Supplemental</td></tr>
+      <tr><td>Status/Stage</td><td>Processing status</td></tr>
+    </tbody>
+  </table>
+
+  <div class="screenshot-placeholder">
+    <p>[Insert Contracts Register Screenshot]</p>
+    <p>Recommended size: 1440x900px</p>
+  </div>
+
+  <div class="page-break"></div>
+
+  <h3>Other Management Pages</h3>
+
+  <div class="feature-grid">
+    <div class="feature-card">
+      <h4>Reports & Analytics</h4>
+      <p><strong>Route:</strong> <code>/management/reports</code></p>
+      <ul>
+        <li>Generate custom reports</li>
+        <li>Export to PDF/Excel</li>
+        <li>Visual analytics with charts</li>
+      </ul>
+    </div>
+    <div class="feature-card">
+      <h4>MDA Management</h4>
+      <p><strong>Route:</strong> <code>/management/mda</code></p>
+      <ul>
+        <li>List of all registered MDAs</li>
+        <li>MDA statistics</li>
+        <li>Add/Edit MDA functionality</li>
+      </ul>
+    </div>
+    <div class="feature-card">
+      <h4>User Management</h4>
+      <p><strong>Route:</strong> <code>/management/users</code></p>
+      <ul>
+        <li>User list with roles</li>
+        <li>Add new users</li>
+        <li>Permission management</li>
+      </ul>
+    </div>
+    <div class="feature-card">
+      <h4>Settings</h4>
+      <p><strong>Route:</strong> <code>/management/settings</code></p>
+      <ul>
+        <li>General settings</li>
+        <li>Notifications</li>
+        <li>Security & System</li>
+      </ul>
+    </div>
+  </div>
+
+  <hr class="section-divider">
+  <div class="page-break"></div>
+
+  <h2>4. Ask Rex AI Assistant</h2>
+
+  <h3>Overview</h3>
+  <p>"Ask Rex" is an AI-powered assistant integrated into the management portal. It appears as a floating button in the top-right corner of all management pages.</p>
+
+  <h3>Visual Design</h3>
+
+  <h4>Closed State</h4>
+  <ul>
+    <li>Floating button with green gradient (<code>emerald-500</code> to <code>green-600</code>)</li>
+    <li>"Ask Rex" label badge</li>
+    <li>Bot icon with sparkle effect</li>
+    <li>Position: Top-right corner (<code>top-20 right-6</code>)</li>
+  </ul>
+
+  <h4>Open State</h4>
+  <ul>
+    <li>Chat panel: 400px width, 550px height</li>
+    <li>Green gradient header with Rex branding</li>
+    <li>Chat message area with scroll</li>
+    <li>Input field with send button</li>
+    <li>Voice input support (microphone button)</li>
+    <li>Text-to-speech support (speaker button)</li>
+  </ul>
+
+  <div class="screenshot-placeholder">
+    <p>[Insert Ask Rex Closed State Screenshot]</p>
+    <p>Recommended size: 400x200px</p>
+  </div>
+
+  <div class="screenshot-placeholder">
+    <p>[Insert Ask Rex Open/Chat State Screenshot]</p>
+    <p>Recommended size: 450x600px</p>
+  </div>
+
+  <h3>Capabilities</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>Feature</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Report Generation</strong></td>
+        <td>Generate contracts/correspondence reports with full table display, filtered by period, MDA, or status</td>
+      </tr>
+      <tr>
+        <td><strong>Search Functions</strong></td>
+        <td>Search correspondence and contract records with various filter criteria</td>
+      </tr>
+      <tr>
+        <td><strong>Statistics</strong></td>
+        <td>Portal-wide and MDA-specific analytics with status breakdowns</td>
+      </tr>
+      <tr>
+        <td><strong>Help & Guidance</strong></td>
+        <td>Portal navigation help, feature explanations, quick action suggestions</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Tool Result Displays</h3>
+
+  <h4>Contracts Report Table</h4>
+  <ul>
+    <li>Emerald-themed header</li>
+    <li>Columns: Date Received, Originating MDA, Subject, Nature, Category, Contract #, Type, Status</li>
+    <li>Color-coded status badges</li>
+  </ul>
+
+  <h4>Correspondence Report Table</h4>
+  <ul>
+    <li>Blue-themed header</li>
+    <li>Columns: Date Received, Originating MDA, Subject, Reference #, Category, Type, Status, Date Completed</li>
+    <li>Color-coded status badges</li>
+  </ul>
+
+  <div class="screenshot-placeholder">
+    <p>[Insert Rex Displaying Report Screenshot]</p>
+    <p>Recommended size: 450x600px</p>
+  </div>
+
+  <hr class="section-divider">
+  <div class="page-break"></div>
+
+  <h2>5. Component Library</h2>
+
+  <h3>UI Components Used (shadcn/ui)</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>Component</th>
+        <th>Usage</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td><code>Button</code></td><td>Actions, form submissions</td></tr>
+      <tr><td><code>Card</code></td><td>Content containers, statistics</td></tr>
+      <tr><td><code>Input</code></td><td>Form fields, search</td></tr>
+      <tr><td><code>Badge</code></td><td>Status indicators</td></tr>
+      <tr><td><code>Table</code></td><td>Data display</td></tr>
+      <tr><td><code>Dialog</code></td><td>Modals, confirmations</td></tr>
+      <tr><td><code>DropdownMenu</code></td><td>User menu, actions</td></tr>
+      <tr><td><code>Sheet</code></td><td>Mobile navigation</td></tr>
+      <tr><td><code>Breadcrumb</code></td><td>Navigation hierarchy</td></tr>
+      <tr><td><code>ScrollArea</code></td><td>Scrollable containers</td></tr>
+      <tr><td><code>Tabs</code></td><td>Settings organization</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Custom Components</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>Component</th>
+        <th>Location</th>
+        <th>Purpose</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>AskRex</code></td>
+        <td><code>/components/ask-rex.tsx</code></td>
+        <td>AI chat assistant</td>
+      </tr>
+      <tr>
+        <td><code>ManagementLayout</code></td>
+        <td><code>/app/management/layout.tsx</code></td>
+        <td>Portal layout wrapper</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <hr class="section-divider">
+
+  <h2>6. Navigation & Breadcrumbs</h2>
+
+  <h3>Breadcrumb Configuration</h3>
+  <pre><code>const breadcrumbConfig = {
+  "/management": { label: "Dashboard" },
+  "/management/correspondence-register": { 
+    label: "Correspondence Register", 
+    parent: "/management" 
+  },
+  "/management/contracts-register": { 
+    label: "Contracts Register", 
+    parent: "/management" 
+  },
+  "/management/reports": { 
+    label: "Reports & Analytics", 
+    parent: "/management" 
+  },
+  "/management/mda": { 
+    label: "MDA Management", 
+    parent: "/management" 
+  },
+  "/management/users": { 
+    label: "User Management", 
+    parent: "/management" 
+  },
+  "/management/settings": { 
+    label: "Settings", 
+    parent: "/management" 
+  },
+}</code></pre>
+
+  <h3>Breadcrumb Display</h3>
+  <ul>
+    <li>Always shows "Home" link to landing page</li>
+    <li>Hierarchical navigation path</li>
+    <li>Current page displayed as non-clickable text</li>
+    <li>Separator: Chevron right icon</li>
+  </ul>
+
+  <hr class="section-divider">
+  <div class="page-break"></div>
+
+  <h2>7. Responsive Design</h2>
+
+  <h3>Breakpoints</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>Breakpoint</th>
+        <th>Width</th>
+        <th>Behavior</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Mobile</td>
+        <td>&lt; 768px</td>
+        <td>Sidebar hidden, hamburger menu, full-width content</td>
+      </tr>
+      <tr>
+        <td>Tablet</td>
+        <td>768px - 1024px</td>
+        <td>Collapsible sidebar, adjusted spacing</td>
+      </tr>
+      <tr>
+        <td>Desktop</td>
+        <td>&gt; 1024px</td>
+        <td>Full sidebar, optimal layout</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Mobile Adaptations</h3>
+  <ul>
+    <li>Sidebar becomes Sheet (slide-out drawer)</li>
+    <li>Tables become scrollable horizontally</li>
+    <li>Cards stack vertically</li>
+    <li>Ask Rex button repositions appropriately</li>
+  </ul>
+
+  <hr class="section-divider">
+
+  <h2>8. File Structure</h2>
+
+  <pre><code>/app
+  /management
+    layout.tsx          # Management portal layout
+    page.tsx            # Dashboard
+    /correspondence-register
+      page.tsx          # Correspondence listing
+    /contracts-register
+      page.tsx          # Contracts listing
+    /reports
+      page.tsx          # Reports & analytics
+    /mda
+      page.tsx          # MDA management
+    /users
+      page.tsx          # User management
+    /settings
+      page.tsx          # Portal settings
+  /api
+    /rex
+      route.ts          # Ask Rex API endpoint
+
+/components
+  ask-rex.tsx           # Ask Rex AI assistant
+  /ui
+    (shadcn components)
+
+/docs
+  DESIGN_DOCUMENTATION.md
+  /screenshots          # Add screenshots here</code></pre>
+
+  <hr class="section-divider">
+
+  <h2>Version History</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Version</th>
+        <th>Changes</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>v1.0</td><td>Landing page, basic management layout</td></tr>
+      <tr><td>v2.0</td><td>Added correspondence and contracts registers</td></tr>
+      <tr><td>v3.0</td><td>Implemented Ask Rex AI assistant</td></tr>
+      <tr><td>v4.0</td><td>Added breadcrumbs navigation</td></tr>
+      <tr><td>v5.0</td><td>Enhanced Rex with report generation</td></tr>
+      <tr><td>Current</td><td>Full feature implementation</td></tr>
+    </tbody>
+  </table>
+
+  <hr class="section-divider">
+
+  <div style="text-align: center; color: #64748b; margin-top: 40px;">
+    <p><strong>SGC Portal - Design Documentation</strong></p>
+    <p>Version 1.0 | March 2026</p>
+    <p>Solicitors General Chambers</p>
+  </div>
+
+</body>
+</html>
