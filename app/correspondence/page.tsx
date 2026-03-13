@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { ArrowLeft, ArrowRight, Save, Send, Info, FileText, Gavel, FileStack, HelpCircle, CheckCircle, Scale, Globe, UserCheck, Lock } from "lucide-react"
+import { AskRex } from "@/components/ask-rex"
 import Link from "next/link"
 import { MINISTRIES_DEPARTMENTS_AGENCIES } from "@/lib/constants"
 
@@ -182,6 +183,7 @@ export default function CorrespondencePage() {
     return (
       <div className="flex min-h-screen flex-col bg-background">
         <Header />
+        <AskRex position="content" />
         <main className="flex-1 py-12">
           <div className="container mx-auto px-4 lg:px-8 max-w-2xl">
             <Card className="bg-card border-border overflow-hidden">
@@ -263,6 +265,7 @@ export default function CorrespondencePage() {
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <Header />
+      <AskRex position="content" />
       
       <main className="flex-1 py-8 lg:py-12">
         <div className="container mx-auto px-4 lg:px-8 max-w-4xl">

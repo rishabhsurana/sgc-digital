@@ -36,6 +36,7 @@ import {
   DollarSign,
   Activity
 } from "lucide-react"
+import { AskRex } from "@/components/ask-rex"
 
 // Sample data for demonstration
 const SUMMARY_STATS = {
@@ -92,6 +93,7 @@ export default function ReportsPage() {
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <Header />
+      <AskRex position="content" />
       
       <main className="flex-1 py-8">
         <div className="container mx-auto px-4 lg:px-8">

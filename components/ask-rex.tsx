@@ -17,12 +17,16 @@ import {
   FileText,
   Search,
   FileBarChart,
-  Sparkles,
   Loader2,
   User,
   Volume2,
-  VolumeX
+  VolumeX,
+  Lightbulb
 } from "lucide-react"
+
+interface AskRexProps {
+  position?: "header" | "content"
+}
 
 interface Message {
   id: string
@@ -39,7 +43,7 @@ const SUGGESTED_PROMPTS = [
   { icon: FileBarChart, label: "Generate report", prompt: "Generate a report on " },
 ]
 
-export function AskRex() {
+export function AskRex({ position = "header" }: AskRexProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [isExpanded, setIsExpanded] = useState(false)
   const [input, setInput] = useState("")
@@ -216,20 +220,61 @@ export function AskRex() {
   }
 
   if (!isOpen) {
+    const isSmall = position === "header"
+    
     return (
-      <div className="fixed bottom-6 right-6 z-[100]">
-        <div className="relative">
+      <div className={cn(
+        "fixed right-4 z-[100]",
+        isSmall ? "top-8" : "top-36"
+      )}>
+        <div className="relative group">
+          {/* Wire/cord hanging from top */}
+          <div className={cn(
+            "absolute left-1/2 -translate-x-1/2 bg-gradient-to-b from-slate-600 to-slate-400 rounded-full",
+            isSmall ? "-top-6 w-0.5 h-6" : "-top-8 w-1 h-8"
+          )} />
+          
+          {/* Bulb socket/cap */}
+          <div className={cn(
+            "absolute left-1/2 -translate-x-1/2 bg-slate-700 rounded-t-lg border-2 border-slate-500",
+            isSmall ? "-top-1.5 w-5 h-2.5" : "-top-2 w-8 h-4"
+          )} />
+          
+          {/* Main bulb button */}
           <Button
             onClick={() => setIsOpen(true)}
-            className="h-16 w-16 rounded-full shadow-2xl bg-primary hover:bg-primary/90 border-4 border-accent animate-pulse hover:animate-none"
+            className={cn(
+              "rounded-full shadow-2xl bg-gradient-to-br from-slate-300 to-slate-100 hover:from-yellow-200 hover:to-yellow-400 border-slate-400 hover:border-yellow-500 hover:shadow-[0_0_60px_20px_rgba(250,204,21,0.6)] transition-all duration-300 flex items-center justify-center group-hover:scale-105",
+              isSmall ? "h-20 w-20 border-2" : "h-32 w-32 border-4"
+            )}
             size="icon"
           >
-            <Bot className="h-7 w-7" />
+            <Lightbulb className={cn(
+              "text-slate-400 group-hover:text-yellow-600 transition-colors duration-300 group-hover:drop-shadow-[0_0_15px_rgba(250,204,21,0.8)]",
+              isSmall ? "h-10 w-10" : "h-16 w-16"
+            )} />
           </Button>
-          <div className="absolute -top-2 -right-2 bg-accent text-accent-foreground text-[10px] font-bold px-2 py-1 rounded-full shadow-lg">
-            Ask Rex
+          
+          {/* Glow effect on hover */}
+          <div className="absolute inset-0 rounded-full bg-yellow-400/0 group-hover:bg-yellow-400/20 blur-xl transition-all duration-300 pointer-events-none" />
+          
+          {/* Ask Rex label */}
+          <div className={cn(
+            "absolute left-1/2 -translate-x-1/2 whitespace-nowrap bg-slate-900 font-bold rounded-full shadow-lg",
+            isSmall ? "-bottom-3 text-xs px-3 py-1" : "-bottom-4 text-base px-5 py-2"
+          )}>
+            <span className="text-emerald-400">Ask</span> <span className="text-blue-400">Rex</span>
           </div>
-          <Sparkles className="h-4 w-4 absolute -bottom-1 -left-1 text-accent animate-bounce" />
+          
+          {/* Notification dot */}
+          <div className={cn(
+            "absolute rounded-full bg-red-500 animate-ping",
+            isSmall ? "top-0 -right-0.5 h-3 w-3" : "top-0 -right-1 h-4 w-4"
+          )} />
+          <div className={cn(
+            "absolute rounded-full bg-red-500",
+            isSmall ? "top-0 -right-0.5 h-3 w-3" : "top-0 -right-1 h-4 w-4"
+          )} />
         </div>
       </div>
     )

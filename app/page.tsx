@@ -3,6 +3,7 @@ import { Footer } from "@/components/footer"
 import { ServiceCard } from "@/components/service-card"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
+import { AskRex } from "@/components/ask-rex"
 import Link from "next/link"
 import Image from "next/image"
 import { 
@@ -23,6 +24,7 @@ export default function HomePage() {
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <Header />
+      <AskRex position="content" />
       
       <main className="flex-1">
         {/* Hero Section */}
@@ -53,13 +55,13 @@ export default function HomePage() {
                     Correspondence
                   </Link>
                 </Button>
-                <Button size="lg" variant="outline" asChild className="w-full sm:w-56 bg-transparent border-slate-500 text-white hover:bg-slate-800">
+                <Button size="lg" className="w-full sm:w-56 bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg" asChild>
                   <Link href="/contracts">
                     <FileSignature className="mr-2 h-5 w-5" />
                     Contract Request
                   </Link>
                 </Button>
-                <Button size="lg" variant="outline" asChild className="w-full sm:w-56 bg-transparent border-slate-500 text-white hover:bg-slate-800">
+                <Button size="lg" className="w-full sm:w-56 bg-slate-600 hover:bg-slate-700 text-white shadow-lg" asChild>
                   <Link href="/dashboard">
                     <LayoutDashboard className="mr-2 h-5 w-5" />
                     My Dashboard

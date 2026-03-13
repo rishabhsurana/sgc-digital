@@ -50,6 +50,7 @@ import {
 } from "lucide-react"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
+import { AskRex } from "@/components/ask-rex"
 import Link from "next/link"
 
 // User info interface
@@ -604,6 +605,7 @@ export default function DashboardPage() {
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <Header />
+      <AskRex position="content" />
       
       <main className="flex-1 py-8 lg:py-12">
         <div className="container mx-auto px-4 lg:px-8">
@@ -689,57 +691,57 @@ export default function DashboardPage() {
 
           {/* Stats Cards */}
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-8">
-            <Card className="bg-card border-border">
+            <Card className="bg-gradient-to-br from-slate-100 to-slate-200 border border-slate-300 shadow-md">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-muted-foreground">Total Submissions</p>
-                    <p className="text-2xl font-bold text-foreground">{stats.total}</p>
+                    <p className="text-sm text-slate-600 font-medium">Total Submissions</p>
+                    <p className="text-2xl font-bold text-slate-800">{stats.total}</p>
                   </div>
-                  <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                    <FileText className="h-5 w-5 text-primary" />
+                  <div className="h-10 w-10 rounded-lg bg-slate-300 flex items-center justify-center">
+                    <FileText className="h-5 w-5 text-slate-700" />
                   </div>
                 </div>
               </CardContent>
             </Card>
             
-            <Card className="bg-card border-border">
+            <Card className="bg-gradient-to-br from-blue-100 to-blue-200 border border-blue-300 shadow-md">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-muted-foreground">Active</p>
-                    <p className="text-2xl font-bold text-foreground">{stats.active}</p>
+                    <p className="text-sm text-blue-700 font-medium">Active</p>
+                    <p className="text-2xl font-bold text-blue-900">{stats.active}</p>
                   </div>
-                  <div className="h-10 w-10 rounded-lg bg-blue-100 flex items-center justify-center">
-                    <RefreshCw className="h-5 w-5 text-blue-600" />
+                  <div className="h-10 w-10 rounded-lg bg-blue-300 flex items-center justify-center">
+                    <RefreshCw className="h-5 w-5 text-blue-700" />
                   </div>
                 </div>
               </CardContent>
             </Card>
             
-            <Card className="bg-card border-border">
+            <Card className="bg-gradient-to-br from-sky-100 to-cyan-200 border border-cyan-300 shadow-md">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-muted-foreground">Action Required</p>
-                    <p className="text-2xl font-bold text-foreground">{stats.actionRequired}</p>
+                    <p className="text-sm text-cyan-700 font-medium">Action Required</p>
+                    <p className="text-2xl font-bold text-cyan-900">{stats.actionRequired}</p>
                   </div>
-                  <div className="h-10 w-10 rounded-lg bg-orange-100 flex items-center justify-center">
-                    <AlertCircle className="h-5 w-5 text-orange-600" />
+                  <div className="h-10 w-10 rounded-lg bg-cyan-300 flex items-center justify-center">
+                    <AlertCircle className="h-5 w-5 text-cyan-700" />
                   </div>
                 </div>
               </CardContent>
             </Card>
             
-            <Card className="bg-card border-border">
+            <Card className="bg-gradient-to-br from-emerald-100 to-emerald-200 border border-emerald-300 shadow-md">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-muted-foreground">Completed</p>
-                    <p className="text-2xl font-bold text-foreground">{stats.completed}</p>
+                    <p className="text-sm text-emerald-700 font-medium">Completed</p>
+                    <p className="text-2xl font-bold text-emerald-900">{stats.completed}</p>
                   </div>
-                  <div className="h-10 w-10 rounded-lg bg-green-100 flex items-center justify-center">
-                    <CheckCircle className="h-5 w-5 text-green-600" />
+                  <div className="h-10 w-10 rounded-lg bg-emerald-300 flex items-center justify-center">
+                    <CheckCircle className="h-5 w-5 text-emerald-700" />
                   </div>
                 </div>
               </CardContent>

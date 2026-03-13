@@ -22,7 +22,7 @@ export function Header() {
   return (
     <header className="sticky top-0 z-50 w-full">
       {/* Top Bar with Government Branding */}
-      <div className="bg-primary text-primary-foreground">
+      <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white">
         <div className="flex h-10 items-center justify-between px-4 lg:px-6 text-xs">
           <div className="flex items-center gap-3">
             <Image
@@ -61,13 +61,13 @@ export function Header() {
               href="/" 
               className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-foreground/80 rounded-lg transition-all hover:text-primary hover:bg-primary/5"
             >
-              <Home className="h-4 w-4" />
+              <Home className="h-4 w-4 text-teal-600" />
               Home
             </Link>
             
             <DropdownMenu>
               <DropdownMenuTrigger className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-foreground/80 rounded-lg transition-all hover:text-primary hover:bg-primary/5">
-                <FileText className="h-4 w-4" />
+                <FileText className="h-4 w-4 text-blue-600" />
                 Services
                 <ChevronDown className="h-3 w-3" />
               </DropdownMenuTrigger>
@@ -83,7 +83,7 @@ export function Header() {
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <Link href="/contracts" className="flex items-center gap-2">
-                    <FileSignature className="h-4 w-4 text-purple-600" />
+                    <FileSignature className="h-4 w-4 text-emerald-600" />
                     <div>
                       <p className="font-medium">Contracts</p>
                       <p className="text-xs text-muted-foreground">Government contract requests</p>
@@ -97,7 +97,7 @@ export function Header() {
               href="/dashboard" 
               className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-foreground/80 rounded-lg transition-all hover:text-primary hover:bg-primary/5"
             >
-              <LayoutDashboard className="h-4 w-4" />
+              <LayoutDashboard className="h-4 w-4 text-amber-600" />
               Dashboard
             </Link>
             
@@ -105,7 +105,7 @@ export function Header() {
               href="/management" 
               className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-foreground/80 rounded-lg transition-all hover:text-primary hover:bg-primary/5"
             >
-              <Settings className="h-4 w-4" />
+              <Settings className="h-4 w-4 text-slate-600" />
               Management
             </Link>
           </nav>
@@ -157,7 +157,7 @@ export function Header() {
                     onClick={() => setIsOpen(false)}
                     className="flex items-center gap-3 px-4 py-3 text-foreground rounded-lg hover:bg-primary/10 hover:text-primary transition-colors"
                   >
-                    <Home className="h-5 w-5" />
+                    <Home className="h-5 w-5 text-teal-600" />
                     Home
                   </Link>
                   
@@ -191,7 +191,7 @@ export function Header() {
                     onClick={() => setIsOpen(false)}
                     className="flex items-center gap-3 px-4 py-3 text-foreground rounded-lg hover:bg-primary/10 hover:text-primary transition-colors ml-2"
                   >
-                    <LayoutDashboard className="h-5 w-5" />
+                    <LayoutDashboard className="h-5 w-5 text-amber-600" />
                     Dashboard
                   </Link>
                   <Link 
@@ -199,7 +199,7 @@ export function Header() {
                     onClick={() => setIsOpen(false)}
                     className="flex items-center gap-3 px-4 py-3 text-foreground rounded-lg hover:bg-primary/10 hover:text-primary transition-colors ml-2"
                   >
-                    <Settings className="h-5 w-5" />
+                    <Settings className="h-5 w-5 text-slate-600" />
                     Management
                   </Link>
                   
