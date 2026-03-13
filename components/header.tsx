@@ -117,7 +117,7 @@ export function Header() {
                 Sign In
               </Link>
             </Button>
-            <Button size="sm" className="hidden sm:flex bg-accent hover:bg-accent/90 text-accent-foreground shadow-md" asChild>
+            <Button size="sm" className="hidden sm:flex bg-emerald-600 hover:bg-emerald-700 text-white shadow-md" asChild>
               <Link href="/register">
                 <User className="mr-2 h-4 w-4" />
                 Register
@@ -216,7 +216,7 @@ export function Header() {
                   <Link 
                     href="/register" 
                     onClick={() => setIsOpen(false)}
-                    className="flex items-center gap-3 px-4 py-3 bg-accent text-accent-foreground rounded-lg hover:bg-accent/90 transition-colors font-medium"
+                    className="flex items-center gap-3 px-4 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors font-medium"
                   >
                     <User className="h-5 w-5" />
                     Register

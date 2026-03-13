@@ -119,7 +119,7 @@ export function Footer() {
                 alt="Barbados Coat of Arms"
                 width={32}
                 height={32}
-                style={{ width: 'auto', height: 'auto' }}
+                className="w-8 h-8"
               />
               <div>
                 <p className="font-medium">Government of Barbados</p>
@@ -147,7 +147,7 @@ export function Footer() {
                 alt="SGC Digital"
                 width={40}
                 height={36}
-                style={{ width: 'auto', height: 'auto' }}
+                className="w-10 h-9"
               />
             </div>
           </div>
