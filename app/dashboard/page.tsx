@@ -677,13 +677,13 @@ export default function DashboardPage() {
                 </div>
               </div>
               <div className="flex gap-2">
-                <Button variant="outline" size="sm" className="border-white/30 text-white hover:bg-white/10" asChild>
+                <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white" asChild>
                   <Link href="/correspondence">
                     <FileText className="mr-2 h-4 w-4" />
                     New Correspondence
                   </Link>
                 </Button>
-                <Button size="sm" className="bg-white/20 hover:bg-white/30 text-white" asChild>
+                <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white" asChild>
                   <Link href="/contracts">
                     <FileSignature className="mr-2 h-4 w-4" />
                     New Contract
