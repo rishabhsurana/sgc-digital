@@ -108,48 +108,44 @@ export function Footer() {
         </div>
       </div>
       
-      {/* Bottom Bar */}
+      {/* Bottom Bar - matching header dimensions */}
       <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white">
-        <div className="container mx-auto px-4 py-4 lg:px-8">
-          <div className="flex flex-col sm:flex-row justify-between items-center gap-4 text-xs">
-            {/* Left: Government Logo */}
-            <div className="flex items-center gap-3">
-              <Image
-                src="/images/barbados-coat-of-arms.png"
-                alt="Barbados Coat of Arms"
-                width={32}
-                height={32}
-                className="w-8 h-8"
-              />
-              <div>
-                <p className="font-medium">Government of Barbados</p>
-                <p className="text-white/70">
-                  © {new Date().getFullYear()} All rights reserved.
-                </p>
-              </div>
+        <div className="flex h-10 items-center justify-between px-4 lg:px-6 text-xs">
+          {/* Left: Government Logo */}
+          <div className="flex items-center gap-3">
+            <Image
+              src="/images/barbados-coat-of-arms.png"
+              alt="Barbados Coat of Arms"
+              width={28}
+              height={28}
+            />
+            <div className="hidden sm:flex items-center">
+              <span className="font-medium">Government of Barbados</span>
+              <span className="mx-2 opacity-50">|</span>
+              <span className="text-white/70">© {new Date().getFullYear()}</span>
             </div>
-            
-            {/* Center: Links */}
-            <div className="flex items-center gap-4">
-              <Link href="/terms" className="hover:underline">Terms of Use</Link>
-              <Link href="/accessibility" className="hover:underline">Accessibility</Link>
-              <Link href="/sitemap" className="hover:underline">Sitemap</Link>
+          </div>
+          
+          {/* Center: Links */}
+          <div className="hidden sm:flex items-center gap-4">
+            <Link href="/terms" className="hover:underline">Terms of Use</Link>
+            <Link href="/accessibility" className="hover:underline">Accessibility</Link>
+            <Link href="/sitemap" className="hover:underline">Sitemap</Link>
+          </div>
+          
+          {/* Right: SGC Digital Logo */}
+          <div className="flex items-center gap-3">
+            <div className="hidden sm:block text-right">
+              <span className="font-medium">SGC Digital</span>
+              <span className="mx-2 opacity-50">|</span>
+              <span className="text-white/70">Solicitor General{"'"}s Chambers</span>
             </div>
-            
-            {/* Right: SGC Digital Logo */}
-            <div className="flex items-center gap-3">
-              <div className="text-right">
-                <p className="font-medium">SGC Digital</p>
-                <p className="text-white/70">Solicitor General{"'"}s Chambers</p>
-              </div>
-              <Image
-                src="/images/sgc-digital-logo.png"
-                alt="SGC Digital"
-                width={40}
-                height={36}
-                className="w-10 h-9"
-              />
-            </div>
+            <Image
+              src="/images/sgc-digital-logo.png"
+              alt="SGC Digital"
+              width={28}
+              height={28}
+            />
           </div>
         </div>
       </div>
