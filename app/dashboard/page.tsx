@@ -663,29 +663,32 @@ export default function DashboardPage() {
             </Card>
           )}
 
-          {/* Page Header */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
-            <div>
-              <h1 className="font-serif text-3xl font-bold text-foreground">
-                My Submissions
-              </h1>
-              <p className="mt-1 text-muted-foreground">
-                Track and manage your correspondence and contract submissions.
-              </p>
-            </div>
-            <div className="flex gap-2">
-              <Button variant="outline" asChild>
-                <Link href="/correspondence">
-                  <FileText className="mr-2 h-4 w-4" />
-                  New Correspondence
-                </Link>
-              </Button>
-              <Button asChild>
-                <Link href="/contracts">
-                  <FileSignature className="mr-2 h-4 w-4" />
-                  New Contract
-                </Link>
-              </Button>
+          {/* Hero Banner */}
+          <div className="rounded-xl bg-gradient-to-r from-slate-700 via-slate-800 to-slate-900 p-6 mb-8 text-white">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-start gap-4">
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-white/20">
+                  <LayoutDashboard className="h-7 w-7 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-2xl sm:text-3xl font-bold">My Submissions</h1>
+                  <p className="mt-1 text-white/80">Track and manage your correspondence and contract submissions.</p>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" className="border-white/30 text-white hover:bg-white/10" asChild>
+                  <Link href="/correspondence">
+                    <FileText className="mr-2 h-4 w-4" />
+                    New Correspondence
+                  </Link>
+                </Button>
+                <Button size="sm" className="bg-white/20 hover:bg-white/30 text-white" asChild>
+                  <Link href="/contracts">
+                    <FileSignature className="mr-2 h-4 w-4" />
+                    New Contract
+                  </Link>
+                </Button>
+              </div>
             </div>
           </div>
 
