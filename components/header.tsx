@@ -176,9 +176,9 @@ export function Header() {
                   <Link 
                     href="/contracts" 
                     onClick={() => setIsOpen(false)}
-                    className="flex items-center gap-3 px-4 py-3 text-foreground rounded-lg hover:bg-purple-50 hover:text-purple-700 transition-colors ml-2"
+                    className="flex items-center gap-3 px-4 py-3 text-foreground rounded-lg hover:bg-emerald-50 hover:text-emerald-700 transition-colors ml-2"
                   >
-                    <FileSignature className="h-5 w-5 text-purple-600" />
+                    <FileSignature className="h-5 w-5 text-emerald-600" />
                     Contracts
                   </Link>
                   
