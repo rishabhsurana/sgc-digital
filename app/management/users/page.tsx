@@ -135,7 +135,7 @@ const STATUSES = [
 ]
 
 export default function UserManagementPage() {
-  const [searchQuery, setSearchQuery] = useState("")
+  const [searchQuery, setSearchQuery] = useState<string>("")
   const [roleFilter, setRoleFilter] = useState<string>("all")
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const [isAddUserOpen, setIsAddUserOpen] = useState(false)
