@@ -273,17 +273,28 @@ export default function CorrespondencePage() {
           <div className="mb-8">
             <Link 
               href="/" 
-              className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-4"
+              className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-4 transition-colors"
             >
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back to Home
             </Link>
-            <h1 className="font-serif text-3xl font-bold text-foreground">
-              Submit Registry Correspondence
-            </h1>
-            <p className="mt-2 text-muted-foreground">
-              Complete the form below to submit correspondence to the Solicitor General{"'"}s Chambers Registry.
-            </p>
+            
+            {/* Hero Banner */}
+            <div className="rounded-xl bg-gradient-to-r from-blue-600 via-blue-700 to-slate-800 p-6 mb-6 text-white">
+              <div className="flex items-start gap-4">
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-white/20">
+                  <FileText className="h-7 w-7 text-white" />
+                </div>
+                <div>
+                  <h1 className="font-serif text-2xl sm:text-3xl font-bold">
+                    Submit Registry Correspondence
+                  </h1>
+                  <p className="mt-1 text-white/80">
+                    Complete the form below to submit correspondence to the Solicitor General{"'"}s Chambers Registry.
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Stepper */}

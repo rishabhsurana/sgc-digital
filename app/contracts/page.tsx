@@ -498,22 +498,22 @@ export default function ContractsPage() {
             </Link>
             
             {/* Hero Banner */}
-            <div className="rounded-xl bg-gradient-to-r from-primary/10 via-primary/5 to-accent/10 border border-primary/20 p-6 mb-6">
+            <div className="rounded-xl bg-gradient-to-r from-emerald-600 via-emerald-700 to-slate-800 p-6 mb-6 text-white">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-start gap-4">
-                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-primary/10">
-                    <FileText className="h-7 w-7 text-primary" />
+                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-white/20">
+                    <FileText className="h-7 w-7 text-white" />
                   </div>
                   <div>
-                    <h1 className="font-serif text-2xl sm:text-3xl font-bold text-foreground">
+                    <h1 className="font-serif text-2xl sm:text-3xl font-bold">
                       Submit Government Contract
                     </h1>
-                    <p className="mt-1 text-muted-foreground">
+                    <p className="mt-1 text-white/80">
                       Submit post-award contract requests for legal review by the Solicitor General{"'"}s Chambers.
                     </p>
                   </div>
                 </div>
-                <Badge className="shrink-0 bg-accent text-accent-foreground border-0">Ministry/MDA Only</Badge>
+                <Badge className="shrink-0 bg-white/20 text-white border-0">Ministry/MDA Only</Badge>
               </div>
             </div>
             
