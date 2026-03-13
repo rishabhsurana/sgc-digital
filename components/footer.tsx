@@ -109,7 +109,7 @@ export function Footer() {
       </div>
       
       {/* Bottom Bar */}
-      <div className="bg-primary text-primary-foreground">
+      <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white">
         <div className="container mx-auto px-4 py-4 lg:px-8">
           <div className="flex flex-col sm:flex-row justify-between items-center gap-4 text-xs">
             {/* Left: Government Logo */}
@@ -123,7 +123,7 @@ export function Footer() {
               />
               <div>
                 <p className="font-medium">Government of Barbados</p>
-                <p className="text-primary-foreground/70">
+                <p className="text-white/70">
                   © {new Date().getFullYear()} All rights reserved.
                 </p>
               </div>
@@ -140,7 +140,7 @@ export function Footer() {
             <div className="flex items-center gap-3">
               <div className="text-right">
                 <p className="font-medium">SGC Digital</p>
-                <p className="text-primary-foreground/70">Solicitor General{"'"}s Chambers</p>
+                <p className="text-white/70">Solicitor General{"'"}s Chambers</p>
               </div>
               <Image
                 src="/images/sgc-digital-logo.png"
