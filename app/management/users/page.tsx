@@ -211,7 +211,7 @@ export default function UserManagementPage() {
                 Add User
               </Button>
             </DialogTrigger>
-          <DialogContent className="max-w-md">
+            <DialogContent className="max-w-md">
             <DialogHeader>
               <DialogTitle>Add New User</DialogTitle>
               <DialogDescription>
@@ -263,7 +263,8 @@ export default function UserManagementPage() {
               <Button onClick={() => setIsAddUserOpen(false)}>Create User</Button>
             </DialogFooter>
           </DialogContent>
-        </Dialog>
+          </Dialog>
+        </div>
       </div>
 
       {/* Stats Cards */}
