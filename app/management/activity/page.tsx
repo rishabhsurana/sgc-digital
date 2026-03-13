@@ -145,16 +145,23 @@ const recentActivity = [
 export default function ActivityMonitorPage() {
   return (
     <div className="space-y-8">
-      {/* Page Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Activity Monitor</h1>
-          <p className="text-muted-foreground mt-1">Track pending actions and recent system activity</p>
+      {/* Hero Banner */}
+      <div className="rounded-xl bg-gradient-to-r from-rose-600 via-pink-600 to-slate-800 p-6 text-white">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div className="flex items-start gap-4">
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-white/20">
+              <Clock className="h-7 w-7 text-white" />
+            </div>
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold">Activity Monitor</h1>
+              <p className="mt-1 text-white/80">Track pending actions and recent system activity</p>
+            </div>
+          </div>
+          <Button variant="outline" size="sm" className="border-white/30 text-white hover:bg-white/10">
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Refresh
+          </Button>
         </div>
-        <Button variant="outline" className="gap-2">
-          <RefreshCw className="h-4 w-4" />
-          Refresh
-        </Button>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">

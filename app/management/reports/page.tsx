@@ -89,21 +89,19 @@ export default function ManagementReportsPage() {
 
   return (
     <div className="p-6 lg:p-8">
-      {/* Page Header */}
-      <div className="mb-8">
+      {/* Hero Banner */}
+      <div className="rounded-xl bg-gradient-to-r from-amber-600 via-orange-600 to-slate-800 p-6 mb-8 text-white">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-orange-500 to-orange-600 text-white shadow-lg">
-                <BarChart3 className="h-6 w-6" />
-              </div>
-              Reports & Analytics
-            </h1>
-            <p className="mt-2 text-muted-foreground">
-              Comprehensive insights into SGC Digital submissions and processing metrics.
-            </p>
+          <div className="flex items-start gap-4">
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-white/20">
+              <BarChart3 className="h-7 w-7 text-white" />
+            </div>
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold">Reports & Analytics</h1>
+              <p className="mt-1 text-white/80">Comprehensive insights into SGC Digital submissions and processing metrics.</p>
+            </div>
           </div>
-          <Button className="bg-accent hover:bg-accent/90 text-accent-foreground shadow-md">
+          <Button size="sm" className="bg-white/20 hover:bg-white/30 text-white">
             <Download className="mr-2 h-4 w-4" />
             Export Report
           </Button>

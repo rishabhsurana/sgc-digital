@@ -266,28 +266,28 @@ export default function ContractsRegisterPage() {
 
   return (
     <div className="p-6 lg:p-8">
-      {/* Page Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 text-white shadow-lg">
-              <FileSignature className="h-6 w-6" />
+      {/* Hero Banner */}
+      <div className="rounded-xl bg-gradient-to-r from-blue-600 via-blue-700 to-slate-800 p-6 mb-6 text-white">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div className="flex items-start gap-4">
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-white/20">
+              <FileSignature className="h-7 w-7 text-white" />
             </div>
-            Contracts Register
-          </h1>
-          <p className="mt-2 text-muted-foreground">
-            View and manage all contract submissions.
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm">
-            <RefreshCw className="mr-2 h-4 w-4" />
-            Refresh
-          </Button>
-          <Button className="bg-accent hover:bg-accent/90 text-accent-foreground" size="sm">
-            <Download className="mr-2 h-4 w-4" />
-            Export
-          </Button>
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold">Contracts Register</h1>
+              <p className="mt-1 text-white/80">View and manage all contract submissions.</p>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" className="border-white/30 text-white hover:bg-white/10">
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Refresh
+            </Button>
+            <Button size="sm" className="bg-white/20 hover:bg-white/30 text-white">
+              <Download className="mr-2 h-4 w-4" />
+              Export
+            </Button>
+          </div>
         </div>
       </div>
 

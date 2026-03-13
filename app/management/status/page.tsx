@@ -97,10 +97,17 @@ const mdaStats = [
 export default function StatusOverviewPage() {
   return (
     <div className="space-y-8">
-      {/* Page Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-foreground">Status Overview</h1>
-        <p className="text-muted-foreground mt-1">System statistics and performance metrics</p>
+      {/* Hero Banner */}
+      <div className="rounded-xl bg-gradient-to-r from-violet-600 via-purple-600 to-slate-800 p-6 text-white">
+        <div className="flex items-start gap-4">
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-white/20">
+            <TrendingUp className="h-7 w-7 text-white" />
+          </div>
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold">Status Overview</h1>
+            <p className="mt-1 text-white/80">System statistics and performance metrics</p>
+          </div>
+        </div>
       </div>
 
       {/* Stats Grid */}

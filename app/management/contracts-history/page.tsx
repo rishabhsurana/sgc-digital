@@ -250,28 +250,28 @@ export default function ContractsHistoryPage() {
 
   return (
     <div className="space-y-6">
-      {/* Page Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-orange-500 to-orange-600 text-white shadow-lg">
-              <History className="h-6 w-6" />
+      {/* Hero Banner */}
+      <div className="rounded-xl bg-gradient-to-r from-indigo-600 via-indigo-700 to-slate-800 p-6 mb-6 text-white">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div className="flex items-start gap-4">
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-white/20">
+              <History className="h-7 w-7 text-white" />
             </div>
-            Contracts History
-          </h1>
-          <p className="mt-2 text-muted-foreground">
-            View all submitted contracts with documents and submitter details.
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm">
-            <RefreshCw className="mr-2 h-4 w-4" />
-            Refresh
-          </Button>
-          <Button className="bg-accent hover:bg-accent/90 text-accent-foreground" size="sm">
-            <Download className="mr-2 h-4 w-4" />
-            Export
-          </Button>
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold">Contracts History</h1>
+              <p className="mt-1 text-white/80">View all submitted contracts with documents and submitter details.</p>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" className="border-white/30 text-white hover:bg-white/10">
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Refresh
+            </Button>
+            <Button size="sm" className="bg-white/20 hover:bg-white/30 text-white">
+              <Download className="mr-2 h-4 w-4" />
+              Export
+            </Button>
+          </div>
         </div>
       </div>
 
