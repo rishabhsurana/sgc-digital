@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import { Inter, Source_Serif_4 } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
+import { AuthProvider } from '@/lib/auth-context'
 import './globals.css'
 
 const inter = Inter({ 
@@ -34,7 +35,9 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.variable} ${sourceSerif.variable}`}>
       <body className="font-sans antialiased min-h-screen">
-        {children}
+        <AuthProvider>
+          {children}
+        </AuthProvider>
         <Analytics />
       </body>
     </html>
