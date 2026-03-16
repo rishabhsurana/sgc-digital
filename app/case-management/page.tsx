@@ -58,7 +58,7 @@ export default function CaseManagementPage() {
               <Users className="h-7 w-7 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold">Case Management</h1>
+              <h1 className="text-2xl sm:text-3xl font-bold">SGC Digital - Case Management</h1>
               <p className="mt-1 text-white/80">BPM workflow management for Correspondence and Contracts</p>
             </div>
           </div>

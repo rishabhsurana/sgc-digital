@@ -85,8 +85,8 @@ export default function ContractsCaseManagementLayout({
                 className="h-8 w-8"
               />
               <div className="hidden sm:block">
-                <h1 className="text-sm font-semibold">Contracts Case Management</h1>
-                <p className="text-xs text-white/70">Solicitor General&apos;s Chambers</p>
+                <h1 className="text-sm font-semibold">SGC Digital - Case Management</h1>
+                <p className="text-xs text-white/70">Contracts Module</p>
               </div>
             </Link>
           </div>
