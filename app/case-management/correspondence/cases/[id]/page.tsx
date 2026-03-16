@@ -219,6 +219,8 @@ export default function CorrespondenceCaseDetailPage() {
   const [showEditDatesDialog, setShowEditDatesDialog] = useState(false)
   const [showEditClassificationDialog, setShowEditClassificationDialog] = useState(false)
   const [showEditContactDialog, setShowEditContactDialog] = useState(false)
+  const [showEditReferencesDialog, setShowEditReferencesDialog] = useState(false)
+  const [showEditFileAssocDialog, setShowEditFileAssocDialog] = useState(false)
   const [showLiaisonDialog, setShowLiaisonDialog] = useState(false)
   
   // Form states
@@ -233,6 +235,17 @@ export default function CorrespondenceCaseDetailPage() {
     priority: caseData.priority,
     isConfidential: caseData.isConfidential,
     isUrgent: caseData.isUrgent
+  })
+  const [referencesForm, setReferencesForm] = useState({
+    externalReferenceNo: caseData.externalReferenceNo || "",
+    fileReferenceNo: caseData.fileReferenceNo,
+    volume: caseData.volume,
+    folioMinuteNo: caseData.folioMinuteNo
+  })
+  const [fileAssocForm, setFileAssocForm] = useState({
+    registryFileAssocStatus: caseData.registryFileAssocStatus,
+    fileTypes: caseData.fileTypes,
+    existingFileRefs: caseData.existingFileRefs.join(", ")
   })
   
   // Role-based permissions
@@ -631,10 +644,15 @@ export default function CorrespondenceCaseDetailPage() {
             
             {/* Reference Numbers */}
             <Card>
-              <CardHeader className="pb-3">
+              <CardHeader className="pb-3 flex flex-row items-center justify-between">
                 <CardTitle className="text-base flex items-center gap-2">
                   <Hash className="h-4 w-4" /> Reference Numbers
                 </CardTitle>
+                {canEditDates() && (
+                  <Button variant="ghost" size="sm" onClick={() => setShowEditReferencesDialog(true)}>
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                )}
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 gap-x-8 gap-y-4">
@@ -712,10 +730,15 @@ export default function CorrespondenceCaseDetailPage() {
             
             {/* File Association */}
             <Card>
-              <CardHeader className="pb-3">
+              <CardHeader className="pb-3 flex flex-row items-center justify-between">
                 <CardTitle className="text-base flex items-center gap-2">
                   <FolderOpen className="h-4 w-4" /> File Association
                 </CardTitle>
+                {canEditDates() && (
+                  <Button variant="ghost" size="sm" onClick={() => setShowEditFileAssocDialog(true)}>
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                )}
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
@@ -1265,6 +1288,136 @@ export default function CorrespondenceCaseDetailPage() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowLiaisonDialog(false)}>Cancel</Button>
             <Button onClick={() => setShowLiaisonDialog(false)}>Add Liaison</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit References Dialog */}
+      <Dialog open={showEditReferencesDialog} onOpenChange={setShowEditReferencesDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Reference Numbers</DialogTitle>
+            <DialogDescription>Update file reference information</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>External Reference No.</Label>
+              <Input 
+                value={referencesForm.externalReferenceNo}
+                onChange={(e) => setReferencesForm(prev => ({ ...prev, externalReferenceNo: e.target.value }))}
+                placeholder="External reference number"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>File Reference No.</Label>
+              <Input 
+                value={referencesForm.fileReferenceNo}
+                onChange={(e) => setReferencesForm(prev => ({ ...prev, fileReferenceNo: e.target.value }))}
+                placeholder="SG/ADV/2026/123"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Volume</Label>
+                <Input 
+                  value={referencesForm.volume}
+                  onChange={(e) => setReferencesForm(prev => ({ ...prev, volume: e.target.value }))}
+                  placeholder="1"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Folio / Minute No.</Label>
+                <Input 
+                  value={referencesForm.folioMinuteNo}
+                  onChange={(e) => setReferencesForm(prev => ({ ...prev, folioMinuteNo: e.target.value }))}
+                  placeholder="15"
+                />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowEditReferencesDialog(false)}>Cancel</Button>
+            <Button onClick={() => {
+              setCaseData(prev => ({
+                ...prev,
+                externalReferenceNo: referencesForm.externalReferenceNo,
+                fileReferenceNo: referencesForm.fileReferenceNo,
+                volume: referencesForm.volume,
+                folioMinuteNo: referencesForm.folioMinuteNo
+              }))
+              setShowEditReferencesDialog(false)
+            }}>Save Changes</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit File Association Dialog */}
+      <Dialog open={showEditFileAssocDialog} onOpenChange={setShowEditFileAssocDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit File Association</DialogTitle>
+            <DialogDescription>Update registry file association details</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Registry File Status</Label>
+              <Select 
+                value={fileAssocForm.registryFileAssocStatus}
+                onValueChange={(value) => setFileAssocForm(prev => ({ ...prev, registryFileAssocStatus: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Pending">Pending</SelectItem>
+                  <SelectItem value="In Progress">In Progress</SelectItem>
+                  <SelectItem value="Complete">Complete</SelectItem>
+                  <SelectItem value="Not Required">Not Required</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>File Types</Label>
+              <div className="flex flex-wrap gap-2">
+                {["Advisory", "Litigation", "Compensation", "Public Trustee", "International Law", "Cabinet/Confidential"].map(type => (
+                  <label key={type} className="flex items-center gap-2 text-sm">
+                    <input 
+                      type="checkbox" 
+                      checked={fileAssocForm.fileTypes.includes(type)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setFileAssocForm(prev => ({ ...prev, fileTypes: [...prev.fileTypes, type] }))
+                        } else {
+                          setFileAssocForm(prev => ({ ...prev, fileTypes: prev.fileTypes.filter(t => t !== type) }))
+                        }
+                      }}
+                      className="rounded border-gray-300"
+                    />
+                    {type}
+                  </label>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Existing File References (comma-separated)</Label>
+              <Input 
+                value={fileAssocForm.existingFileRefs}
+                onChange={(e) => setFileAssocForm(prev => ({ ...prev, existingFileRefs: e.target.value }))}
+                placeholder="SG/ADV/2024/089, SG/ADV/2023/156"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowEditFileAssocDialog(false)}>Cancel</Button>
+            <Button onClick={() => {
+              setCaseData(prev => ({
+                ...prev,
+                registryFileAssocStatus: fileAssocForm.registryFileAssocStatus,
+                fileTypes: fileAssocForm.fileTypes,
+                existingFileRefs: fileAssocForm.existingFileRefs.split(",").map(s => s.trim()).filter(Boolean)
+              }))
+              setShowEditFileAssocDialog(false)
+            }}>Save Changes</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
