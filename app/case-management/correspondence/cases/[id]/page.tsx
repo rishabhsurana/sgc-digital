@@ -24,7 +24,13 @@ import {
   XCircle,
   PlayCircle,
   PauseCircle,
-  ArrowRight
+  ArrowRight,
+  Hash,
+  Phone,
+  MapPin,
+  Shield,
+  FolderOpen,
+  Upload
 } from "lucide-react"
 import { formatDate, formatDateTime } from "@/lib/utils/date-utils"
 import { Button } from "@/components/ui/button"
@@ -57,269 +63,249 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
 import Link from "next/link"
 
-// Mock case data
+// Mock case data with COMPLETE properties per configuration workbook (TAB 3)
 const mockCase = {
-  id: "COR-2026-00140",
-  subject: "Legal Opinion - Public Procurement Act Amendment",
-  description: "Request for legal opinion regarding proposed amendments to the Public Procurement Act. The Ministry seeks guidance on constitutional implications and compliance with international trade agreements.",
-  type: "Advisory",
-  status: "ASSIGNED",
-  stage: "PROCESS",
-  urgency: "normal",
-  confidential: false,
+  // Core Identification
+  trackingNumber: "COR-2026-00140",
+  caseType: "Correspondence",
+  
+  // Classification
+  correspondenceType: "Advisory",
+  
+  // Submission Details
+  submissionChannel: "Portal",
+  dateReceived: "2026-03-10T11:20:00",
+  
+  // Originating Entity
   originatingEntity: "Ministry of Finance",
-  contactPerson: "John Smith",
-  contactEmail: "john.smith@mof.gov.bb",
-  contactPhone: "+1 246 555-0123",
-  submitter: "John Smith",
+  externalSubmitterType: "Ministry/Department",
+  
+  // External Contact Details
+  externalContactName: "John Smith",
+  externalContactJobTitle: "Legal Counsel",
+  externalContactAddress: null, // Only for Public submitters
+  externalContactTelephone: "+1 246 555-0123",
+  externalContactEmail: "john.smith@mof.gov.bb",
+  externalReferenceNo: "MOF/LEG/2026/015",
+  entityId: "MOF-001",
+  
+  // Subject Matter
+  subjectMatter: "Request for legal opinion regarding proposed amendments to the Public Procurement Act. The Ministry seeks guidance on constitutional implications and compliance with international trade agreements including CARICOM obligations.",
+  
+  // File Types & References
+  fileTypes: ["Advisory File", "Foreign / Ministry File"],
+  existingFileRefs: ["REG/ADV/2025/089", "REG/MIN/2024/112"],
+  
+  // Flags
+  confidentialFlag: false,
+  urgencyFlag: false,
+  
+  // Assignment
   assignedOfficer: "Sarah Thompson",
-  assignedOfficerId: "1",
-  supervisingOfficer: "Director General Solicitor",
-  dateReceived: "2026-03-10",
-  dateAssigned: "2026-03-11",
+  assignedOfficerId: "ST-001",
+  assignedOfficerEmail: "s.thompson@sgc.gov.bb",
+  
+  // Case Status
+  caseStatus: "ASSIGNED",
+  caseStatusLabel: "Assigned",
+  
+  // Registry File Association
+  registryFileAssocStatus: "Complete",
+  
+  // SLA Details
   dueDate: "2026-03-24",
   slaStatus: "on_track",
   daysRemaining: 8,
-  directive: "Please review with particular attention to CARICOM trade obligations.",
-  fileReference: "REG/ADV/2026/045"
+  
+  // SG/DSG Review Details
+  reviewedBy: "Director General Solicitor",
+  reviewDate: "2026-03-11T09:30:00",
+  directive: "Please review with particular attention to CARICOM trade obligations. Coordinate with Ministry of Foreign Affairs if required.",
+  priority: "normal",
+  
+  // Security Profile
+  securityProfile: "Registry-Standard",
+  
+  // Bring Up Date (for follow-up)
+  bringUpDate: null,
+  
+  // Dispatch Details (when completed)
+  dispatchDate: null,
+  closureDate: null
 }
 
+const workflowStages = [
+  { id: "INTAKE", name: "Intake", status: "completed", completedDate: "2026-03-10" },
+  { id: "REVIEW", name: "SG/DSG Review", status: "completed", completedDate: "2026-03-11" },
+  { id: "FILE_ASSOC", name: "File Association", status: "completed", completedDate: "2026-03-11", parallel: true },
+  { id: "PROCESS", name: "Processing", status: "current" },
+  { id: "APPROVAL", name: "Approval", status: "pending" },
+  { id: "DISPATCH", name: "Dispatch", status: "pending" },
+  { id: "CLOSE", name: "Closed", status: "pending" },
+]
+
 const documents = [
-  { id: "1", name: "Amendment Proposal Draft.pdf", type: "PDF", size: "2.4 MB", uploadedBy: "John Smith", uploadedAt: "2026-03-10", category: "submission" },
-  { id: "2", name: "Current Act Annotated.pdf", type: "PDF", size: "1.8 MB", uploadedBy: "John Smith", uploadedAt: "2026-03-10", category: "submission" },
-  { id: "3", name: "CARICOM Trade Agreement Excerpt.pdf", type: "PDF", size: "890 KB", uploadedBy: "Sarah Thompson", uploadedAt: "2026-03-12", category: "reference" },
+  { id: "1", name: "Amendment Proposal Draft.pdf", documentClass: "Incoming Correspondence", size: "2.4 MB", uploadedBy: "John Smith (MOF)", uploadedAt: "2026-03-10", category: "submission" },
+  { id: "2", name: "Current Act Annotated.pdf", documentClass: "Supporting Documents", size: "1.8 MB", uploadedBy: "John Smith (MOF)", uploadedAt: "2026-03-10", category: "submission" },
+  { id: "3", name: "CARICOM Trade Agreement Excerpt.pdf", documentClass: "Supporting Documents", size: "890 KB", uploadedBy: "Sarah Thompson", uploadedAt: "2026-03-12", category: "reference" },
+  { id: "4", name: "Registry Cover Sheet.pdf", documentClass: "Registry Cover Sheet", size: "45 KB", uploadedBy: "System", uploadedAt: "2026-03-10", category: "system" },
 ]
 
 const activities = [
-  { id: "1", type: "status_change", description: "Status changed from PENDING_REVIEW to ASSIGNED", user: "Director General Solicitor", timestamp: "2026-03-11T09:30:00", details: "Assigned to Sarah Thompson" },
-  { id: "2", type: "comment", description: "Added internal note", user: "Sarah Thompson", timestamp: "2026-03-12T14:15:00", details: "Reviewed submission documents. Will need to consult CARICOM obligations." },
-  { id: "3", type: "document", description: "Uploaded document", user: "Sarah Thompson", timestamp: "2026-03-12T14:45:00", details: "CARICOM Trade Agreement Excerpt.pdf" },
-  { id: "4", type: "task", description: "Task completed", user: "Sarah Thompson", timestamp: "2026-03-13T10:00:00", details: "Initial document review completed" },
+  { id: "1", type: "intake", description: "Case created via portal submission", user: "System", timestamp: "2026-03-10T11:20:00", details: "Tracking number assigned: COR-2026-00140" },
+  { id: "2", type: "intake_validation", description: "Intake validation completed", user: "Registry Clerk", timestamp: "2026-03-10T14:30:00", details: "All mandatory fields captured" },
+  { id: "3", type: "file_assoc", description: "File association completed", user: "Registry File Officer", timestamp: "2026-03-11T10:15:00", details: "Linked to existing files: REG/ADV/2025/089, REG/MIN/2024/112" },
+  { id: "4", type: "review", description: "SG/DSG review completed", user: "Director General Solicitor", timestamp: "2026-03-11T09:30:00", details: "Assigned to Sarah Thompson with directive" },
+  { id: "5", type: "assignment", description: "Case assigned to Legal Officer", user: "Director General Solicitor", timestamp: "2026-03-11T09:30:00", details: "Assigned to Sarah Thompson" },
+  { id: "6", type: "document", description: "Document uploaded", user: "Sarah Thompson", timestamp: "2026-03-12T14:45:00", details: "CARICOM Trade Agreement Excerpt.pdf" },
+  { id: "7", type: "comment", description: "Internal note added", user: "Sarah Thompson", timestamp: "2026-03-12T14:15:00", details: "Reviewed submission documents. Will need to consult CARICOM obligations." },
 ]
 
 const tasks = [
-  { id: "1", title: "Review submission documents", status: "completed", assignee: "Sarah Thompson", dueDate: "2026-03-13", completedAt: "2026-03-13" },
-  { id: "2", title: "Research CARICOM trade obligations", status: "in_progress", assignee: "Sarah Thompson", dueDate: "2026-03-17", completedAt: null },
-  { id: "3", title: "Draft legal opinion", status: "pending", assignee: "Sarah Thompson", dueDate: "2026-03-20", completedAt: null },
-  { id: "4", title: "Supervisor review", status: "pending", assignee: "Director General Solicitor", dueDate: "2026-03-22", completedAt: null },
+  { id: "1", title: "Review submission documents", status: "completed", dueDate: "2026-03-12", assignee: "Sarah Thompson", completedDate: "2026-03-12" },
+  { id: "2", title: "Draft legal opinion", status: "in_progress", dueDate: "2026-03-20", assignee: "Sarah Thompson" },
+  { id: "3", title: "Submit for SG/DSG approval", status: "pending", dueDate: "2026-03-22", assignee: "Sarah Thompson" },
+  { id: "4", title: "Finalize and dispatch response", status: "pending", dueDate: "2026-03-24", assignee: "Registry" },
 ]
 
 const comments = [
-  { id: "1", author: "Director General Solicitor", content: "Please review with particular attention to CARICOM trade obligations.", timestamp: "2026-03-11T09:30:00", isInternal: true },
-  { id: "2", author: "Sarah Thompson", content: "Reviewed submission documents. The proposed amendments appear straightforward but will need to verify compatibility with existing trade agreements.", timestamp: "2026-03-12T14:15:00", isInternal: true },
+  { id: "1", author: "Sarah Thompson", timestamp: "2026-03-12T14:15:00", content: "Reviewed submission documents. The proposed amendments have significant implications for CARICOM trade obligations. Will need to research precedents.", isInternal: true },
+  { id: "2", author: "Director General Solicitor", timestamp: "2026-03-11T09:35:00", content: "Please prioritize this matter. Ministry has requested response by end of month.", isInternal: true },
 ]
-
-const workflowStages = [
-  { code: "INTAKE", label: "Intake", completed: true, current: false },
-  { code: "REVIEW", label: "SG/DSG Review", completed: true, current: false },
-  { code: "PROCESS", label: "Processing", completed: false, current: true },
-  { code: "APPROVAL", label: "Approval", completed: false, current: false },
-  { code: "DISPATCH", label: "Dispatch", completed: false, current: false },
-  { code: "CLOSE", label: "Closed", completed: false, current: false },
-]
-
-const statusConfig: Record<string, { label: string; color: string }> = {
-  NEW: { label: "New", color: "bg-blue-100 text-blue-700" },
-  PENDING_REVIEW: { label: "Pending Review", color: "bg-purple-100 text-purple-700" },
-  ASSIGNED: { label: "Assigned", color: "bg-teal-100 text-teal-700" },
-  PENDING_EXTERNAL: { label: "Pending External", color: "bg-amber-100 text-amber-700" },
-  ON_HOLD: { label: "On Hold", color: "bg-slate-100 text-slate-700" },
-  CLOSED: { label: "Closed", color: "bg-green-100 text-green-700" },
-}
-
-const slaConfig: Record<string, { label: string; color: string; bgColor: string }> = {
-  on_track: { label: "On Track", color: "text-green-700", bgColor: "bg-green-100" },
-  at_risk: { label: "At Risk", color: "text-amber-700", bgColor: "bg-amber-100" },
-  breached: { label: "Breached", color: "text-red-700", bgColor: "bg-red-100" },
-}
 
 export default function CorrespondenceCaseDetailPage() {
   const params = useParams()
-  const caseId = params.id as string
   const [activeTab, setActiveTab] = useState("details")
   const [newComment, setNewComment] = useState("")
   const [isInternalComment, setIsInternalComment] = useState(true)
 
-  const status = statusConfig[mockCase.status]
-  const sla = slaConfig[mockCase.slaStatus]
+  const getStageStatusColor = (status: string) => {
+    switch (status) {
+      case "completed": return "bg-emerald-500"
+      case "current": return "bg-blue-500"
+      default: return "bg-gray-300"
+    }
+  }
+
+  const getSlaColor = (status: string) => {
+    switch (status) {
+      case "on_track": return "text-emerald-600 bg-emerald-50"
+      case "at_risk": return "text-amber-600 bg-amber-50"
+      case "overdue": return "text-red-600 bg-red-50"
+      default: return "text-gray-600 bg-gray-50"
+    }
+  }
+
+  const getCorrespondenceTypeColor = (type: string) => {
+    const colors: Record<string, string> = {
+      "General": "bg-gray-100 text-gray-800",
+      "Litigation": "bg-red-100 text-red-800",
+      "Compensation": "bg-amber-100 text-amber-800",
+      "Public Trustee": "bg-purple-100 text-purple-800",
+      "Advisory": "bg-blue-100 text-blue-800",
+      "International Law": "bg-teal-100 text-teal-800",
+      "Cabinet/Confidential": "bg-rose-100 text-rose-800"
+    }
+    return colors[type] || "bg-gray-100 text-gray-800"
+  }
 
   return (
     <div className="space-y-6">
-      {/* Back Navigation */}
+      {/* Header */}
       <div className="flex items-center gap-4">
-        <Button variant="ghost" size="sm" asChild>
+        <Button variant="ghost" size="icon" asChild>
           <Link href="/case-management/correspondence/workqueue">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Workqueue
+            <ArrowLeft className="h-5 w-5" />
           </Link>
         </Button>
-      </div>
-
-      {/* Case Header */}
-      <div className="rounded-xl bg-gradient-to-r from-blue-700 via-blue-800 to-blue-900 p-6 text-white">
-        <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
-          <div className="flex items-start gap-4">
-            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-white/20">
-              <Mail className="h-7 w-7 text-white" />
-            </div>
-            <div>
-              <div className="flex items-center gap-3 mb-2">
-                <h1 className="text-2xl font-bold font-mono">{mockCase.id}</h1>
-                <Badge className="bg-white/20 text-white">{mockCase.type}</Badge>
-                {mockCase.confidential && (
-                  <Badge className="bg-red-500/80 text-white">Confidential</Badge>
-                )}
-              </div>
-              <p className="text-lg text-white/90">{mockCase.subject}</p>
-              <div className="flex flex-wrap items-center gap-4 mt-3 text-sm text-white/70">
-                <div className="flex items-center gap-1">
-                  <Building2 className="h-4 w-4" />
-                  {mockCase.originatingEntity}
-                </div>
-                <div className="flex items-center gap-1">
-                  <User className="h-4 w-4" />
-                  {mockCase.assignedOfficer}
-                </div>
-                <div className="flex items-center gap-1">
-                  <Calendar className="h-4 w-4" />
-                  Due: {formatDate(mockCase.dueDate)}
-                </div>
-              </div>
-            </div>
+        <div className="flex-1">
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-bold">{mockCase.trackingNumber}</h1>
+            <Badge className="bg-blue-100 text-blue-800">{mockCase.caseStatusLabel}</Badge>
+            <Badge className={getCorrespondenceTypeColor(mockCase.correspondenceType)}>
+              {mockCase.correspondenceType}
+            </Badge>
+            {mockCase.urgencyFlag && (
+              <Badge className="bg-red-500 text-white">Urgent</Badge>
+            )}
+            {mockCase.confidentialFlag && (
+              <Badge className="bg-purple-500 text-white">
+                <Shield className="h-3 w-3 mr-1" />
+                Confidential
+              </Badge>
+            )}
           </div>
-          <div className="flex flex-col sm:flex-row gap-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button size="sm" className="bg-white/20 hover:bg-white/30 text-white">
-                  <MoreHorizontal className="h-4 w-4 mr-2" />
-                  Actions
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem>
-                  <PlayCircle className="h-4 w-4 mr-2" />
-                  Advance Stage
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <UserPlus className="h-4 w-4 mr-2" />
-                  Reassign
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <Flag className="h-4 w-4 mr-2" />
-                  Change Urgency
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <PauseCircle className="h-4 w-4 mr-2" />
-                  Put On Hold
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem>
-                  <Send className="h-4 w-4 mr-2" />
-                  Request Clarification
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem className="text-red-600">
-                  <XCircle className="h-4 w-4 mr-2" />
-                  Cancel Case
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white">
-              <ArrowRight className="h-4 w-4 mr-2" />
-              Submit for Approval
-            </Button>
-          </div>
+          <p className="text-muted-foreground mt-1 line-clamp-1">{mockCase.subjectMatter.substring(0, 100)}...</p>
         </div>
-      </div>
-
-      {/* Status Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Status</p>
-                <Badge className={`mt-1 ${status.color}`}>{status.label}</Badge>
-              </div>
-              <CheckCircle className="h-8 w-8 text-teal-500" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Current Stage</p>
-                <p className="text-lg font-semibold mt-1">Processing</p>
-              </div>
-              <Clock className="h-8 w-8 text-blue-500" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">SLA Status</p>
-                <Badge className={`mt-1 ${sla.bgColor} ${sla.color}`}>{sla.label}</Badge>
-              </div>
-              {mockCase.slaStatus === "on_track" ? (
-                <CheckCircle className="h-8 w-8 text-green-500" />
-              ) : (
-                <AlertTriangle className="h-8 w-8 text-amber-500" />
-              )}
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Days Remaining</p>
-                <p className="text-2xl font-bold mt-1">{mockCase.daysRemaining}</p>
-              </div>
-              <Calendar className="h-8 w-8 text-slate-500" />
-            </div>
-          </CardContent>
-        </Card>
+        <div className="flex items-center gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline">
+                Actions
+                <MoreHorizontal className="h-4 w-4 ml-2" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem><Edit className="h-4 w-4 mr-2" /> Edit Case</DropdownMenuItem>
+              <DropdownMenuItem><Upload className="h-4 w-4 mr-2" /> Upload Document</DropdownMenuItem>
+              <DropdownMenuItem><UserPlus className="h-4 w-4 mr-2" /> Reassign</DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem><Send className="h-4 w-4 mr-2" /> Submit for Approval</DropdownMenuItem>
+              <DropdownMenuItem><Flag className="h-4 w-4 mr-2" /> Mark Urgent</DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem><PauseCircle className="h-4 w-4 mr-2" /> Put On Hold</DropdownMenuItem>
+              <DropdownMenuItem className="text-red-600"><XCircle className="h-4 w-4 mr-2" /> Cancel Case</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
 
       {/* Workflow Progress */}
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-lg">Workflow Progress</CardTitle>
+          <CardTitle className="text-base">Workflow Progress</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-between">
-            {workflowStages.map((stage, index) => (
-              <div key={stage.code} className="flex items-center">
+            {workflowStages.filter(s => !s.parallel).map((stage, index) => (
+              <div key={stage.id} className="flex items-center">
                 <div className="flex flex-col items-center">
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                    stage.completed 
-                      ? "bg-green-500 text-white" 
-                      : stage.current 
-                        ? "bg-blue-500 text-white ring-4 ring-blue-200" 
-                        : "bg-slate-200 text-slate-500"
-                  }`}>
-                    {stage.completed ? (
-                      <CheckCircle className="h-5 w-5" />
-                    ) : (
-                      <span className="text-sm font-medium">{index + 1}</span>
-                    )}
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm ${getStageStatusColor(stage.status)}`}>
+                    {stage.status === "completed" ? <CheckCircle className="h-4 w-4" /> : index + 1}
                   </div>
-                  <span className={`text-xs mt-2 ${stage.current ? "font-semibold text-blue-600" : "text-muted-foreground"}`}>
-                    {stage.label}
-                  </span>
+                  <span className="text-xs mt-1 text-center max-w-[80px]">{stage.name}</span>
+                  {stage.completedDate && (
+                    <span className="text-xs text-muted-foreground">{formatDate(stage.completedDate)}</span>
+                  )}
                 </div>
-                {index < workflowStages.length - 1 && (
-                  <div className={`w-16 sm:w-24 h-1 mx-2 ${
-                    stage.completed ? "bg-green-500" : "bg-slate-200"
-                  }`} />
+                {index < workflowStages.filter(s => !s.parallel).length - 1 && (
+                  <div className={`w-12 h-0.5 mx-2 ${stage.status === "completed" ? "bg-emerald-500" : "bg-gray-200"}`} />
                 )}
               </div>
             ))}
+          </div>
+          {/* SLA Info */}
+          <div className="mt-4 pt-4 border-t flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Badge className={getSlaColor(mockCase.slaStatus)}>
+                <Clock className="h-3 w-3 mr-1" />
+                {mockCase.daysRemaining} days remaining
+              </Badge>
+              <span className="text-sm text-muted-foreground">Due: {formatDate(mockCase.dueDate)}</span>
+            </div>
+            <span className="text-sm text-muted-foreground">
+              Stage: <span className="font-medium">{workflowStages.find(s => s.status === "current")?.name || "N/A"}</span>
+            </span>
           </div>
         </CardContent>
       </Card>
@@ -327,136 +313,348 @@ export default function CorrespondenceCaseDetailPage() {
       {/* Main Content Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
-          <TabsTrigger value="details">Details</TabsTrigger>
+          <TabsTrigger value="details">Case Details</TabsTrigger>
           <TabsTrigger value="documents">Documents ({documents.length})</TabsTrigger>
-          <TabsTrigger value="tasks">Tasks ({tasks.length})</TabsTrigger>
-          <TabsTrigger value="communications">Communications</TabsTrigger>
-          <TabsTrigger value="history">History</TabsTrigger>
+          <TabsTrigger value="timeline">Timeline</TabsTrigger>
+          <TabsTrigger value="tasks">Tasks</TabsTrigger>
+          <TabsTrigger value="comments">Comments</TabsTrigger>
         </TabsList>
 
-        {/* Details Tab */}
-        <TabsContent value="details" className="mt-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Case Information</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-muted-foreground">Reference Number</Label>
-                    <p className="font-mono">{mockCase.id}</p>
-                  </div>
-                  <div>
-                    <Label className="text-muted-foreground">File Reference</Label>
-                    <p className="font-mono">{mockCase.fileReference || "Not assigned"}</p>
-                  </div>
-                  <div>
-                    <Label className="text-muted-foreground">Type</Label>
-                    <p>{mockCase.type}</p>
-                  </div>
-                  <div>
-                    <Label className="text-muted-foreground">Urgency</Label>
-                    <p className="capitalize">{mockCase.urgency}</p>
-                  </div>
-                  <div>
-                    <Label className="text-muted-foreground">Date Received</Label>
-                    <p>{formatDate(mockCase.dateReceived)}</p>
-                  </div>
-                  <div>
-                    <Label className="text-muted-foreground">Date Assigned</Label>
-                    <p>{formatDate(mockCase.dateAssigned)}</p>
-                  </div>
-                </div>
-                <Separator />
+        {/* DETAILS TAB */}
+        <TabsContent value="details" className="space-y-6">
+          {/* Core Identification */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Hash className="h-4 w-4" />
+                Core Identification
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div>
-                  <Label className="text-muted-foreground">Description</Label>
-                  <p className="mt-1">{mockCase.description}</p>
+                  <p className="text-sm text-muted-foreground">Tracking Number</p>
+                  <p className="font-medium">{mockCase.trackingNumber}</p>
                 </div>
-                {mockCase.directive && (
-                  <>
-                    <Separator />
-                    <div>
-                      <Label className="text-muted-foreground">SG/DSG Directive</Label>
-                      <p className="mt-1 p-3 bg-amber-50 border border-amber-200 rounded-lg text-amber-800">
-                        {mockCase.directive}
-                      </p>
-                    </div>
-                  </>
-                )}
-              </CardContent>
-            </Card>
+                <div>
+                  <p className="text-sm text-muted-foreground">Case Type</p>
+                  <p className="font-medium">{mockCase.caseType}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Correspondence Type</p>
+                  <Badge className={getCorrespondenceTypeColor(mockCase.correspondenceType)}>
+                    {mockCase.correspondenceType}
+                  </Badge>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Submission Channel</p>
+                  <p className="font-medium">{mockCase.submissionChannel}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Parties & Assignment</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
+          {/* Subject Matter */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Mail className="h-4 w-4" />
+                Subject Matter
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm leading-relaxed">{mockCase.subjectMatter}</p>
+            </CardContent>
+          </Card>
+
+          {/* Originating Entity & Contact */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Building2 className="h-4 w-4" />
+                Originating Entity & Contact
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Originating Entity</p>
+                    <p className="font-medium text-lg">{mockCase.originatingEntity}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">External Submitter Type</p>
+                    <Badge variant="outline">{mockCase.externalSubmitterType}</Badge>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">External Reference No.</p>
+                    <p className="font-medium">{mockCase.externalReferenceNo || "N/A"}</p>
+                  </div>
+                </div>
+                <div className="space-y-3 pl-4 border-l-2 border-blue-200">
+                  <p className="text-sm font-medium text-muted-foreground">Contact Details</p>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Name</p>
+                    <p className="font-medium">{mockCase.externalContactName}</p>
+                  </div>
+                  {mockCase.externalContactJobTitle && (
+                    <div>
+                      <p className="text-sm text-muted-foreground">Job Title</p>
+                      <p className="font-medium">{mockCase.externalContactJobTitle}</p>
+                    </div>
+                  )}
+                  <div className="flex items-center gap-2">
+                    <Mail className="h-4 w-4 text-muted-foreground" />
+                    <p>{mockCase.externalContactEmail}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Phone className="h-4 w-4 text-muted-foreground" />
+                    <p>{mockCase.externalContactTelephone}</p>
+                  </div>
+                  {mockCase.externalContactAddress && (
+                    <div className="flex items-start gap-2">
+                      <MapPin className="h-4 w-4 text-muted-foreground mt-1" />
+                      <p>{mockCase.externalContactAddress}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* File Types & References */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <FolderOpen className="h-4 w-4" />
+                File Types & References
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-6">
                 <div>
-                  <Label className="text-muted-foreground">Originating Entity</Label>
-                  <div className="flex items-center gap-2 mt-1">
-                    <Building2 className="h-4 w-4 text-muted-foreground" />
-                    <p>{mockCase.originatingEntity}</p>
+                  <p className="text-sm text-muted-foreground mb-2">File Types</p>
+                  <div className="flex flex-wrap gap-2">
+                    {mockCase.fileTypes.map((type, index) => (
+                      <Badge key={index} variant="outline">{type}</Badge>
+                    ))}
                   </div>
                 </div>
                 <div>
-                  <Label className="text-muted-foreground">Contact Person</Label>
-                  <div className="mt-1 space-y-1">
-                    <p>{mockCase.contactPerson}</p>
-                    <p className="text-sm text-muted-foreground">{mockCase.contactEmail}</p>
-                    <p className="text-sm text-muted-foreground">{mockCase.contactPhone}</p>
-                  </div>
-                </div>
-                <Separator />
-                <div>
-                  <Label className="text-muted-foreground">Assigned Legal Officer</Label>
-                  <div className="flex items-center gap-2 mt-1">
-                    <User className="h-4 w-4 text-muted-foreground" />
-                    <p>{mockCase.assignedOfficer}</p>
-                  </div>
+                  <p className="text-sm text-muted-foreground mb-2">Existing File References</p>
+                  {mockCase.existingFileRefs && mockCase.existingFileRefs.length > 0 ? (
+                    <div className="space-y-1">
+                      {mockCase.existingFileRefs.map((ref, index) => (
+                        <p key={index} className="font-mono text-sm">{ref}</p>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">No existing files linked</p>
+                  )}
                 </div>
                 <div>
-                  <Label className="text-muted-foreground">Supervising Officer</Label>
-                  <div className="flex items-center gap-2 mt-1">
-                    <User className="h-4 w-4 text-muted-foreground" />
-                    <p>{mockCase.supervisingOfficer}</p>
-                  </div>
+                  <p className="text-sm text-muted-foreground">Registry File Association Status</p>
+                  <Badge className={mockCase.registryFileAssocStatus === "Complete" ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"}>
+                    {mockCase.registryFileAssocStatus}
+                  </Badge>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Dates */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Calendar className="h-4 w-4" />
+                Dates
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div>
+                  <p className="text-sm text-muted-foreground">Date Received</p>
+                  <p className="font-medium">{formatDate(mockCase.dateReceived)}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">SLA Due Date</p>
+                  <p className="font-medium">{formatDate(mockCase.dueDate)}</p>
+                </div>
+                {mockCase.bringUpDate && (
+                  <div>
+                    <p className="text-sm text-muted-foreground">Bring Up Date</p>
+                    <p className="font-medium">{formatDate(mockCase.bringUpDate)}</p>
+                  </div>
+                )}
+                {mockCase.dispatchDate && (
+                  <div>
+                    <p className="text-sm text-muted-foreground">Dispatch Date</p>
+                    <p className="font-medium">{formatDate(mockCase.dispatchDate)}</p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Assignment & Processing */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <User className="h-4 w-4" />
+                Assignment & Processing
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                <div>
+                  <p className="text-sm text-muted-foreground">Assigned Officer</p>
+                  <p className="font-medium">{mockCase.assignedOfficer}</p>
+                  <p className="text-xs text-muted-foreground">{mockCase.assignedOfficerEmail}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Reviewed By</p>
+                  <p className="font-medium">{mockCase.reviewedBy}</p>
+                  <p className="text-xs text-muted-foreground">{formatDate(mockCase.reviewDate)}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Case Status</p>
+                  <Badge className="bg-blue-100 text-blue-800">{mockCase.caseStatusLabel}</Badge>
+                </div>
+              </div>
+              {mockCase.directive && (
+                <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                  <p className="text-sm font-medium text-blue-800 mb-1">SG/DSG Directive:</p>
+                  <p className="text-sm text-blue-700">{mockCase.directive}</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Flags & Security */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Shield className="h-4 w-4" />
+                Flags & Security
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div>
+                  <p className="text-sm text-muted-foreground">Confidential</p>
+                  <Badge variant={mockCase.confidentialFlag ? "destructive" : "outline"}>
+                    {mockCase.confidentialFlag ? "Yes" : "No"}
+                  </Badge>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Urgent</p>
+                  <Badge variant={mockCase.urgencyFlag ? "destructive" : "outline"}>
+                    {mockCase.urgencyFlag ? "Yes" : "No"}
+                  </Badge>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Security Profile</p>
+                  <p className="font-medium">{mockCase.securityProfile}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Priority</p>
+                  <Badge variant="outline" className="capitalize">{mockCase.priority}</Badge>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
-        {/* Documents Tab */}
-        <TabsContent value="documents" className="mt-6">
+        {/* DOCUMENTS TAB */}
+        <TabsContent value="documents">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="text-lg">Documents</CardTitle>
+              <div>
+                <CardTitle className="text-base">Documents</CardTitle>
+                <CardDescription>All documents associated with this correspondence</CardDescription>
+              </div>
               <Button size="sm">
-                <Paperclip className="h-4 w-4 mr-2" />
+                <Upload className="h-4 w-4 mr-2" />
                 Upload Document
               </Button>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                {documents.map((doc) => (
-                  <div key={doc.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50">
-                    <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 rounded bg-red-100 flex items-center justify-center">
-                        <FileText className="h-5 w-5 text-red-600" />
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Document Name</TableHead>
+                    <TableHead>Document Class</TableHead>
+                    <TableHead>Uploaded By</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Size</TableHead>
+                    <TableHead className="w-[50px]"></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {documents.map((doc) => (
+                    <TableRow key={doc.id}>
+                      <TableCell className="font-medium">
+                        <div className="flex items-center gap-2">
+                          <FileText className="h-4 w-4 text-muted-foreground" />
+                          {doc.name}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{doc.documentClass}</Badge>
+                      </TableCell>
+                      <TableCell>{doc.uploadedBy}</TableCell>
+                      <TableCell>{formatDate(doc.uploadedAt)}</TableCell>
+                      <TableCell>{doc.size}</TableCell>
+                      <TableCell>
+                        <Button variant="ghost" size="icon">
+                          <Download className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* TIMELINE TAB */}
+        <TabsContent value="timeline">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Activity Timeline</CardTitle>
+              <CardDescription>Complete history of case activities</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {activities.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()).map((activity, index) => (
+                  <div key={activity.id} className="flex gap-4">
+                    <div className="flex flex-col items-center">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                        activity.type === "intake" ? "bg-emerald-100 text-emerald-600" :
+                        activity.type === "assignment" || activity.type === "review" ? "bg-blue-100 text-blue-600" :
+                        activity.type === "document" ? "bg-purple-100 text-purple-600" :
+                        activity.type === "file_assoc" ? "bg-teal-100 text-teal-600" :
+                        "bg-gray-100 text-gray-600"
+                      }`}>
+                        {activity.type === "intake" || activity.type === "intake_validation" ? <Mail className="h-4 w-4" /> :
+                         activity.type === "assignment" ? <UserPlus className="h-4 w-4" /> :
+                         activity.type === "review" ? <CheckCircle className="h-4 w-4" /> :
+                         activity.type === "document" ? <FileText className="h-4 w-4" /> :
+                         activity.type === "file_assoc" ? <FolderOpen className="h-4 w-4" /> :
+                         activity.type === "comment" ? <MessageSquare className="h-4 w-4" /> :
+                         <History className="h-4 w-4" />}
                       </div>
-                      <div>
-                        <p className="font-medium">{doc.name}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {doc.size} - Uploaded by {doc.uploadedBy} on {formatDate(doc.uploadedAt)}
-                        </p>
-                      </div>
+                      {index < activities.length - 1 && (
+                        <div className="w-px h-full bg-gray-200 my-1" />
+                      )}
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline" className="capitalize">{doc.category}</Badge>
-                      <Button size="sm" variant="ghost">
-                        <Download className="h-4 w-4" />
-                      </Button>
+                    <div className="flex-1 pb-4">
+                      <p className="font-medium">{activity.description}</p>
+                      <p className="text-sm text-muted-foreground">{activity.details}</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {activity.user} - {formatDateTime(activity.timestamp)}
+                      </p>
                     </div>
                   </div>
                 ))}
@@ -465,35 +663,24 @@ export default function CorrespondenceCaseDetailPage() {
           </Card>
         </TabsContent>
 
-        {/* Tasks Tab */}
-        <TabsContent value="tasks" className="mt-6">
+        {/* TASKS TAB */}
+        <TabsContent value="tasks">
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="text-lg">Tasks</CardTitle>
-              <Button size="sm">
-                Add Task
-              </Button>
+            <CardHeader>
+              <CardTitle className="text-base">Tasks</CardTitle>
+              <CardDescription>Active tasks for this case</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
                 {tasks.map((task) => (
                   <div key={task.id} className="flex items-center justify-between p-3 border rounded-lg">
                     <div className="flex items-center gap-3">
-                      <div className={`h-6 w-6 rounded-full flex items-center justify-center ${
-                        task.status === "completed" 
-                          ? "bg-green-100 text-green-600"
-                          : task.status === "in_progress"
-                            ? "bg-blue-100 text-blue-600"
-                            : "bg-slate-100 text-slate-600"
-                      }`}>
-                        {task.status === "completed" ? (
-                          <CheckCircle className="h-4 w-4" />
-                        ) : task.status === "in_progress" ? (
-                          <PlayCircle className="h-4 w-4" />
-                        ) : (
-                          <Clock className="h-4 w-4" />
-                        )}
-                      </div>
+                      <input
+                        type="checkbox"
+                        checked={task.status === "completed"}
+                        className="h-4 w-4"
+                        readOnly
+                      />
                       <div>
                         <p className={`font-medium ${task.status === "completed" ? "line-through text-muted-foreground" : ""}`}>
                           {task.title}
@@ -503,7 +690,13 @@ export default function CorrespondenceCaseDetailPage() {
                         </p>
                       </div>
                     </div>
-                    <Badge variant="outline" className="capitalize">{task.status.replace("_", " ")}</Badge>
+                    <Badge variant={
+                      task.status === "completed" ? "default" :
+                      task.status === "in_progress" ? "default" : "outline"
+                    } className={task.status === "completed" ? "bg-emerald-100 text-emerald-800" : ""}>
+                      {task.status === "completed" ? "Completed" :
+                       task.status === "in_progress" ? "In Progress" : "Pending"}
+                    </Badge>
                   </div>
                 ))}
               </div>
@@ -511,105 +704,53 @@ export default function CorrespondenceCaseDetailPage() {
           </Card>
         </TabsContent>
 
-        {/* Communications Tab */}
-        <TabsContent value="communications" className="mt-6">
+        {/* COMMENTS TAB */}
+        <TabsContent value="comments">
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">Comments & Communications</CardTitle>
+              <CardTitle className="text-base">Comments & Notes</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Comment Input */}
-              <div className="space-y-3">
-                <Textarea 
-                  placeholder="Add a comment..."
-                  value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
-                  rows={3}
-                />
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <input 
-                      type="checkbox" 
-                      id="internal" 
-                      checked={isInternalComment}
-                      onChange={(e) => setIsInternalComment(e.target.checked)}
-                      className="rounded"
-                    />
-                    <Label htmlFor="internal" className="text-sm">Internal only (not visible to submitter)</Label>
-                  </div>
-                  <Button size="sm" disabled={!newComment.trim()}>
-                    <Send className="h-4 w-4 mr-2" />
-                    Add Comment
-                  </Button>
-                </div>
-              </div>
-
-              <Separator />
-
-              {/* Comments List */}
+            <CardContent className="space-y-6">
+              {/* Existing Comments */}
               <div className="space-y-4">
                 {comments.map((comment) => (
-                  <div key={comment.id} className={`p-4 rounded-lg ${comment.isInternal ? "bg-amber-50 border border-amber-200" : "bg-muted"}`}>
+                  <div key={comment.id} className={`p-4 rounded-lg ${comment.isInternal ? "bg-amber-50 border border-amber-200" : "bg-gray-50"}`}>
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
-                        <div className="h-8 w-8 rounded-full bg-slate-200 flex items-center justify-center">
-                          <User className="h-4 w-4 text-slate-600" />
-                        </div>
-                        <div>
-                          <p className="font-medium text-sm">{comment.author}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {formatDateTime(comment.timestamp)}
-                          </p>
-                        </div>
+                        <span className="font-medium">{comment.author}</span>
+                        {comment.isInternal && (
+                          <Badge variant="outline" className="text-amber-700 border-amber-300">Internal</Badge>
+                        )}
                       </div>
-                      {comment.isInternal && (
-                        <Badge variant="outline" className="text-amber-700 border-amber-300">Internal</Badge>
-                      )}
+                      <span className="text-xs text-muted-foreground">{formatDateTime(comment.timestamp)}</span>
                     </div>
                     <p className="text-sm">{comment.content}</p>
                   </div>
                 ))}
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
 
-        {/* History Tab */}
-        <TabsContent value="history" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Activity History</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="relative">
-                <div className="absolute left-4 top-0 bottom-0 w-px bg-slate-200" />
-                <div className="space-y-6">
-                  {activities.map((activity) => (
-                    <div key={activity.id} className="relative pl-10">
-                      <div className={`absolute left-0 w-8 h-8 rounded-full flex items-center justify-center ${
-                        activity.type === "status_change" 
-                          ? "bg-blue-100 text-blue-600"
-                          : activity.type === "comment"
-                            ? "bg-amber-100 text-amber-600"
-                            : activity.type === "document"
-                              ? "bg-green-100 text-green-600"
-                              : "bg-purple-100 text-purple-600"
-                      }`}>
-                        {activity.type === "status_change" && <ArrowRight className="h-4 w-4" />}
-                        {activity.type === "comment" && <MessageSquare className="h-4 w-4" />}
-                        {activity.type === "document" && <FileText className="h-4 w-4" />}
-                        {activity.type === "task" && <CheckCircle className="h-4 w-4" />}
-                      </div>
-                      <div>
-                        <p className="font-medium text-sm">{activity.description}</p>
-                        <p className="text-sm text-muted-foreground">{activity.details}</p>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {activity.user} - {formatDateTime(activity.timestamp)}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
+              {/* Add Comment */}
+              <Separator />
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="internal"
+                    checked={isInternalComment}
+                    onChange={(e) => setIsInternalComment(e.target.checked)}
+                    className="h-4 w-4"
+                  />
+                  <Label htmlFor="internal" className="text-sm">Internal note (not visible to submitter)</Label>
                 </div>
+                <Textarea
+                  placeholder="Add a comment or note..."
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                />
+                <Button>
+                  <Send className="h-4 w-4 mr-2" />
+                  Add Comment
+                </Button>
               </div>
             </CardContent>
           </Card>
