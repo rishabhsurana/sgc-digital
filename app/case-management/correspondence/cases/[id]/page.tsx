@@ -26,7 +26,7 @@ import {
   PauseCircle,
   ArrowRight
 } from "lucide-react"
-import { formatDate } from "@/lib/utils/date-utils"
+import { formatDate, formatDateTime } from "@/lib/utils/date-utils"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -558,7 +558,7 @@ export default function CorrespondenceCaseDetailPage() {
                         <div>
                           <p className="font-medium text-sm">{comment.author}</p>
                           <p className="text-xs text-muted-foreground">
-                            {new Date(comment.timestamp).toLocaleString()}
+                            {formatDateTime(comment.timestamp)}
                           </p>
                         </div>
                       </div>
@@ -604,7 +604,7 @@ export default function CorrespondenceCaseDetailPage() {
                         <p className="font-medium text-sm">{activity.description}</p>
                         <p className="text-sm text-muted-foreground">{activity.details}</p>
                         <p className="text-xs text-muted-foreground mt-1">
-                          {activity.user} - {new Date(activity.timestamp).toLocaleString()}
+                          {activity.user} - {formatDateTime(activity.timestamp)}
                         </p>
                       </div>
                     </div>
