@@ -23,6 +23,7 @@ import {
   MoreHorizontal,
   ChevronRight
 } from "lucide-react"
+import { formatDate } from "@/lib/utils/date-utils"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -272,11 +273,11 @@ export default function ContractCaseDetailPage() {
                     </div>
                     <div>
                       <label className="text-sm text-muted-foreground">Start Date</label>
-                      <p className="font-medium">{new Date(caseData.startDate).toLocaleDateString()}</p>
+                      <p className="font-medium">{formatDate(caseData.startDate)}</p>
                     </div>
                     <div>
                       <label className="text-sm text-muted-foreground">End Date</label>
-                      <p className="font-medium">{new Date(caseData.endDate).toLocaleDateString()}</p>
+                      <p className="font-medium">{formatDate(caseData.endDate)}</p>
                     </div>
                   </div>
                   <Separator />
@@ -472,7 +473,7 @@ export default function ContractCaseDetailPage() {
                   {caseData.daysRemaining}
                 </div>
                 <p className="text-sm text-muted-foreground">days remaining</p>
-                <p className="text-sm mt-2">Due: {new Date(caseData.dueDate).toLocaleDateString()}</p>
+                <p className="text-sm mt-2">Due: {formatDate(caseData.dueDate)}</p>
                 <Badge className="mt-2 bg-green-100 text-green-800">On Track</Badge>
               </div>
             </CardContent>

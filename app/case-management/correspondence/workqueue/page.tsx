@@ -18,6 +18,7 @@ import {
   MessageSquare,
   ExternalLink
 } from "lucide-react"
+import { formatDate } from "@/lib/utils/date-utils"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -314,7 +315,7 @@ export default function CorrespondenceWorkqueuePage() {
                         <TableCell>
                           <div className="flex items-center gap-1">
                             <Calendar className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm">{new Date(item.dueDate).toLocaleDateString()}</span>
+                            <span className="text-sm">{formatDate(item.dueDate)}</span>
                           </div>
                         </TableCell>
                         <TableCell>

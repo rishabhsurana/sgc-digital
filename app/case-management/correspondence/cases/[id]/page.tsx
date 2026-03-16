@@ -26,6 +26,7 @@ import {
   PauseCircle,
   ArrowRight
 } from "lucide-react"
+import { formatDate } from "@/lib/utils/date-utils"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -183,7 +184,7 @@ export default function CorrespondenceCaseDetailPage() {
                 </div>
                 <div className="flex items-center gap-1">
                   <Calendar className="h-4 w-4" />
-                  Due: {new Date(mockCase.dueDate).toLocaleDateString()}
+                  Due: {formatDate(mockCase.dueDate)}
                 </div>
               </div>
             </div>
@@ -360,11 +361,11 @@ export default function CorrespondenceCaseDetailPage() {
                   </div>
                   <div>
                     <Label className="text-muted-foreground">Date Received</Label>
-                    <p>{new Date(mockCase.dateReceived).toLocaleDateString()}</p>
+                    <p>{formatDate(mockCase.dateReceived)}</p>
                   </div>
                   <div>
                     <Label className="text-muted-foreground">Date Assigned</Label>
-                    <p>{new Date(mockCase.dateAssigned).toLocaleDateString()}</p>
+                    <p>{formatDate(mockCase.dateAssigned)}</p>
                   </div>
                 </div>
                 <Separator />
@@ -447,7 +448,7 @@ export default function CorrespondenceCaseDetailPage() {
                       <div>
                         <p className="font-medium">{doc.name}</p>
                         <p className="text-sm text-muted-foreground">
-                          {doc.size} - Uploaded by {doc.uploadedBy} on {new Date(doc.uploadedAt).toLocaleDateString()}
+                          {doc.size} - Uploaded by {doc.uploadedBy} on {formatDate(doc.uploadedAt)}
                         </p>
                       </div>
                     </div>
@@ -498,7 +499,7 @@ export default function CorrespondenceCaseDetailPage() {
                           {task.title}
                         </p>
                         <p className="text-sm text-muted-foreground">
-                          {task.assignee} - Due {new Date(task.dueDate).toLocaleDateString()}
+                          {task.assignee} - Due {formatDate(task.dueDate)}
                         </p>
                       </div>
                     </div>

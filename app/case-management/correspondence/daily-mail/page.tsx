@@ -18,6 +18,7 @@ import {
   Shield,
   FileText
 } from "lucide-react"
+import { formatDate, formatDateLong } from "@/lib/utils/date-utils"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -196,7 +197,7 @@ export default function DailyMailDashboardPage() {
             </div>
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold">Daily Mail Dashboard</h1>
-              <p className="mt-1 text-white/80">Review and assign incoming correspondence - {new Date().toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+              <p className="mt-1 text-white/80">Review and assign incoming correspondence - {formatDateLong(new Date())}</p>
             </div>
           </div>
           <div className="flex gap-2">
@@ -376,7 +377,7 @@ export default function DailyMailDashboardPage() {
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <Calendar className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm">{new Date(item.dateReceived).toLocaleDateString()}</span>
+                        <span className="text-sm">{formatDate(item.dateReceived)}</span>
                       </div>
                     </TableCell>
                     <TableCell>

@@ -18,6 +18,7 @@ import {
   User,
   AlertTriangle
 } from "lucide-react"
+import { formatDate } from "@/lib/utils/date-utils"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -334,7 +335,7 @@ export default function ContractsWorkQueuePage() {
                     <div className="flex items-center gap-2">
                       <Calendar className="h-4 w-4 text-muted-foreground" />
                       <div>
-                        <p className="text-sm">{new Date(item.dueDate).toLocaleDateString()}</p>
+                        <p className="text-sm">{formatDate(item.dueDate)}</p>
                         <p className={`text-xs ${item.daysRemaining < 0 ? 'text-red-600' : item.daysRemaining <= 3 ? 'text-amber-600' : 'text-muted-foreground'}`}>
                           {item.daysRemaining < 0 
                             ? `${Math.abs(item.daysRemaining)} days overdue` 
