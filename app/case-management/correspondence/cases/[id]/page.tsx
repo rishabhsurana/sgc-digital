@@ -425,199 +425,203 @@ export default function CorrespondenceCaseDetailPage() {
         <span className="text-foreground font-medium">{caseData.trackingNumber}</span>
       </nav>
 
-      {/* Header Card with Key Info */}
-      <Card className="border-l-4 border-l-blue-600">
-        <CardContent className="pt-6">
-          <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
-            {/* Left - Case Identity */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <Button variant="ghost" size="icon" asChild>
-                  <Link href="/case-management/correspondence/workqueue">
-                    <ArrowLeft className="h-5 w-5" />
-                  </Link>
-                </Button>
-                <div>
-                  <div className="flex items-center gap-3">
-                    <h1 className="text-2xl font-bold">{caseData.trackingNumber}</h1>
-                    {getStatusBadge(caseData.status)}
-                    {caseData.isUrgent && <Badge variant="destructive"><Flag className="h-3 w-3 mr-1" />Urgent</Badge>}
-                    {caseData.isConfidential && <Badge variant="outline"><Shield className="h-3 w-3 mr-1" />Confidential</Badge>}
-                  </div>
-                  <p className="text-muted-foreground mt-1 max-w-2xl">{caseData.subjectMatter}</p>
+      {/* Header Card with Key Info - Blue Gradient Theme */}
+      <div className="rounded-xl bg-gradient-to-r from-blue-700 via-blue-800 to-blue-900 p-6 text-white shadow-lg">
+        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+          {/* Left - Case Identity */}
+          <div className="space-y-4 flex-1">
+            <div className="flex items-center gap-3">
+              <Button variant="ghost" size="icon" asChild className="text-white/80 hover:text-white hover:bg-white/10">
+                <Link href="/case-management/correspondence/workqueue">
+                  <ArrowLeft className="h-5 w-5" />
+                </Link>
+              </Button>
+              <div>
+                <div className="flex items-center gap-3 flex-wrap">
+                  <h1 className="text-2xl font-bold text-white">{caseData.trackingNumber}</h1>
+                  <Badge className="bg-white/20 text-white border-white/30 hover:bg-white/30">
+                    {statusConfig[caseData.status]?.label || caseData.status}
+                  </Badge>
+                  {caseData.isUrgent && <Badge className="bg-red-500 text-white border-red-400"><Flag className="h-3 w-3 mr-1" />Urgent</Badge>}
+                  {caseData.isConfidential && <Badge className="bg-amber-500/90 text-white border-amber-400"><Shield className="h-3 w-3 mr-1" />Confidential</Badge>}
                 </div>
-              </div>
-              
-              {/* Quick Info Row */}
-              <div className="flex flex-wrap items-center gap-4 text-sm">
-                <div className="flex items-center gap-1.5">
-                  <Building2 className="h-4 w-4 text-muted-foreground" />
-                  <span>{caseData.originatingEntity}</span>
-                </div>
-                <Separator orientation="vertical" className="h-4" />
-                <div className="flex items-center gap-1.5">
-                  <Briefcase className="h-4 w-4 text-muted-foreground" />
-                  <span>{caseData.correspondenceTypeLabel}</span>
-                </div>
-                <Separator orientation="vertical" className="h-4" />
-                <div className="flex items-center gap-1.5">
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                  <span>Received: {formatDate(caseData.dateReceived)}</span>
-                </div>
-                {caseData.assignedOfficerName && (
-                  <>
-                    <Separator orientation="vertical" className="h-4" />
-                    <div className="flex items-center gap-1.5">
-                      <User className="h-4 w-4 text-muted-foreground" />
-                      <span>Assigned: {caseData.assignedOfficerName}</span>
-                    </div>
-                  </>
-                )}
+                <p className="text-white/80 mt-2 max-w-2xl leading-relaxed">{caseData.subjectMatter}</p>
               </div>
             </div>
             
-            {/* Right - SLA & Dates */}
-            <div className="flex flex-col sm:flex-row gap-4">
-              {/* SLA Status */}
-              <div className={`rounded-lg border p-4 min-w-[160px] ${getSlaStatusColor(caseData.slaStatus)}`}>
-                <div className="flex items-center gap-2 mb-2">
-                  <Timer className="h-4 w-4" />
-                  <span className="text-xs font-medium uppercase tracking-wide">SLA Status</span>
-                </div>
-                <div className="text-2xl font-bold">{caseData.daysRemaining} days</div>
-                <div className="text-xs">remaining of {caseData.slaDays}</div>
+            {/* Quick Info Row */}
+            <div className="flex flex-wrap items-center gap-4 text-sm text-white/70">
+              <div className="flex items-center gap-1.5">
+                <Building2 className="h-4 w-4" />
+                <span>{caseData.originatingEntity}</span>
               </div>
-              
-              {/* Due Date */}
-              <div className="rounded-lg border bg-muted/50 p-4 min-w-[160px]">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Due Date</span>
+              <div className="h-4 w-px bg-white/30" />
+              <div className="flex items-center gap-1.5">
+                <Briefcase className="h-4 w-4" />
+                <span>{caseData.correspondenceTypeLabel}</span>
+              </div>
+              <div className="h-4 w-px bg-white/30" />
+              <div className="flex items-center gap-1.5">
+                <Calendar className="h-4 w-4" />
+                <span>Received: {formatDate(caseData.dateReceived)}</span>
+              </div>
+              {caseData.assignedOfficerName && (
+                <>
+                  <div className="h-4 w-px bg-white/30" />
+                  <div className="flex items-center gap-1.5">
+                    <User className="h-4 w-4" />
+                    <span>Assigned: {caseData.assignedOfficerName}</span>
                   </div>
-                  {canEditDates() && (
-                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setShowEditDatesDialog(true)}>
-                      <Edit className="h-3 w-3" />
-                    </Button>
-                  )}
+                </>
+              )}
+            </div>
+          </div>
+          
+          {/* Right - SLA & Dates */}
+          <div className="flex flex-col sm:flex-row gap-3">
+            {/* SLA Status */}
+            <div className={`rounded-lg p-4 min-w-[150px] ${
+              caseData.slaStatus === 'on_track' ? 'bg-emerald-500/20 border border-emerald-400/30' :
+              caseData.slaStatus === 'at_risk' ? 'bg-amber-500/20 border border-amber-400/30' :
+              'bg-red-500/20 border border-red-400/30'
+            }`}>
+              <div className="flex items-center gap-2 mb-1">
+                <Timer className="h-4 w-4" />
+                <span className="text-xs font-medium uppercase tracking-wide text-white/80">SLA Status</span>
+              </div>
+              <div className={`text-2xl font-bold ${
+                caseData.slaStatus === 'on_track' ? 'text-emerald-300' :
+                caseData.slaStatus === 'at_risk' ? 'text-amber-300' :
+                'text-red-300'
+              }`}>{caseData.daysRemaining} days</div>
+              <div className="text-xs text-white/60">remaining of {caseData.slaDays}</div>
+            </div>
+            
+            {/* Due Date */}
+            <div className="rounded-lg bg-white/10 border border-white/20 p-4 min-w-[150px]">
+              <div className="flex items-center justify-between mb-1">
+                <div className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4 text-white/80" />
+                  <span className="text-xs font-medium uppercase tracking-wide text-white/80">Due Date</span>
                 </div>
-                <div className="text-lg font-bold">{formatDate(caseData.dueDate)}</div>
-                {caseData.bringUpDate && (
-                  <div className="text-xs text-muted-foreground">Bring-up: {formatDate(caseData.bringUpDate)}</div>
+                {canEditDates() && (
+                  <Button variant="ghost" size="icon" className="h-6 w-6 text-white/60 hover:text-white hover:bg-white/10" onClick={() => setShowEditDatesDialog(true)}>
+                    <Edit className="h-3 w-3" />
+                  </Button>
                 )}
               </div>
+              <div className="text-lg font-bold text-white">{formatDate(caseData.dueDate)}</div>
+              {caseData.bringUpDate && (
+                <div className="text-xs text-white/60">Bring-up: {formatDate(caseData.bringUpDate)}</div>
+              )}
             </div>
           </div>
+        </div>
           
-          {/* Workflow Progress */}
-          <div className="mt-6 pt-6 border-t">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium">Workflow Progress</span>
-            </div>
-            <div className="flex items-center gap-2">
-              {workflowStages.map((stage, index) => (
-                <div key={stage.id} className="flex items-center">
-                  <div className={`
-                    flex items-center justify-center w-8 h-8 rounded-full text-xs font-medium
-                    ${index < currentStageIndex ? 'bg-green-600 text-white' :
-                      index === currentStageIndex ? 'bg-blue-600 text-white' :
-                      'bg-muted text-muted-foreground'}
-                  `}>
-                    {index < currentStageIndex ? <CheckCircle className="h-4 w-4" /> : index + 1}
-                  </div>
-                  <span className={`ml-2 text-sm hidden sm:inline ${index === currentStageIndex ? 'font-medium' : 'text-muted-foreground'}`}>
-                    {stage.label}
-                  </span>
-                  {index < workflowStages.length - 1 && (
-                    <div className={`w-8 lg:w-16 h-0.5 mx-2 ${index < currentStageIndex ? 'bg-green-600' : 'bg-muted'}`} />
-                  )}
-                </div>
-              ))}
-            </div>
+        {/* Workflow Progress - Inside themed header */}
+        <div className="mt-6 pt-5 border-t border-white/20">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-sm font-medium text-white/90">Workflow Progress</span>
           </div>
-          
-          {/* Alert if pending assignment */}
-          {caseData.status === "PENDING_REVIEW" && canAssign() && (
-            <div className="mt-4 p-4 rounded-lg bg-amber-50 border border-amber-200">
-              <div className="flex items-center gap-3">
-                <AlertCircle className="h-5 w-5 text-amber-600" />
-                <div className="flex-1">
-                  <p className="font-medium text-amber-800">Action Required: Assign to Legal Officer</p>
-                  <p className="text-sm text-amber-700">This case is awaiting your review and assignment to a legal officer.</p>
+          <div className="flex items-center gap-1 overflow-x-auto pb-1">
+            {workflowStages.map((stage, index) => (
+              <div key={stage.id} className="flex items-center">
+                <div className={`
+                  flex items-center justify-center w-8 h-8 rounded-full text-xs font-medium
+                  ${index < currentStageIndex ? 'bg-emerald-400 text-emerald-900' :
+                    index === currentStageIndex ? 'bg-white text-blue-700' :
+                    'bg-white/20 text-white/60'}
+                `}>
+                  {index < currentStageIndex ? <CheckCircle className="h-4 w-4" /> : index + 1}
                 </div>
-                <Button onClick={() => setShowAssignDialog(true)}>
-                  <UserPlus className="h-4 w-4 mr-2" />
-                  Assign Officer
-                </Button>
+                <span className={`ml-2 text-sm hidden sm:inline ${index === currentStageIndex ? 'font-medium text-white' : 'text-white/60'}`}>
+                  {stage.label}
+                </span>
+                {index < workflowStages.length - 1 && (
+                  <div className={`w-8 lg:w-12 h-0.5 mx-2 ${index < currentStageIndex ? 'bg-emerald-400' : 'bg-white/20'}`} />
+                )}
               </div>
-            </div>
-          )}
-          
-          {/* Action Buttons */}
-          <div className="mt-4 pt-4 border-t flex flex-wrap gap-2">
-            {canAssign() && caseData.status === "PENDING_REVIEW" && (
-              <Button onClick={() => setShowAssignDialog(true)}>
-                <UserPlus className="h-4 w-4 mr-2" />
-                Assign to Officer
-              </Button>
-            )}
-            {canProcess() && caseData.status === "ASSIGNED" && (
-              <>
-                <Button variant="outline" onClick={() => setShowLiaisonDialog(true)}>
-                  <ExternalLink className="h-4 w-4 mr-2" />
-                  Liaise with Agency
-                </Button>
-                <Button>
-                  <Send className="h-4 w-4 mr-2" />
-                  Submit Response for Approval
-                </Button>
-              </>
-            )}
-            {canApprove() && caseData.status === "IN_PROGRESS" && (
-              <>
-                <Button variant="outline">
-                  <XCircle className="h-4 w-4 mr-2" />
-                  Return for Revision
-                </Button>
-                <Button>
-                  <CheckCircle className="h-4 w-4 mr-2" />
-                  Approve & Dispatch
-                </Button>
-              </>
-            )}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline">
-                  <MoreHorizontal className="h-4 w-4 mr-2" />
-                  More Actions
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => setShowEditClassificationDialog(true)}>
-                  <Edit className="h-4 w-4 mr-2" />
-                  Edit Classification
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setShowEditDatesDialog(true)}>
-                  <Calendar className="h-4 w-4 mr-2" />
-                  Edit Dates
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setShowEditContactDialog(true)}>
-                  <User className="h-4 w-4 mr-2" />
-                  Edit Contact Info
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <PauseCircle className="h-4 w-4 mr-2" />
-                  Put On Hold
-                </DropdownMenuItem>
-                <DropdownMenuItem className="text-destructive">
-                  <Archive className="h-4 w-4 mr-2" />
-                  Cancel Case
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            ))}
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
+      
+      {/* Alert if pending assignment - Outside header, white card */}
+      {caseData.status === "PENDING_REVIEW" && canAssign() && (
+        <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-amber-100">
+              <AlertCircle className="h-5 w-5 text-amber-600" />
+            </div>
+            <div className="flex-1">
+              <p className="font-semibold text-amber-900">Action Required: Assign to Legal Officer</p>
+              <p className="text-sm text-amber-700">This case is awaiting your review and assignment to a legal officer.</p>
+            </div>
+            <Button onClick={() => setShowAssignDialog(true)} className="bg-amber-600 hover:bg-amber-700">
+              <UserPlus className="h-4 w-4 mr-2" />
+              Assign Officer
+            </Button>
+          </div>
+        </div>
+      )}
+          
+      {/* Action Buttons */}
+      <div className="flex flex-wrap gap-2">
+        {canProcess() && caseData.status === "ASSIGNED" && (
+          <>
+            <Button variant="outline" onClick={() => setShowLiaisonDialog(true)}>
+              <ExternalLink className="h-4 w-4 mr-2" />
+              Liaise with Agency
+            </Button>
+            <Button>
+              <Send className="h-4 w-4 mr-2" />
+              Submit Response for Approval
+            </Button>
+          </>
+        )}
+        {canApprove() && caseData.status === "IN_PROGRESS" && (
+          <>
+            <Button variant="outline">
+              <XCircle className="h-4 w-4 mr-2" />
+              Return for Revision
+            </Button>
+            <Button>
+              <CheckCircle className="h-4 w-4 mr-2" />
+              Approve & Dispatch
+            </Button>
+          </>
+        )}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline">
+              <MoreHorizontal className="h-4 w-4 mr-2" />
+              More Actions
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => setShowEditClassificationDialog(true)}>
+              <Edit className="h-4 w-4 mr-2" />
+              Edit Classification
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setShowEditDatesDialog(true)}>
+              <Calendar className="h-4 w-4 mr-2" />
+              Edit Dates
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setShowEditContactDialog(true)}>
+              <User className="h-4 w-4 mr-2" />
+              Edit Contact Info
+            </DropdownMenuItem>
+            <DropdownMenuItem>
+              <PauseCircle className="h-4 w-4 mr-2" />
+              Put On Hold
+            </DropdownMenuItem>
+            <DropdownMenuItem className="text-destructive">
+              <Archive className="h-4 w-4 mr-2" />
+              Cancel Case
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
 
       {/* Main Content Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
