@@ -43,6 +43,33 @@ import {
   Trash2
 } from "lucide-react"
 import { formatDate, formatDateTime } from "@/lib/utils/date-utils"
+import {
+  CONTRACT_TYPES,
+  CONTRACT_NATURE,
+  CONTRACT_CATEGORIES,
+  CONTRACT_INSTRUMENT_TYPES,
+  CONTRACT_STATUS,
+  FUNDING_SOURCES,
+  PROCUREMENT_METHODS,
+  CONTRACTING_PARTY_SCOPE,
+  CURRENCIES,
+  RETURN_TO_MDA_REASONS,
+  INTAKE_VALIDATION_STATUS,
+  MANDATORY_DOCS_CHECKLIST_STATUS,
+  REGISTRY_FILE_ASSOCIATION_STATUS,
+  URGENCY_LEVELS,
+  SECURITY_LEVELS,
+  SUBMISSION_CHANNELS,
+  DISPATCH_MODES,
+  DOCUMENT_STATUS,
+  APPROVAL_DECISIONS,
+  CONTRACT_DOCUMENT_TYPES,
+  LEGAL_OFFICERS,
+  ORIGINATING_MDAS,
+  NATURE_CATEGORY_RULES,
+  getCategoriesForNature,
+  getInstrumentTypesForNature
+} from "@/lib/constants/taxonomy"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -90,122 +117,64 @@ import {
   TableRow,
 } from "@/components/ui/table"
 
-// ========== CONTROLLED VOCABULARIES (from Configuration Workbook TAB 12) ==========
-const CONTRACT_TYPES = [
-  { value: "New", label: "New Contract" },
-  { value: "Supplemental", label: "Supplemental (Amendment/Addendum)" },
-  { value: "Renewal", label: "Renewal" },
-]
+// ========== CONTROLLED VOCABULARIES (Imported from @/lib/constants/taxonomy) ==========
+// Based on Contracts_Module_Classification_Taxonomy_Metadata_v14_28Feb2026
 
-const NATURE_OF_CONTRACT = [
-  { value: "Goods", label: "Goods" },
-  { value: "Consultancy", label: "Consultancy / Services" },
-  { value: "Works", label: "Works" },
-]
+// Map taxonomy legal officers to component format
+const LEGAL_OFFICERS_LIST = LEGAL_OFFICERS.map((officer, idx) => ({
+  id: `lo${idx + 1}`,
+  code: officer.code,
+  name: officer.label,
+  role: officer.role
+}))
 
-const CONTRACT_CATEGORIES = [
-  { value: "CAT_PROC", label: "Procurement of Goods & Services" },
-  { value: "CAT_CONS", label: "Consultancy / Professional Services" },
-  { value: "CAT_EMP", label: "Employment / Personnel" },
-  { value: "CAT_CONST", label: "Construction / Public Works" },
-  { value: "CAT_LEASE", label: "Lease / Property" },
-  { value: "CAT_MOU", label: "Inter-Agency / MOU" },
-  { value: "CAT_OTHER", label: "Other (exception - justification required)" },
-]
+// Map originating MDAs to component format  
+const ORIGINATING_MDA_LIST = ORIGINATING_MDAS.map(mda => ({
+  value: mda.code,
+  label: mda.label
+}))
 
-const CONTRACT_INSTRUMENT_TYPES = [
-  { value: "CLEAN", label: "Cleaning Services" },
-  { value: "CONS_CO", label: "Consultancy - Company" },
-  { value: "CONS_IND", label: "Consultant/Independent Contractor" },
-  { value: "GDS", label: "Goods" },
-  { value: "IC", label: "Individual Consultant" },
-  { value: "IC_IDB", label: "Individual Consultant (IDB-funded)" },
-  { value: "OTHER", label: "Other" },
-  { value: "SVC", label: "Services" },
-  { value: "UNI", label: "Uniforms" },
-  { value: "WKS", label: "Works" },
-]
+// Helper to get status badge variant
+const getContractStatusDisplay = (statusCode: string) => {
+  const status = CONTRACT_STATUS.find(s => s.code === statusCode)
+  return status?.label || statusCode
+}
 
-const PROCUREMENT_METHODS = [
-  { value: "Open Tender", label: "Open Tender" },
-  { value: "Limited Tender", label: "Limited Tender" },
-  { value: "Single Source", label: "Single Source" },
-  { value: "Direct Purchase", label: "Direct Purchase" },
-  { value: "Other", label: "Other" },
-]
-
-const FUNDING_SOURCES = [
-  { value: "Government Budget - Recurrent", label: "Government Budget - Recurrent" },
-  { value: "Government Budget - Capital", label: "Government Budget - Capital" },
-  { value: "IDB", label: "Inter-American Development Bank (IDB)" },
-  { value: "World Bank", label: "World Bank" },
-  { value: "CDB", label: "Caribbean Development Bank (CDB)" },
-  { value: "EU", label: "European Union" },
-  { value: "Other", label: "Other" },
-]
-
-const URGENCY_LEVELS = [
+// Map old "Critical" to urgency levels - Critical not in taxonomy
+const URGENCY_DISPLAY = [
   { value: "Normal", label: "Normal" },
   { value: "Urgent", label: "Urgent" },
-  { value: "Critical", label: "Critical" },
 ]
 
-const MANDATORY_DOCS_STATUS = [
-  { value: "Complete", label: "Complete" },
-  { value: "Incomplete", label: "Incomplete" },
-  { value: "Waived", label: "Waived" },
-]
+// These are now imported from taxonomy - using mapped versions for backwards compatibility
+const MANDATORY_DOCS_STATUS = MANDATORY_DOCS_CHECKLIST_STATUS.map(s => ({ value: s.code, label: s.label }))
+const REGISTRY_FILE_ASSOC_STATUS = REGISTRY_FILE_ASSOCIATION_STATUS.map(s => ({ value: s.code, label: s.label }))
+const RETURN_REASONS = RETURN_TO_MDA_REASONS.map(r => ({ value: r.code, label: r.label }))
+const CONTRACTING_SCOPE = CONTRACTING_PARTY_SCOPE.map(s => ({ value: s.code, label: s.label }))
 
-const REGISTRY_FILE_ASSOC_STATUS = [
-  { value: "Not Started", label: "Not Started" },
-  { value: "In Progress", label: "In Progress" },
-  { value: "Linked", label: "Linked" },
-  { value: "No File Found", label: "No File Found" },
-]
-
-const RETURN_REASONS = [
-  { value: "Missing Documents", label: "Missing Documents" },
-  { value: "Clarification Required", label: "Clarification Required" },
-  { value: "Incorrect Template", label: "Incorrect Template" },
-  { value: "Policy Approval Missing", label: "Policy Approval Missing" },
-  { value: "Other", label: "Other" },
-]
-
-const LEGAL_OFFICERS = [
-  { value: "LO001", label: "John Smith", email: "j.smith@sgc.gov.bb" },
-  { value: "LO002", label: "Sarah Williams", email: "s.williams@sgc.gov.bb" },
-  { value: "LO003", label: "Michael Brown", email: "m.brown@sgc.gov.bb" },
-  { value: "LO004", label: "Jessica Taylor", email: "j.taylor@sgc.gov.bb" },
-  { value: "LO005", label: "David Clarke", email: "d.clarke@sgc.gov.bb" },
-]
-
-const CONTRACTING_PARTY_SCOPE = [
-  { value: "Local", label: "Local" },
-  { value: "Regional", label: "Regional (CARICOM)" },
-  { value: "International", label: "International" },
-]
-
-// Mock case data with COMPLETE properties per configuration workbook
+// Mock case data with COMPLETE properties per Contracts_Module_Classification_Taxonomy_Metadata_v14
+// Property IDs match the taxonomy metadata dictionary (TAB: Property ID)
 const initialCaseData = {
-  // Core Identification
-  contractTransactionNo: "CON-2026-00089",
-  caseType: "CON_NEW",
-  contractType: "New",
+  // Core Identification (ContractTransactionNo - primary unique identifier)
+  contractTransactionNo: "CON-2026-00089", // System-generated
+  caseType: "CON_NEW", // ICM Case Type
+  contractType: "NEW", // ContractType: NEW, SUP, REN (from CONTRACT_TYPES taxonomy)
   
-  // Classification
-  natureOfContract: "Consultancy",
-  contractCategory: "CAT_CONS",
-  contractCategoryOtherJustification: "",
-  contractInstrumentType: "CONS_CO",
-  contractSubType: "",
-  contractTitle: "IT Infrastructure Support Services Agreement",
+  // Classification (per Nature-first taxonomy structure)
+  natureOfContract: "NAT_CSV", // NatureOfContract: NAT_GDS, NAT_CSV, NAT_WKS (drives allowed categories)
+  contractCategory: "CAT_CONS", // ContractCategory - constrained by NatureOfContract via NATURE_CATEGORY_RULES
+  contractCategoryOtherJustification: "", // Required when contractCategory = CAT_OTHER
+  contractInstrumentType: "CONS_CO", // ContractInstrumentType - template family filtered by natureOfContract
+  contractSubType: "", // Required when contractInstrumentType = OTHER
+  contractTitle: "IT Infrastructure Support Services Agreement", // ContractTitle - subject matter
   
-  // Originating Ministry/MDA
-  originatingMinistry: "Ministry of Finance",
+  // Originating Ministry/MDA (OriginatingMDA)
+  originatingMinistry: "MOF", // OriginatingMDA code from ORIGINATING_MDAS
   originatingMDA: "Information Technology Division",
+  originatingMDALabel: "Ministry of Finance",
   
-  // Counterparty Information
-  counterpartyName: "Caribbean Tech Solutions Ltd.",
+  // Counterparty Information (CounterpartyName, etc.)
+  counterpartyName: "Caribbean Tech Solutions Ltd.", // CounterpartyName - legal name
   counterpartyTradingName: "CTS",
   counterpartyRegistrationNo: "BB-12345-2020",
   counterpartyTaxId: "TIN-987654321",
@@ -213,72 +182,75 @@ const initialCaseData = {
   counterpartyContactEmail: "m.brown@ctsbb.com",
   counterpartyContactPhone: "+1 246 555 0123",
   counterpartyAddress: "123 Business Park, Warrens, St. Michael, Barbados",
-  contractingPartyScope: "Local",
+  contractingPartyScope: "Local", // ContractingPartyScope: Local, Regional, International
   
   // Authorized Signatory
   authorizedSignatory: "Hon. John Doe, Minister of Finance",
   
-  // Financial Details
-  contractValue: 450000.00,
-  currency: "BBD",
+  // Financial Details (ContractValue, Currency)
+  contractValue: 450000.00, // ContractValue - optional but recommended
+  currency: "BBD", // Currency: BBD, USD, OTHER
   
-  // Contract Dates
-  effectiveDate: "2026-04-01",
-  expiryDate: "2029-03-31",
-  renewalOption: true,
+  // Contract Dates (EffectiveDate, ExpiryDate, etc.)
+  effectiveDate: "2026-04-01", // EffectiveDate - start date
+  expiryDate: "2029-03-31", // ExpiryDate - end date
+  renewalOption: true, // RenewalOption - indicates renewal/extension option exists
   renewalTerms: "1 year extension option",
-  recommendedCompletionDate: "2026-03-25",
+  recommendedCompletionDate: "2026-03-25", // RecommendedCompletionDate - supports SLA reporting
   
-  // Procurement
-  procurementMethod: "Open Tender",
+  // Procurement (ProcurementMethod, FundingSource)
+  procurementMethod: "TENDER", // ProcurementMethod: TENDER, RFQ, DIRECT, SSP, OTHER
+  singleSourceFlag: false, // SingleSourceFlag - derived from ProcurementMethod = SSP
   tenderReference: "MOF/PROC/2026/001",
-  cpoApprovalReference: "",
-  fundingSource: "Government Budget - Recurrent",
+  cpoApprovalReference: "", // CPOApprovalReference - required if singleSourceFlag = true
+  fundingSource: "GOB", // FundingSource: GOB, IDB, OTHER_DONOR (IDB triggers integrity docs)
   
-  // Submission Details
-  submissionChannel: "Portal",
-  dateSubmitted: "2026-03-10",
+  // Submission Details (SubmissionChannel, DateSubmitted)
+  submissionChannel: "Portal", // SubmissionChannel: Portal, Email, Paper
+  dateSubmitted: "2026-03-10", // DateSubmitted - system timestamp
   externalReferenceNo: "MOF/IT/2026/001",
   
-  // Document Checklist Status
-  mandatoryDocsChecklistStatus: "Complete",
+  // Document Checklist Status (MandatoryDocsChecklistStatus)
+  mandatoryDocsChecklistStatus: "Complete", // Complete, Incomplete, Waived
+  intakeValidationStatus: "Validated", // IntakeValidationStatus: Validated, Missing Documents, etc.
   
-  // Assignment & Processing
-  assignedLegalOfficerId: "LO001",
-  assignedLegalOfficer: "John Smith",
-  assignedLegalOfficerEmail: "j.smith@sgc.gov.bb",
-  supervisor: "Sarah Williams (DSG)",
+  // Assignment & Processing (AssignedLegalOfficer)
+  assignedLegalOfficerId: "JSMALL_DSG", // Code from LEGAL_OFFICERS taxonomy
+  assignedLegalOfficer: "Jennifer Small (DSG)", // AssignedLegalOfficer display name
+  assignedLegalOfficerEmail: "j.small@sgc.gov.bb",
+  supervisor: "Sir Richard Cheltenham, KC (SG)",
   
-  // Contract Status & Stage
-  contractStatus: "DRAFTING",
+  // Contract Status & Stage (ContractStatus - workflow state)
+  contractStatus: "DRAFTING", // ContractStatus: INTAKE, ASSIGNED, DRAFTING, SUP_REVIEW, etc.
   contractStage: "DRAFT",
   
-  // Urgency & Flags
-  urgencyLevel: "Normal",
-  urgencyFlag: false,
-  confidentialFlag: false,
+  // Urgency & Security (Urgency, SecurityLevel)
+  urgencyLevel: "Normal", // Urgency: Normal, Urgent
+  urgencyFlag: false, // Urgent items may bypass batching
+  confidentialFlag: false, 
+  securityLevel: "INTERNAL", // SecurityLevel: PUBLIC, INTERNAL, CONF, LEGAL_PRIV
   
-  // Approval/Review Properties
-  approvalDecision: null,
+  // Approval/Review Properties (ApprovalDecision)
+  approvalDecision: null, // ApprovalDecision: Approved, Rejected, Returned for Correction, etc.
   approvalComments: "",
   dateSubmittedForApproval: null,
   dateApprovedOrReturned: null,
   approvedBy: null,
   
-  // External Loop / Ministry Interaction
-  dateSentToMinistry: null,
-  dateReturnedFromMinistry: null,
+  // External Loop / Ministry Interaction (DateSentToMinistry, DateReturnedFromMinistry)
+  dateSentToMinistry: null, // DateSentToMinistry - duration reporting
+  dateReturnedFromMinistry: null, // DateReturnedFromMinistry
   additionalInfoRequestedFlag: false,
-  returnToMDAReason: "",
+  returnToMDAReason: "", // ReturnToMDAReason from RETURN_TO_MDA_REASONS
   returnToMDANotes: "",
   dateAdditionalInfoRequested: null,
   dateAdditionalInfoReceived: null,
   
-  // Adjudication Handling
+  // Adjudication Handling (DateAdjudicated - Supreme Court Registration)
   dateSentToLegalAssistant: null,
   dateReturnedFromRegistryStamp: null,
   outToAdjudicationFlag: false,
-  dateAdjudicated: null,
+  dateAdjudicated: null, // DateAdjudicated - when Legal Assistant uploads stamped contract
   adjudicationNotes: "",
   
   // Parent/Prior Contract (for Supplemental/Renewal)
@@ -469,11 +441,11 @@ export default function ContractCaseDetailPage() {
   
   // Workflow action handlers
   const handleAssignOfficer = () => {
-    const officer = LEGAL_OFFICERS.find(o => o.value === selectedOfficer)
+    const officer = LEGAL_OFFICERS_LIST.find(o => o.code === selectedOfficer)
     if (officer) {
       setCaseData({
         ...caseData,
-        assignedLegalOfficerId: officer.value,
+        assignedLegalOfficerId: officer.code,
         assignedLegalOfficer: officer.label,
         assignedLegalOfficerEmail: officer.email,
         contractStatus: "ASSIGNED",
@@ -620,9 +592,12 @@ export default function ContractCaseDetailPage() {
                       <SelectValue placeholder="Select an officer" />
                     </SelectTrigger>
                     <SelectContent>
-                      {LEGAL_OFFICERS.map(officer => (
-                        <SelectItem key={officer.value} value={officer.value}>
-                          {officer.label}
+                      {LEGAL_OFFICERS_LIST.map(officer => (
+                        <SelectItem key={officer.code} value={officer.code}>
+                          <div className="flex flex-col">
+                            <span>{officer.name}</span>
+                            {officer.role && <span className="text-xs text-muted-foreground">{officer.role}</span>}
+                          </div>
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -917,7 +892,7 @@ export default function ContractCaseDetailPage() {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Contract Type</p>
-                  <p className="font-medium">{CONTRACT_TYPES.find(t => t.value === caseData.contractType)?.label || caseData.contractType}</p>
+                  <p className="font-medium">{CONTRACT_TYPES.find(t => t.code === caseData.contractType)?.label || caseData.contractType}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Submission Channel</p>
@@ -947,15 +922,15 @@ export default function ContractCaseDetailPage() {
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 <div>
                   <p className="text-sm text-muted-foreground">Nature of Contract</p>
-                  <p className="font-medium">{NATURE_OF_CONTRACT.find(n => n.value === caseData.natureOfContract)?.label}</p>
+                  <p className="font-medium">{CONTRACT_NATURE.find(n => n.code === caseData.natureOfContract)?.label || caseData.natureOfContract}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Contract Category</p>
-                  <p className="font-medium">{CONTRACT_CATEGORIES.find(c => c.value === caseData.contractCategory)?.label}</p>
+                  <p className="font-medium">{CONTRACT_CATEGORIES.find(c => c.code === caseData.contractCategory)?.label}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Contract Instrument Type</p>
-                  <p className="font-medium">{CONTRACT_INSTRUMENT_TYPES.find(t => t.value === caseData.contractInstrumentType)?.label}</p>
+                  <p className="font-medium">{CONTRACT_INSTRUMENT_TYPES.find(t => t.code === caseData.contractInstrumentType)?.label}</p>
                 </div>
                 <div className="col-span-2 md:col-span-3">
                   <p className="text-sm text-muted-foreground">Contract Title</p>
@@ -1374,46 +1349,54 @@ export default function ContractCaseDetailPage() {
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Edit Contract Classification</DialogTitle>
+            <DialogDescription>Update contract classification per taxonomy rules. Category is constrained by Nature.</DialogDescription>
           </DialogHeader>
           <div className="grid grid-cols-2 gap-4 py-4">
             <div>
-              <Label>Contract Type</Label>
+              <Label>Contract Type <span className="text-destructive">*</span></Label>
               <Select value={editForm.contractType} onValueChange={(v) => setEditForm({...editForm, contractType: v})}>
                 <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {CONTRACT_TYPES.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}
+                  {CONTRACT_TYPES.map(t => <SelectItem key={t.code} value={t.code}>{t.label}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
             <div>
-              <Label>Nature of Contract</Label>
-              <Select value={editForm.natureOfContract} onValueChange={(v) => setEditForm({...editForm, natureOfContract: v})}>
+              <Label>Nature of Contract <span className="text-destructive">*</span></Label>
+              <Select value={editForm.natureOfContract} onValueChange={(v) => setEditForm({...editForm, natureOfContract: v, contractCategory: ""})}>
                 <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {NATURE_OF_CONTRACT.map(n => <SelectItem key={n.value} value={n.value}>{n.label}</SelectItem>)}
+                  {CONTRACT_NATURE.map(n => <SelectItem key={n.code} value={n.code}>{n.label}</SelectItem>)}
                 </SelectContent>
               </Select>
+              <p className="text-xs text-muted-foreground mt-1">Drives allowed categories and instrument types</p>
             </div>
             <div>
-              <Label>Contract Category</Label>
+              <Label>Contract Category <span className="text-destructive">*</span></Label>
               <Select value={editForm.contractCategory} onValueChange={(v) => setEditForm({...editForm, contractCategory: v})}>
-                <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="mt-1"><SelectValue placeholder="Select category" /></SelectTrigger>
                 <SelectContent>
-                  {CONTRACT_CATEGORIES.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
+                  {getCategoriesForNature(editForm.natureOfContract).map(c => (
+                    <SelectItem key={c.code} value={c.code}>{c.label}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
+              <p className="text-xs text-muted-foreground mt-1">Constrained by Nature via Nature-Category Rules</p>
             </div>
             <div>
-              <Label>Contract Instrument Type</Label>
+              <Label>Contract Instrument Type <span className="text-destructive">*</span></Label>
               <Select value={editForm.contractInstrumentType} onValueChange={(v) => setEditForm({...editForm, contractInstrumentType: v})}>
-                <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="mt-1"><SelectValue placeholder="Select template type" /></SelectTrigger>
                 <SelectContent>
-                  {CONTRACT_INSTRUMENT_TYPES.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}
+                  {getInstrumentTypesForNature(editForm.natureOfContract).map(t => (
+                    <SelectItem key={t.code} value={t.code}>{t.label}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
+              <p className="text-xs text-muted-foreground mt-1">Template family filtered by Nature</p>
             </div>
             <div className="col-span-2">
-              <Label>Contract Title</Label>
+              <Label>Contract Title <span className="text-destructive">*</span></Label>
               <Input className="mt-1" value={editForm.contractTitle} onChange={(e) => setEditForm({...editForm, contractTitle: e.target.value})} />
             </div>
           </div>
@@ -1492,18 +1475,20 @@ export default function ContractCaseDetailPage() {
               <Select value={editForm.fundingSource} onValueChange={(v) => setEditForm({...editForm, fundingSource: v})}>
                 <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {FUNDING_SOURCES.map(f => <SelectItem key={f.value} value={f.value}>{f.label}</SelectItem>)}
+                  {FUNDING_SOURCES.map(f => <SelectItem key={f.code} value={f.code}>{f.label}</SelectItem>)}
                 </SelectContent>
               </Select>
+              <p className="text-xs text-muted-foreground mt-1">IDB triggers integrity docs requirement</p>
             </div>
             <div>
               <Label>Procurement Method</Label>
               <Select value={editForm.procurementMethod} onValueChange={(v) => setEditForm({...editForm, procurementMethod: v})}>
                 <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {PROCUREMENT_METHODS.map(p => <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>)}
+                  {PROCUREMENT_METHODS.map(p => <SelectItem key={p.code} value={p.code}>{p.label}</SelectItem>)}
                 </SelectContent>
               </Select>
+              <p className="text-xs text-muted-foreground mt-1">Single Source requires CPO approval</p>
             </div>
             <div>
               <Label>Tender Reference</Label>
@@ -1537,7 +1522,7 @@ export default function ContractCaseDetailPage() {
               <Select value={editForm.contractingPartyScope} onValueChange={(v) => setEditForm({...editForm, contractingPartyScope: v})}>
                 <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {CONTRACTING_PARTY_SCOPE.map(s => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
+                  {CONTRACTING_PARTY_SCOPE.map(s => <SelectItem key={s.code} value={s.code}>{s.label}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
@@ -1586,7 +1571,7 @@ export default function ContractCaseDetailPage() {
               <Select value={editForm.urgencyLevel} onValueChange={(v) => setEditForm({...editForm, urgencyLevel: v, urgencyFlag: v !== "Normal"})}>
                 <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {URGENCY_LEVELS.map(u => <SelectItem key={u.value} value={u.value}>{u.label}</SelectItem>)}
+                  {URGENCY_LEVELS.map(u => <SelectItem key={u.code} value={u.code}>{u.label}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>

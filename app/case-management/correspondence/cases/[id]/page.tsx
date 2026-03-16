@@ -42,6 +42,24 @@ import {
   MoreHorizontal
 } from "lucide-react"
 import { formatDate, formatDateTime } from "@/lib/utils/date-utils"
+import {
+  CORRESPONDENCE_TYPES,
+  REGISTRY_CASE_STATUS,
+  REGISTRY_FILE_TYPES,
+  SECURITY_PROFILES,
+  URGENCY_LEVELS,
+  ORIGINATING_ENTITY_TYPES,
+  INTERNAL_RECIPIENTS,
+  SUBMISSION_CHANNELS,
+  DISPATCH_MODES,
+  REGISTRY_DOCUMENT_TYPES,
+  NOTE_TYPES,
+  LEGAL_OFFICERS,
+  ORIGINATING_MDAS,
+  REGISTRY_FILE_ASSOCIATION_STATUS,
+  getRecommendedFileTypes,
+  getSecurityProfileForCorrespondenceType
+} from "@/lib/constants/taxonomy"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -83,25 +101,18 @@ import {
 } from "@/components/ui/dropdown-menu"
 import Link from "next/link"
 
-// Controlled vocabularies per Configuration Workbook
-const CORRESPONDENCE_TYPES = [
-  "General", "Litigation", "Compensation", "Public Trustee", "Advisory", "International Law", "Cabinet / Confidential"
-]
+// Use legal officers from taxonomy with mapped IDs
+const LEGAL_OFFICERS_LIST = LEGAL_OFFICERS.map((officer, idx) => ({
+  id: `lo${idx + 1}`,
+  name: officer.label,
+  code: officer.code,
+  role: officer.role
+}))
 
-const PRIORITY_LEVELS = ["Normal", "Urgent", "Critical"]
-
-const SUBMITTER_TYPES = [
-  "Ministry/Department", "Statutory Body", "Member of the Public", "Private Sector", "Regional/International Body"
-]
-
-const FILE_TYPES = ["Litigation", "Crown Grants", "Compensation", "Advisory", "General"]
-
-const LEGAL_OFFICERS = [
-  { id: "lo1", name: "Sarah Thompson" },
-  { id: "lo2", name: "Michael Brown" },
-  { id: "lo3", name: "Jennifer Lee" },
-  { id: "lo4", name: "David Williams" },
-  { id: "lo5", name: "Amanda Chen" },
+// Combine taxonomy legal officers with any additional mock officers
+const ALL_LEGAL_OFFICERS = [
+  ...LEGAL_OFFICERS_LIST,
+  // Additional officers if needed
 ]
 
 // Mock current user (for role-based access)
@@ -113,38 +124,51 @@ const CURRENT_USER = {
 }
 
 // MOCK DATA - Simulating a case in PENDING_REVIEW status (not yet assigned)
+// Using taxonomy codes from Registry_Module_Classification_Taxonomy_Metadata_v2
 const getMockCaseData = (id: string) => ({
   id,
-  trackingNumber: `REG-2026-${id.padStart(5, '0')}`,
-  status: "PENDING_REVIEW", // NEW, PENDING_REVIEW, ASSIGNED, IN_PROGRESS, PENDING_EXTERNAL, ON_HOLD, CLOSED
+  // Core Identifiers (per TAB: Property ID regTrackingNo)
+  trackingNumber: `REG-2026-COR-2026-00${id.padStart(3, '0')}`,
+  caseType: "Registry Correspondence", // regCaseType - constant
+  
+  // Workflow Status (per TAB: CL_RegistryCaseStatus)
+  status: "PENDING_REVIEW", // regCaseStatus: NEW, PENDING_REVIEW, ASSIGNED, PENDING_EXTERNAL, ON_HOLD, CLOSED, CANCELLED
   workflowStage: "REVIEW",
   
-  // Classification
-  correspondenceType: "Advisory",
-  priority: "Normal",
-  isConfidential: false,
-  isUrgent: false,
+  // Classification (per TAB: CL_CorrespondenceType)
+  correspondenceType: "ADVISORY", // Code from taxonomy
+  correspondenceTypeLabel: CORRESPONDENCE_TYPES.find(t => t.code === "ADVISORY")?.label || "Advisory",
   
-  // Subject
+  // Priority & Security (per TAB: regUrgencyFlag, regConfidentialFlag, regSecurityProfile)
+  priority: "Normal", // CL_UrgencyLevel
+  isConfidential: false, // regConfidentialFlag
+  isUrgent: false, // regUrgencyFlag
+  securityProfile: "STANDARD", // CL_SecurityProfile: STANDARD, CONFIDENTIAL, CABINET
+  
+  // Subject (per TAB: regSubjectMatter)
   subjectMatter: "Request for Legal Opinion on Proposed Amendment to the Companies Act regarding beneficial ownership disclosure requirements",
   
-  // Dates
-  dateReceived: "2026-03-14",
+  // Key Dates (per TAB: regDateReceived, regBringUpDate, regDispatchDate, regClosureDate)
+  dateReceived: "2026-03-14", // regDateReceived
   dueDate: "2026-03-28",
-  bringUpDate: "2026-03-21",
+  bringUpDate: "2026-03-21", // regBringUpDate
   targetCompletionDate: "2026-03-26",
-  closedDate: null,
+  dispatchDate: null, // regDispatchDate
+  closureDate: null, // regClosureDate
   
-  // SLA
+  // SLA Tracking
   slaDays: 14,
   daysElapsed: 2,
   daysRemaining: 12,
   slaStatus: "on_track", // on_track, at_risk, overdue
   
-  // Originator / Contact
-  originatingEntity: "Ministry of International Business",
-  submitterType: "Ministry/Department",
-  submissionChannel: "Portal",
+  // Originator / Contact (per TAB: regOriginatingEntity, regOriginatingEntityType, regEntityId)
+  originatingEntity: "Ministry of International Business", // regOriginatingEntity
+  originatingEntityType: "MDA", // CL_OriginatingEntityType: MDA, COURT, ATTORNEY, PUBLIC, OTHER
+  entityId: "MIB-2026-REG-001", // regEntityId - from portal registration
+  submissionChannel: "Portal", // regSubmissionChannel: Portal, Email, Paper
+  
+  // Contact Details (External submitter)
   contactName: "Ms. Patricia Holder",
   contactJobTitle: "Permanent Secretary",
   contactPhone: "+1 (246) 535-1200",
@@ -152,35 +176,42 @@ const getMockCaseData = (id: string) => ({
   contactAddress: "Warrens Office Complex, Warrens, St. Michael",
   externalReferenceNo: "MIB/LGL/2026/045",
   
-  // Correspondence Details
+  // Correspondence Details (per TAB: regToWhom, From Whom)
   fromWhom: "Permanent Secretary, Ministry of International Business",
-  toWhom: "Solicitor General",
+  toWhom: "SG", // CL_InternalRecipient: SG, DSG, SECRETARY, OTHER
+  toWhomLabel: INTERNAL_RECIPIENTS.find(r => r.code === "SG")?.label || "Solicitor General",
+  
+  // File References
   fileReferenceNo: "SG/ADV/2026/123",
   volume: "1",
   folioMinuteNo: "15",
   
-  // Assignment (null until assigned by SG/DSG)
-  assignedOfficerId: null,
+  // Registry File Association (per TAB: regFileTypes, regExistingFileRefs, regRegistryFileAssocStatus)
+  fileTypes: ["LOCAL", "ADVISORY"], // CL_RegistryFileType codes
+  existingFileRefs: ["SG/ADV/2024/089", "SG/ADV/2023/156"], // regExistingFileRefs
+  registryFileAssocStatus: "IN_PROGRESS", // CL_RegistryFileAssocStatus
+  
+  // Assignment (null until assigned by SG/DSG via Daily Mail review)
+  assignedOfficerId: null, // regAssignedOfficer
   assignedOfficerName: null,
   dateAssigned: null,
-  sgDirective: null,
-  sgDirectiveDate: null,
-  returnToRegistryDirective: null,
   
-  // File Association
-  fileTypes: ["Advisory"],
-  existingFileRefs: [],
-  registryFileAssocStatus: "Pending",
+  // SG/DSG Directive (per TAB: regDirectiveSummary)
+  sgDirective: null, // regDirectiveSummary
+  sgDirectiveDate: null,
+  // Dispatch Details (per TAB: regDispatchMethod, regDispatchTo)
+  dispatchMethod: null, // CL_DispatchMethod: EMAIL, POST, COURIER, PORTAL
+  dispatchTo: null, // regDispatchTo
   
   // External Liaisons
   liaiseAgencies: [],
 })
 
-// Mock documents
+// Mock documents using CL_RegistryDocumentType codes
 const getMockDocuments = () => [
-  { id: "doc1", name: "Request_Letter_MIB.pdf", type: "Incoming Correspondence", size: "245 KB", uploadedBy: "Registry", uploadedAt: "2026-03-14T09:30:00", version: 1 },
-  { id: "doc2", name: "Companies_Act_Amendment_Draft.pdf", type: "Supporting Document", size: "1.2 MB", uploadedBy: "Registry", uploadedAt: "2026-03-14T09:32:00", version: 1 },
-  { id: "doc3", name: "Beneficial_Ownership_Guidelines.pdf", type: "Reference", size: "890 KB", uploadedBy: "Registry", uploadedAt: "2026-03-14T09:35:00", version: 1 },
+  { id: "doc1", name: "Request_Letter_MIB.pdf", typeCode: "INCOMING", type: "Incoming Correspondence", size: "245 KB", uploadedBy: "Registry", uploadedAt: "2026-03-14T09:30:00", version: 1 },
+  { id: "doc2", name: "Companies_Act_Amendment_Draft.pdf", typeCode: "SUPPORTING", type: "Supporting Documents", size: "1.2 MB", uploadedBy: "Registry", uploadedAt: "2026-03-14T09:32:00", version: 1 },
+  { id: "doc3", name: "Beneficial_Ownership_Guidelines.pdf", typeCode: "SUPPORTING", type: "Supporting Documents", size: "890 KB", uploadedBy: "Registry", uploadedAt: "2026-03-14T09:35:00", version: 1 },
 ]
 
 // Mock activities
@@ -426,7 +457,7 @@ export default function CorrespondenceCaseDetailPage() {
                 <Separator orientation="vertical" className="h-4" />
                 <div className="flex items-center gap-1.5">
                   <Briefcase className="h-4 w-4 text-muted-foreground" />
-                  <span>{caseData.correspondenceType}</span>
+                  <span>{caseData.correspondenceTypeLabel}</span>
                 </div>
                 <Separator orientation="vertical" className="h-4" />
                 <div className="flex items-center gap-1.5">
@@ -1075,26 +1106,32 @@ export default function CorrespondenceCaseDetailPage() {
         </TabsContent>
       </Tabs>
       
-      {/* Assign Officer Dialog */}
+      {/* Assign Officer Dialog - Uses regAssignedOfficer from Active Directory */}
       <Dialog open={showAssignDialog} onOpenChange={setShowAssignDialog}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Assign to Legal Officer</DialogTitle>
-            <DialogDescription>Assign this case to a legal officer with your directive.</DialogDescription>
+            <DialogDescription>Assign this case to a legal officer with your directive (regDirectiveSummary).</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label>Select Officer *</Label>
+              <Label>Select Officer <span className="text-destructive">*</span></Label>
               <Select value={assignForm.officerId} onValueChange={(v) => setAssignForm(prev => ({ ...prev, officerId: v }))}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select an officer" />
                 </SelectTrigger>
                 <SelectContent>
-                  {LEGAL_OFFICERS.map(officer => (
-                    <SelectItem key={officer.id} value={officer.id}>{officer.name}</SelectItem>
+                  {ALL_LEGAL_OFFICERS.map(officer => (
+                    <SelectItem key={officer.id} value={officer.id}>
+                      <div className="flex flex-col">
+                        <span>{officer.name}</span>
+                        {officer.role && <span className="text-xs text-muted-foreground">{officer.role}</span>}
+                      </div>
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+              <p className="text-xs text-muted-foreground">Officer responsible for actioning the case</p>
             </div>
             <div className="space-y-2">
               <Label>Due Date *</Label>
@@ -1160,48 +1197,78 @@ export default function CorrespondenceCaseDetailPage() {
         </DialogContent>
       </Dialog>
       
-      {/* Edit Classification Dialog */}
+      {/* Edit Classification Dialog - Using CL_CorrespondenceType and CL_UrgencyLevel from taxonomy */}
       <Dialog open={showEditClassificationDialog} onOpenChange={setShowEditClassificationDialog}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Edit Classification</DialogTitle>
+            <DialogDescription>Update correspondence type and priority settings</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label>Correspondence Type</Label>
+              <Label>Correspondence Type <span className="text-destructive">*</span></Label>
               <Select value={classificationForm.correspondenceType} onValueChange={(v) => setClassificationForm(prev => ({ ...prev, correspondenceType: v }))}>
                 <SelectTrigger>
-                  <SelectValue />
+                  <SelectValue placeholder="Select correspondence type" />
                 </SelectTrigger>
                 <SelectContent>
                   {CORRESPONDENCE_TYPES.map(type => (
-                    <SelectItem key={type} value={type}>{type}</SelectItem>
+                    <SelectItem key={type.code} value={type.code}>
+                      <div className="flex flex-col">
+                        <span>{type.label}</span>
+                        <span className="text-xs text-muted-foreground">{type.description}</span>
+                      </div>
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+              <p className="text-xs text-muted-foreground">Primary classification facet. Drives routing and security defaults.</p>
             </div>
+            
             <div className="space-y-2">
-              <Label>Priority</Label>
+              <Label>Urgency Level</Label>
               <Select value={classificationForm.priority} onValueChange={(v) => setClassificationForm(prev => ({ ...prev, priority: v }))}>
                 <SelectTrigger>
-                  <SelectValue />
+                  <SelectValue placeholder="Select urgency" />
                 </SelectTrigger>
                 <SelectContent>
-                  {PRIORITY_LEVELS.map(level => (
-                    <SelectItem key={level} value={level}>{level}</SelectItem>
+                  {URGENCY_LEVELS.map(level => (
+                    <SelectItem key={level.code} value={level.code}>
+                      <span>{level.label}</span>
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-            <div className="flex items-center justify-between">
-              <Label>Confidential</Label>
-              <Switch 
-                checked={classificationForm.isConfidential} 
-                onCheckedChange={(v) => setClassificationForm(prev => ({ ...prev, isConfidential: v }))} 
-              />
+            
+            <div className="space-y-2">
+              <Label>Security Profile</Label>
+              <Select 
+                value={classificationForm.isConfidential ? "CONFIDENTIAL" : "STANDARD"} 
+                onValueChange={(v) => setClassificationForm(prev => ({ ...prev, isConfidential: v === "CONFIDENTIAL" || v === "CABINET" }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select security profile" />
+                </SelectTrigger>
+                <SelectContent>
+                  {SECURITY_PROFILES.map(profile => (
+                    <SelectItem key={profile.code} value={profile.code}>
+                      <div className="flex flex-col">
+                        <span>{profile.label}</span>
+                        <span className="text-xs text-muted-foreground">{profile.description}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">Controls ACLs/groups on the case and all linked documents.</p>
             </div>
-            <div className="flex items-center justify-between">
-              <Label>Urgent</Label>
+            
+            <div className="flex items-center justify-between p-3 rounded-lg border bg-muted/50">
+              <div className="space-y-0.5">
+                <Label>Urgent Flag</Label>
+                <p className="text-xs text-muted-foreground">If Yes, bypass batching and route immediately for review</p>
+              </div>
               <Switch 
                 checked={classificationForm.isUrgent} 
                 onCheckedChange={(v) => setClassificationForm(prev => ({ ...prev, isUrgent: v }))} 
