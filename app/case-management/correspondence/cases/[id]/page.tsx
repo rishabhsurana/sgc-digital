@@ -18,13 +18,11 @@ import {
   Paperclip,
   Download,
   Edit,
-  MoreHorizontal,
   Flag,
   UserPlus,
   XCircle,
   PlayCircle,
   PauseCircle,
-  ArrowRight,
   Hash,
   Phone,
   MapPin,
@@ -39,7 +37,11 @@ import {
   Users,
   Briefcase,
   Archive,
-  RefreshCw
+  RefreshCw,
+  AlertCircle,
+  CheckCircle2,
+  Timer,
+  FileCheck
 } from "lucide-react"
 import { formatDate, formatDateTime } from "@/lib/utils/date-utils"
 import { Button } from "@/components/ui/button"
@@ -51,14 +53,6 @@ import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
 import { Switch } from "@/components/ui/switch"
-import { Checkbox } from "@/components/ui/checkbox"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import {
   Dialog,
   DialogContent,
@@ -66,7 +60,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog"
 import {
   Select,
@@ -92,34 +85,18 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import Link from "next/link"
 
 // Controlled vocabularies per Configuration Workbook
 const CORRESPONDENCE_TYPES = [
-  "General",
-  "Litigation",
-  "Compensation",
-  "Public Trustee",
-  "Advisory",
-  "International Law",
-  "Cabinet / Confidential"
+  "General", "Litigation", "Compensation", "Public Trustee", "Advisory", "International Law", "Cabinet / Confidential"
 ]
 
-const SUBMISSION_CHANNELS = [
-  "Portal",
-  "Email",
-  "Paper Mail",
-  "Fax/Other"
-]
+const SUBMISSION_CHANNELS = ["Portal", "Email", "Paper Mail", "Fax/Other"]
 
 const SUBMITTER_TYPES = [
-  "Ministry/Department",
-  "Statutory Body",
-  "Member of the Public",
-  "Private Sector",
-  "Regional/International Body"
+  "Ministry/Department", "Statutory Body", "Member of the Public", "Private Sector", "Regional/International Body"
 ]
 
 const PRIORITY_LEVELS = [
@@ -128,38 +105,8 @@ const PRIORITY_LEVELS = [
 ]
 
 const FILE_TYPES = [
-  "Advisory File",
-  "Litigation File",
-  "Compensation File",
-  "Public Trustee File",
-  "International Law File",
-  "Foreign / Ministry File",
-  "General Correspondence File"
-]
-
-const SECURITY_PROFILES = [
-  "Registry-Standard",
-  "Cabinet-Confidential",
-  "Restricted"
-]
-
-const FILE_STATUSES = [
-  "Pending",
-  "In Progress",
-  "Complete",
-  "Not Required"
-]
-
-const CASE_STATUSES = [
-  { value: "NEW", label: "New" },
-  { value: "PENDING_REVIEW", label: "Pending Review" },
-  { value: "ASSIGNED", label: "Assigned" },
-  { value: "IN_PROGRESS", label: "In Progress" },
-  { value: "PENDING_EXTERNAL", label: "Pending External" },
-  { value: "ON_HOLD", label: "On Hold" },
-  { value: "READY_DISPATCH", label: "Ready for Dispatch" },
-  { value: "CLOSED", label: "Closed" },
-  { value: "CANCELLED", label: "Cancelled" }
+  "Advisory File", "Litigation File", "Compensation File", "Public Trustee File", 
+  "International Law File", "Foreign / Ministry File", "General Correspondence File"
 ]
 
 const LEGAL_OFFICERS = [
@@ -170,23 +117,41 @@ const LEGAL_OFFICERS = [
   { id: "AC-005", name: "Angela Clarke", email: "a.clarke@sgc.gov.bb" }
 ]
 
-const MDAS = [
-  { id: "MOF", name: "Ministry of Finance" },
-  { id: "MOH", name: "Ministry of Health" },
-  { id: "MOE", name: "Ministry of Education" },
-  { id: "PMO", name: "Prime Minister's Office" },
-  { id: "AGC", name: "Attorney General's Chambers" },
-  { id: "MOT", name: "Ministry of Transport" },
-  { id: "MFA", name: "Ministry of Foreign Affairs" }
-]
+// Mock current user - In real app, this comes from auth context
+const CURRENT_USER = {
+  id: "SG-001",
+  name: "Hon. Solicitor General",
+  role: "SG", // SG, DSG, LEGAL_OFFICER, REGISTRY_CLERK
+  email: "sg@sgc.gov.bb"
+}
 
-// Mock case data with COMPLETE properties per configuration workbook
-const initialCaseData = {
+// Mock case data - starts as PENDING_REVIEW (not yet assigned by SG)
+const getInitialCaseData = (caseId: string) => ({
   // Core Identification
+  id: caseId,
   trackingNumber: "COR-2026-00140",
-  caseType: "Correspondence",
   
-  // Tab 1: Correspondence Information
+  // Key Dates (displayed prominently at top)
+  dateReceived: "2026-03-10T11:20:00",
+  dueDate: "2026-03-24",
+  dateOfDirective: null as string | null,
+  bringUpDate: null as string | null,
+  dispatchDate: null as string | null,
+  closureDate: null as string | null,
+  
+  // SLA
+  slaStatus: "on_track" as "on_track" | "at_risk" | "overdue",
+  daysRemaining: 14,
+  
+  // Case Status - starts as PENDING_REVIEW until SG assigns
+  caseStatus: "PENDING_REVIEW",
+  
+  // Assignment (null until SG assigns)
+  assignedOfficerId: null as string | null,
+  assignedOfficerName: null as string | null,
+  sgDirective: null as string | null,
+  
+  // Correspondence Information (Tab 1)
   fromWhom: "Ministry of Finance",
   toWhom: "Solicitor General",
   subject: "Request for legal opinion regarding proposed amendments to the Public Procurement Act",
@@ -194,901 +159,687 @@ const initialCaseData = {
   volume: "Vol. 1",
   folioMinuteNo: "F-001",
   
-  // Tab 2: Case Information
+  // Case Classification (Tab 2)
   correspondenceType: "Advisory",
-  correspondenceFrom: "MDA",
   priority: "routine",
-  recommendedDeadlineDate: "2026-03-24",
-  mailingAddress: "Ministry of Finance, Treasury Building, Bridge Street, Bridgetown",
+  submissionChannel: "Portal",
+  externalReferenceNo: "MOF/LEG/2026/015",
+  
+  // Originator/Contact Information
+  originatingEntity: "Ministry of Finance",
+  submitterType: "Ministry/Department",
   contactName: "John Smith",
   contactJobTitle: "Legal Counsel",
-  mobilePhone: "+1 246 555-0123",
-  emailAddress: "john.smith@mof.gov.bb",
-  correspondenceOrigination: "Portal",
-  dateCorrespondenceReceived: "2026-03-10T11:20:00",
-  externalReferenceNo: "MOF/LEG/2026/015",
-  bringUpDate: null,
-  officerAssigned: "Sarah Thompson",
-  officerAssignedId: "ST-001",
-  returnForCorrections: null,
-  dateReturned: null,
+  contactAddress: "Treasury Building, Bridge Street, Bridgetown",
+  contactPhone: "+1 246 555-0123",
+  contactEmail: "john.smith@mof.gov.bb",
   
-  // Tab 3: SG Directive
-  sgDirective: "Please review with particular attention to CARICOM trade obligations. Coordinate with Ministry of Foreign Affairs if required.",
-  dateOfDirective: "2026-03-11T09:30:00",
-  assignedTo: "Sarah Thompson",
-  returnToRegistryDirective: null,
-  
-  // Tab 4: Senior Officers (for routing to multiple)
-  seniorOfficersNotified: [],
-  
-  // Tab 5: Assigned Officer Processing - Liaise with Agencies
-  liaiseAgencies: [
-    {
-      id: "1",
-      agencyName: "Ministry of Foreign Affairs",
-      emailAddress: "legal@mfa.gov.bb",
-      contactName: "Patricia Moore",
-      dateSubmitted: "2026-03-12",
-      dateFeedbackReceived: null,
-      status: "In Progress"
-    }
-  ],
-  
-  // File Types & References
+  // File Association
   fileTypes: ["Advisory File", "Foreign / Ministry File"],
   existingFileRefs: ["REG/ADV/2025/089", "REG/MIN/2024/112"],
+  registryFileAssocStatus: "Complete",
   
   // Flags
   confidentialFlag: false,
   urgencyFlag: false,
-  
-  // Case Status
-  caseStatus: "ASSIGNED",
-  caseStatusLabel: "Assigned",
-  
-  // Registry File Association
-  registryFileAssocStatus: "Complete",
-  
-  // Security Profile
   securityProfile: "Registry-Standard",
   
-  // SLA Details
-  dueDate: "2026-03-24",
-  slaStatus: "on_track",
-  daysRemaining: 8,
-  
-  // Dates
-  dispatchDate: null,
-  closureDate: null,
-  
-  // Originating Entity Details
-  originatingMdaId: "MOF",
-  originatingMdaName: "Ministry of Finance"
+  // Liaison tracking
+  liaiseAgencies: [] as Array<{
+    id: string
+    agencyName: string
+    contactName: string
+    emailAddress: string
+    dateSubmitted: string
+    dateFeedbackReceived: string | null
+    status: string
+  }>
+})
+
+const getWorkflowStages = (status: string) => {
+  const stages = [
+    { id: "INTAKE", name: "Intake", status: "completed" },
+    { id: "REVIEW", name: "SG/DSG Review", status: status === "PENDING_REVIEW" ? "current" : "completed" },
+    { id: "FILE_ASSOC", name: "File Association", status: "completed", parallel: true },
+    { id: "PROCESS", name: "Processing", status: status === "ASSIGNED" || status === "IN_PROGRESS" ? "current" : status === "PENDING_REVIEW" ? "pending" : "completed" },
+    { id: "APPROVAL", name: "Approval", status: ["READY_DISPATCH", "CLOSED"].includes(status) ? "completed" : "pending" },
+    { id: "DISPATCH", name: "Dispatch", status: status === "CLOSED" ? "completed" : "pending" },
+    { id: "CLOSE", name: "Closed", status: status === "CLOSED" ? "completed" : "pending" },
+  ]
+  return stages
 }
 
-const workflowStages = [
-  { id: "INTAKE", name: "Intake", status: "completed", completedDate: "2026-03-10" },
-  { id: "REVIEW", name: "SG/DSG Review", status: "completed", completedDate: "2026-03-11" },
-  { id: "FILE_ASSOC", name: "File Association", status: "completed", completedDate: "2026-03-11", parallel: true },
-  { id: "PROCESS", name: "Processing", status: "current" },
-  { id: "APPROVAL", name: "Approval", status: "pending" },
-  { id: "DISPATCH", name: "Dispatch", status: "pending" },
-  { id: "CLOSE", name: "Closed", status: "pending" },
-]
-
 const documents = [
-  { id: "1", name: "Amendment Proposal Draft.pdf", documentClass: "Incoming Correspondence", size: "2.4 MB", uploadedBy: "John Smith (MOF)", uploadedAt: "2026-03-10", category: "submission" },
-  { id: "2", name: "Current Act Annotated.pdf", documentClass: "Supporting Documents", size: "1.8 MB", uploadedBy: "John Smith (MOF)", uploadedAt: "2026-03-10", category: "submission" },
-  { id: "3", name: "CARICOM Trade Agreement Excerpt.pdf", documentClass: "Reference Material", size: "890 KB", uploadedBy: "Sarah Thompson", uploadedAt: "2026-03-12", category: "reference" },
-  { id: "4", name: "Registry Cover Sheet.pdf", documentClass: "Registry Cover Sheet", size: "45 KB", uploadedBy: "System", uploadedAt: "2026-03-10", category: "system" },
-]
-
-const initialActivities = [
-  { id: "1", type: "intake", description: "Case created via portal submission", user: "System", timestamp: "2026-03-10T11:20:00", details: "Tracking number assigned: COR-2026-00140" },
-  { id: "2", type: "intake_validation", description: "Intake validation completed", user: "Registry Clerk", timestamp: "2026-03-10T14:30:00", details: "All mandatory fields captured" },
-  { id: "3", type: "file_assoc", description: "File association completed", user: "Registry File Officer", timestamp: "2026-03-11T10:15:00", details: "Linked to existing files: REG/ADV/2025/089, REG/MIN/2024/112" },
-  { id: "4", type: "review", description: "SG/DSG review completed", user: "Director General Solicitor", timestamp: "2026-03-11T09:30:00", details: "Assigned to Sarah Thompson with directive" },
-  { id: "5", type: "assignment", description: "Case assigned to Legal Officer", user: "Director General Solicitor", timestamp: "2026-03-11T09:30:00", details: "Assigned to Sarah Thompson" },
-  { id: "6", type: "liaison", description: "External liaison initiated", user: "Sarah Thompson", timestamp: "2026-03-12T10:00:00", details: "Contacted Ministry of Foreign Affairs" },
-]
-
-const tasks = [
-  { id: "1", title: "Review submission documents", status: "completed", dueDate: "2026-03-12", assignee: "Sarah Thompson", completedDate: "2026-03-12" },
-  { id: "2", title: "Coordinate with Ministry of Foreign Affairs", status: "in_progress", dueDate: "2026-03-18", assignee: "Sarah Thompson" },
-  { id: "3", title: "Draft legal opinion", status: "pending", dueDate: "2026-03-20", assignee: "Sarah Thompson" },
-  { id: "4", title: "Submit for SG/DSG approval", status: "pending", dueDate: "2026-03-22", assignee: "Sarah Thompson" },
-  { id: "5", title: "Finalize and dispatch response", status: "pending", dueDate: "2026-03-24", assignee: "Registry" },
-]
-
-const initialComments = [
-  { id: "1", author: "Sarah Thompson", timestamp: "2026-03-12T14:15:00", content: "Reviewed submission documents. The proposed amendments have significant implications for CARICOM trade obligations. Initiated contact with Ministry of Foreign Affairs for their input.", isInternal: true },
-  { id: "2", author: "Director General Solicitor", timestamp: "2026-03-11T09:35:00", content: "Please prioritize this matter. Ministry has requested response by end of month.", isInternal: true },
+  { id: "1", name: "Amendment Proposal Draft.pdf", type: "Incoming Correspondence", size: "2.4 MB", uploadedBy: "John Smith (MOF)", uploadedAt: "2026-03-10" },
+  { id: "2", name: "Current Act Annotated.pdf", type: "Supporting Documents", size: "1.8 MB", uploadedBy: "John Smith (MOF)", uploadedAt: "2026-03-10" },
+  { id: "3", name: "Registry Cover Sheet.pdf", type: "Registry Cover Sheet", size: "45 KB", uploadedBy: "System", uploadedAt: "2026-03-10" },
 ]
 
 export default function CorrespondenceCaseDetailPage() {
   const params = useParams()
-  const [activeTab, setActiveTab] = useState("details")
-  const [caseData, setCaseData] = useState(initialCaseData)
-  const [activities, setActivities] = useState(initialActivities)
-  const [comments, setComments] = useState(initialComments)
-  const [newComment, setNewComment] = useState("")
-  const [isInternalComment, setIsInternalComment] = useState(true)
+  const caseId = params.id as string
   
-  // Edit dialog states
-  const [editCorrespondenceInfoOpen, setEditCorrespondenceInfoOpen] = useState(false)
-  const [editCaseInfoOpen, setEditCaseInfoOpen] = useState(false)
-  const [editSgDirectiveOpen, setEditSgDirectiveOpen] = useState(false)
-  const [editDatesOpen, setEditDatesOpen] = useState(false)
-  const [editContactOpen, setEditContactOpen] = useState(false)
-  const [editFileAssocOpen, setEditFileAssocOpen] = useState(false)
-  const [editFlagsOpen, setEditFlagsOpen] = useState(false)
+  const [caseData, setCaseData] = useState(getInitialCaseData(caseId))
+  const [activities, setActivities] = useState([
+    { id: "1", type: "intake", description: "Case created via portal submission", user: "System", timestamp: "2026-03-10T11:20:00" },
+    { id: "2", type: "validation", description: "Intake validation completed", user: "Registry Clerk", timestamp: "2026-03-10T14:30:00" },
+    { id: "3", type: "file_assoc", description: "File association completed", user: "Registry File Officer", timestamp: "2026-03-11T10:15:00" },
+  ])
   
-  // Action dialog states
-  const [assignOfficerOpen, setAssignOfficerOpen] = useState(false)
-  const [returnToRegistryOpen, setReturnToRegistryOpen] = useState(false)
-  const [submitOutgoingOpen, setSubmitOutgoingOpen] = useState(false)
-  const [liaiseAgencyOpen, setLiaiseAgencyOpen] = useState(false)
-  const [addTaskOpen, setAddTaskOpen] = useState(false)
+  // Dialog states
+  const [showAssignDialog, setShowAssignDialog] = useState(false)
+  const [showEditDatesDialog, setShowEditDatesDialog] = useState(false)
+  const [showEditClassificationDialog, setShowEditClassificationDialog] = useState(false)
+  const [showEditContactDialog, setShowEditContactDialog] = useState(false)
+  const [showLiaisonDialog, setShowLiaisonDialog] = useState(false)
+  const [showSubmitOutgoingDialog, setShowSubmitOutgoingDialog] = useState(false)
+  const [showReturnDialog, setShowReturnDialog] = useState(false)
   
-  // Form states
-  const [editForm, setEditForm] = useState<any>({})
-  const [actionForm, setActionForm] = useState<any>({})
-
-  const getStageStatusColor = (status: string) => {
-    switch (status) {
-      case "completed": return "bg-emerald-500"
-      case "current": return "bg-blue-500"
-      default: return "bg-gray-300"
-    }
+  // Form states for dialogs
+  const [assignForm, setAssignForm] = useState({ officerId: "", directive: "", dueDate: caseData.dueDate })
+  const [datesForm, setDatesForm] = useState({ 
+    dueDate: caseData.dueDate, 
+    bringUpDate: caseData.bringUpDate || "" 
+  })
+  const [classificationForm, setClassificationForm] = useState({
+    correspondenceType: caseData.correspondenceType,
+    priority: caseData.priority,
+    confidentialFlag: caseData.confidentialFlag,
+    urgencyFlag: caseData.urgencyFlag
+  })
+  const [contactForm, setContactForm] = useState({
+    contactName: caseData.contactName,
+    contactJobTitle: caseData.contactJobTitle,
+    contactPhone: caseData.contactPhone,
+    contactEmail: caseData.contactEmail,
+    contactAddress: caseData.contactAddress
+  })
+  const [liaisonForm, setLiaisonForm] = useState({ agencyName: "", contactName: "", emailAddress: "" })
+  
+  // Check if current user can see this case
+  const canViewCase = () => {
+    if (CURRENT_USER.role === "SG" || CURRENT_USER.role === "DSG") return true
+    if (caseData.assignedOfficerId === CURRENT_USER.id) return true
+    return false
   }
-
-  const getSlaColor = (status: string) => {
-    switch (status) {
-      case "on_track": return "text-emerald-600 bg-emerald-50 border-emerald-200"
-      case "at_risk": return "text-amber-600 bg-amber-50 border-amber-200"
-      case "overdue": return "text-red-600 bg-red-50 border-red-200"
-      default: return "text-gray-600 bg-gray-50 border-gray-200"
-    }
-  }
-
-  const getStatusBadgeVariant = (status: string) => {
-    switch (status) {
-      case "NEW": return "secondary"
-      case "PENDING_REVIEW": return "outline"
-      case "ASSIGNED": return "default"
-      case "IN_PROGRESS": return "default"
-      case "PENDING_EXTERNAL": return "outline"
-      case "ON_HOLD": return "secondary"
-      case "READY_DISPATCH": return "default"
-      case "CLOSED": return "secondary"
-      case "CANCELLED": return "destructive"
-      default: return "outline"
-    }
-  }
-
-  const logActivity = (type: string, description: string, details: string) => {
-    const newActivity = {
-      id: String(activities.length + 1),
-      type,
-      description,
-      user: "Current User", // Would come from auth
-      timestamp: new Date().toISOString(),
-      details
-    }
-    setActivities([newActivity, ...activities])
-  }
-
-  // Handle correspondence info edit
-  const handleEditCorrespondenceInfo = () => {
-    setEditForm({
-      fromWhom: caseData.fromWhom,
-      toWhom: caseData.toWhom,
-      subject: caseData.subject,
-      fileReferenceNo: caseData.fileReferenceNo,
-      volume: caseData.volume,
-      folioMinuteNo: caseData.folioMinuteNo
-    })
-    setEditCorrespondenceInfoOpen(true)
-  }
-
-  const saveCorrespondenceInfo = () => {
-    setCaseData({ ...caseData, ...editForm })
-    logActivity("edit", "Correspondence information updated", `Subject: ${editForm.subject}`)
-    setEditCorrespondenceInfoOpen(false)
-  }
-
-  // Handle case info edit
-  const handleEditCaseInfo = () => {
-    setEditForm({
-      correspondenceType: caseData.correspondenceType,
-      correspondenceFrom: caseData.correspondenceFrom,
-      correspondenceOrigination: caseData.correspondenceOrigination,
-      priority: caseData.priority,
-      externalReferenceNo: caseData.externalReferenceNo
-    })
-    setEditCaseInfoOpen(true)
-  }
-
-  const saveCaseInfo = () => {
-    setCaseData({ ...caseData, ...editForm })
-    logActivity("edit", "Case information updated", `Type: ${editForm.correspondenceType}, Priority: ${editForm.priority}`)
-    setEditCaseInfoOpen(false)
-  }
-
-  // Handle SG directive edit
-  const handleEditSgDirective = () => {
-    setEditForm({
-      sgDirective: caseData.sgDirective,
-      assignedTo: caseData.assignedTo
-    })
-    setEditSgDirectiveOpen(true)
-  }
-
-  const saveSgDirective = () => {
-    setCaseData({ 
-      ...caseData, 
-      sgDirective: editForm.sgDirective,
-      assignedTo: editForm.assignedTo,
-      dateOfDirective: new Date().toISOString()
-    })
-    logActivity("directive", "SG Directive updated", editForm.sgDirective)
-    setEditSgDirectiveOpen(false)
-  }
-
-  // Handle dates edit
-  const handleEditDates = () => {
-    setEditForm({
-      recommendedDeadlineDate: caseData.recommendedDeadlineDate,
-      bringUpDate: caseData.bringUpDate || "",
-      dueDate: caseData.dueDate
-    })
-    setEditDatesOpen(true)
-  }
-
-  const saveDates = () => {
-    setCaseData({ ...caseData, ...editForm })
-    logActivity("edit", "Dates updated", `Due Date: ${editForm.dueDate}`)
-    setEditDatesOpen(false)
-  }
-
-  // Handle contact edit
-  const handleEditContact = () => {
-    setEditForm({
-      contactName: caseData.contactName,
-      contactJobTitle: caseData.contactJobTitle,
-      mobilePhone: caseData.mobilePhone,
-      emailAddress: caseData.emailAddress,
-      mailingAddress: caseData.mailingAddress
-    })
-    setEditContactOpen(true)
-  }
-
-  const saveContact = () => {
-    setCaseData({ ...caseData, ...editForm })
-    logActivity("edit", "Contact information updated", `Contact: ${editForm.contactName}`)
-    setEditContactOpen(false)
-  }
-
-  // Handle file association edit
-  const handleEditFileAssoc = () => {
-    setEditForm({
-      fileTypes: [...caseData.fileTypes],
-      existingFileRefs: [...caseData.existingFileRefs],
-      registryFileAssocStatus: caseData.registryFileAssocStatus
-    })
-    setEditFileAssocOpen(true)
-  }
-
-  const saveFileAssoc = () => {
-    setCaseData({ ...caseData, ...editForm })
-    logActivity("edit", "File association updated", `Status: ${editForm.registryFileAssocStatus}`)
-    setEditFileAssocOpen(false)
-  }
-
-  // Handle flags edit
-  const handleEditFlags = () => {
-    setEditForm({
-      urgencyFlag: caseData.urgencyFlag,
-      confidentialFlag: caseData.confidentialFlag,
-      securityProfile: caseData.securityProfile
-    })
-    setEditFlagsOpen(true)
-  }
-
-  const saveFlags = () => {
-    setCaseData({ ...caseData, ...editForm })
-    logActivity("edit", "Flags updated", `Urgent: ${editForm.urgencyFlag}, Confidential: ${editForm.confidentialFlag}`)
-    setEditFlagsOpen(false)
-  }
-
-  // Workflow Actions
+  
+  // Check permissions based on role and case status
+  const canAssign = () => (CURRENT_USER.role === "SG" || CURRENT_USER.role === "DSG") && caseData.caseStatus === "PENDING_REVIEW"
+  const canEditDates = () => CURRENT_USER.role === "SG" || CURRENT_USER.role === "DSG" || caseData.assignedOfficerId === CURRENT_USER.id
+  const canProcess = () => caseData.assignedOfficerId === CURRENT_USER.id && caseData.caseStatus === "ASSIGNED"
+  const canSubmitOutgoing = () => caseData.assignedOfficerId === CURRENT_USER.id && ["ASSIGNED", "IN_PROGRESS"].includes(caseData.caseStatus)
+  const canApprove = () => (CURRENT_USER.role === "SG" || CURRENT_USER.role === "DSG") && caseData.caseStatus === "PENDING_APPROVAL"
+  
+  // Action handlers
   const handleAssignOfficer = () => {
-    setActionForm({
-      officerId: "",
-      directive: ""
-    })
-    setAssignOfficerOpen(true)
+    const officer = LEGAL_OFFICERS.find(o => o.id === assignForm.officerId)
+    if (!officer) return
+    
+    setCaseData(prev => ({
+      ...prev,
+      caseStatus: "ASSIGNED",
+      assignedOfficerId: officer.id,
+      assignedOfficerName: officer.name,
+      sgDirective: assignForm.directive,
+      dateOfDirective: new Date().toISOString(),
+      dueDate: assignForm.dueDate
+    }))
+    
+    setActivities(prev => [{
+      id: String(prev.length + 1),
+      type: "assignment",
+      description: `Case assigned to ${officer.name}`,
+      user: CURRENT_USER.name,
+      timestamp: new Date().toISOString()
+    }, ...prev])
+    
+    setShowAssignDialog(false)
+    setAssignForm({ officerId: "", directive: "", dueDate: caseData.dueDate })
   }
-
-  const confirmAssignOfficer = () => {
-    const officer = LEGAL_OFFICERS.find(o => o.id === actionForm.officerId)
-    if (officer) {
-      setCaseData({
-        ...caseData,
-        officerAssigned: officer.name,
-        officerAssignedId: officer.id,
-        assignedTo: officer.name,
-        caseStatus: "ASSIGNED",
-        caseStatusLabel: "Assigned"
-      })
-      logActivity("assignment", `Case assigned to ${officer.name}`, actionForm.directive || "No additional directive")
-    }
-    setAssignOfficerOpen(false)
+  
+  const handleUpdateDates = () => {
+    setCaseData(prev => ({
+      ...prev,
+      dueDate: datesForm.dueDate,
+      bringUpDate: datesForm.bringUpDate || null
+    }))
+    
+    setActivities(prev => [{
+      id: String(prev.length + 1),
+      type: "update",
+      description: "Dates updated",
+      user: CURRENT_USER.name,
+      timestamp: new Date().toISOString()
+    }, ...prev])
+    
+    setShowEditDatesDialog(false)
   }
-
-  const handleReturnToRegistry = () => {
-    setActionForm({
-      reason: "",
-      returnDirective: ""
-    })
-    setReturnToRegistryOpen(true)
+  
+  const handleUpdateClassification = () => {
+    setCaseData(prev => ({
+      ...prev,
+      correspondenceType: classificationForm.correspondenceType,
+      priority: classificationForm.priority,
+      confidentialFlag: classificationForm.confidentialFlag,
+      urgencyFlag: classificationForm.urgencyFlag
+    }))
+    
+    setActivities(prev => [{
+      id: String(prev.length + 1),
+      type: "update",
+      description: "Classification updated",
+      user: CURRENT_USER.name,
+      timestamp: new Date().toISOString()
+    }, ...prev])
+    
+    setShowEditClassificationDialog(false)
   }
-
-  const confirmReturnToRegistry = () => {
-    setCaseData({
-      ...caseData,
-      returnForCorrections: actionForm.returnDirective,
-      dateReturned: new Date().toISOString(),
-      returnToRegistryDirective: actionForm.returnDirective
-    })
-    logActivity("return", "Case returned to Registry", actionForm.returnDirective)
-    setReturnToRegistryOpen(false)
+  
+  const handleUpdateContact = () => {
+    setCaseData(prev => ({
+      ...prev,
+      contactName: contactForm.contactName,
+      contactJobTitle: contactForm.contactJobTitle,
+      contactPhone: contactForm.contactPhone,
+      contactEmail: contactForm.contactEmail,
+      contactAddress: contactForm.contactAddress
+    }))
+    
+    setShowEditContactDialog(false)
   }
-
-  const handleSubmitOutgoing = () => {
-    setActionForm({
-      recipientName: caseData.contactName,
-      recipientEmail: caseData.emailAddress,
-      message: "",
-      attachDocument: null
-    })
-    setSubmitOutgoingOpen(true)
-  }
-
-  const confirmSubmitOutgoing = () => {
-    setCaseData({
-      ...caseData,
-      caseStatus: "CLOSED",
-      caseStatusLabel: "Closed",
-      dispatchDate: new Date().toISOString(),
-      closureDate: new Date().toISOString()
-    })
-    logActivity("dispatch", "Outgoing correspondence sent", `Sent to: ${actionForm.recipientEmail}`)
-    setSubmitOutgoingOpen(false)
-  }
-
-  const handleLiaiseAgency = () => {
-    setActionForm({
-      agencyName: "",
-      emailAddress: "",
-      contactName: "",
-      message: ""
-    })
-    setLiaiseAgencyOpen(true)
-  }
-
-  const confirmLiaiseAgency = () => {
+  
+  const handleAddLiaison = () => {
     const newLiaison = {
       id: String(caseData.liaiseAgencies.length + 1),
-      agencyName: actionForm.agencyName,
-      emailAddress: actionForm.emailAddress,
-      contactName: actionForm.contactName,
+      agencyName: liaisonForm.agencyName,
+      contactName: liaisonForm.contactName,
+      emailAddress: liaisonForm.emailAddress,
       dateSubmitted: new Date().toISOString().split('T')[0],
       dateFeedbackReceived: null,
-      status: "In Progress"
+      status: "Pending"
     }
-    setCaseData({
-      ...caseData,
-      liaiseAgencies: [...caseData.liaiseAgencies, newLiaison]
-    })
-    logActivity("liaison", `Liaison initiated with ${actionForm.agencyName}`, `Contact: ${actionForm.contactName}`)
-    setLiaiseAgencyOpen(false)
+    
+    setCaseData(prev => ({
+      ...prev,
+      liaiseAgencies: [...prev.liaiseAgencies, newLiaison],
+      caseStatus: "IN_PROGRESS"
+    }))
+    
+    setActivities(prev => [{
+      id: String(prev.length + 1),
+      type: "liaison",
+      description: `External liaison initiated with ${liaisonForm.agencyName}`,
+      user: CURRENT_USER.name,
+      timestamp: new Date().toISOString()
+    }, ...prev])
+    
+    setShowLiaisonDialog(false)
+    setLiaisonForm({ agencyName: "", contactName: "", emailAddress: "" })
   }
-
+  
   const handleSubmitForApproval = () => {
-    setCaseData({
-      ...caseData,
-      caseStatus: "PENDING_REVIEW",
-      caseStatusLabel: "Pending Approval"
-    })
-    logActivity("workflow", "Submitted for SG/DSG approval", "Awaiting review")
+    setCaseData(prev => ({
+      ...prev,
+      caseStatus: "PENDING_APPROVAL"
+    }))
+    
+    setActivities(prev => [{
+      id: String(prev.length + 1),
+      type: "submit",
+      description: "Case submitted for SG/DSG approval",
+      user: CURRENT_USER.name,
+      timestamp: new Date().toISOString()
+    }, ...prev])
   }
-
+  
   const handleApprove = () => {
-    setCaseData({
-      ...caseData,
-      caseStatus: "READY_DISPATCH",
-      caseStatusLabel: "Ready for Dispatch"
-    })
-    logActivity("approval", "Approved by SG/DSG", "Ready for dispatch")
+    setCaseData(prev => ({
+      ...prev,
+      caseStatus: "READY_DISPATCH"
+    }))
+    
+    setActivities(prev => [{
+      id: String(prev.length + 1),
+      type: "approval",
+      description: "Outgoing correspondence approved",
+      user: CURRENT_USER.name,
+      timestamp: new Date().toISOString()
+    }, ...prev])
+  }
+  
+  const handleDispatch = () => {
+    setCaseData(prev => ({
+      ...prev,
+      caseStatus: "CLOSED",
+      dispatchDate: new Date().toISOString(),
+      closureDate: new Date().toISOString()
+    }))
+    
+    setActivities(prev => [{
+      id: String(prev.length + 1),
+      type: "dispatch",
+      description: "Correspondence dispatched and case closed",
+      user: CURRENT_USER.name,
+      timestamp: new Date().toISOString()
+    }, ...prev])
   }
 
-  const handleAddComment = () => {
-    if (!newComment.trim()) return
-    const comment = {
-      id: String(comments.length + 1),
-      author: "Current User",
-      timestamp: new Date().toISOString(),
-      content: newComment,
-      isInternal: isInternalComment
+  const getStatusBadge = (status: string) => {
+    const configs: Record<string, { variant: "default" | "secondary" | "destructive" | "outline", label: string }> = {
+      "PENDING_REVIEW": { variant: "secondary", label: "Pending SG Review" },
+      "ASSIGNED": { variant: "default", label: "Assigned" },
+      "IN_PROGRESS": { variant: "default", label: "In Progress" },
+      "PENDING_EXTERNAL": { variant: "outline", label: "Pending External" },
+      "ON_HOLD": { variant: "secondary", label: "On Hold" },
+      "PENDING_APPROVAL": { variant: "outline", label: "Pending Approval" },
+      "READY_DISPATCH": { variant: "default", label: "Ready for Dispatch" },
+      "CLOSED": { variant: "secondary", label: "Closed" }
     }
-    setComments([comment, ...comments])
-    logActivity("comment", isInternalComment ? "Internal note added" : "Comment added", newComment.substring(0, 50) + "...")
-    setNewComment("")
+    const config = configs[status] || { variant: "secondary", label: status }
+    return <Badge variant={config.variant}>{config.label}</Badge>
   }
-
-  // Get available actions based on case status
-  const getAvailableActions = () => {
-    switch (caseData.caseStatus) {
-      case "NEW":
-        return [
-          { label: "Submit to SG/DSG", action: () => setCaseData({...caseData, caseStatus: "PENDING_REVIEW", caseStatusLabel: "Pending Review"}), icon: Send },
-          { label: "Return for Corrections", action: handleReturnToRegistry, icon: XCircle, variant: "outline" as const }
-        ]
-      case "PENDING_REVIEW":
-        return [
-          { label: "Assign to Officer", action: handleAssignOfficer, icon: UserPlus },
-          { label: "Submit to Senior Officers", action: () => {}, icon: Users },
-          { label: "Submit to SG Secretary", action: () => {}, icon: Briefcase },
-          { label: "Return to Registry", action: handleReturnToRegistry, icon: RefreshCw, variant: "outline" as const }
-        ]
-      case "ASSIGNED":
-      case "IN_PROGRESS":
-        return [
-          { label: "Liaise with Agency", action: handleLiaiseAgency, icon: ExternalLink },
-          { label: "Submit for Approval", action: handleSubmitForApproval, icon: Send },
-          { label: "Put on Hold", action: () => setCaseData({...caseData, caseStatus: "ON_HOLD", caseStatusLabel: "On Hold"}), icon: PauseCircle, variant: "outline" as const }
-        ]
-      case "PENDING_EXTERNAL":
-        return [
-          { label: "Mark Feedback Received", action: () => setCaseData({...caseData, caseStatus: "IN_PROGRESS", caseStatusLabel: "In Progress"}), icon: CheckCircle },
-          { label: "Follow Up", action: handleLiaiseAgency, icon: RefreshCw }
-        ]
-      case "ON_HOLD":
-        return [
-          { label: "Resume Processing", action: () => setCaseData({...caseData, caseStatus: "IN_PROGRESS", caseStatusLabel: "In Progress"}), icon: PlayCircle }
-        ]
-      case "READY_DISPATCH":
-        return [
-          { label: "Submit Outgoing Correspondence", action: handleSubmitOutgoing, icon: Send },
-          { label: "Return for Revision", action: () => setCaseData({...caseData, caseStatus: "IN_PROGRESS", caseStatusLabel: "In Progress"}), icon: RefreshCw, variant: "outline" as const }
-        ]
-      default:
-        return []
+  
+  const getSlaIndicator = () => {
+    if (caseData.slaStatus === "overdue") {
+      return <Badge variant="destructive" className="gap-1"><AlertTriangle className="h-3 w-3" /> Overdue</Badge>
     }
+    if (caseData.slaStatus === "at_risk") {
+      return <Badge variant="outline" className="gap-1 border-amber-500 text-amber-600"><Clock className="h-3 w-3" /> At Risk</Badge>
+    }
+    return <Badge variant="outline" className="gap-1 border-green-500 text-green-600"><CheckCircle className="h-3 w-3" /> On Track</Badge>
   }
-
-  const availableActions = getAvailableActions()
+  
+  const workflowStages = getWorkflowStages(caseData.caseStatus)
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-muted/30">
       {/* Header */}
-      <div className="bg-gradient-to-r from-emerald-700 to-emerald-900 text-white">
-        <div className="max-w-7xl mx-auto px-4 py-4">
+      <div className="bg-gradient-to-r from-blue-900 via-blue-800 to-blue-900 text-white">
+        <div className="container mx-auto px-4 py-4">
           <div className="flex items-center gap-4">
-            <Link href="/case-management/correspondence/workqueue">
-              <Button variant="ghost" size="icon" className="text-white hover:bg-white/20">
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
+            <Link href="/case-management/correspondence" className="flex items-center gap-2 text-white/80 hover:text-white transition-colors">
+              <ArrowLeft className="h-4 w-4" />
+              <span className="text-sm">Back to Dashboard</span>
             </Link>
-            <div className="flex-1">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/20">
-                  <Mail className="h-5 w-5" />
+          </div>
+          
+          <div className="mt-4 flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+            <div className="flex items-start gap-4">
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-white/20">
+                <Mail className="h-7 w-7" />
+              </div>
+              <div>
+                <div className="flex items-center gap-3 flex-wrap">
+                  <h1 className="text-2xl font-bold">{caseData.trackingNumber}</h1>
+                  {getStatusBadge(caseData.caseStatus)}
+                  {caseData.urgencyFlag && <Badge variant="destructive">Urgent</Badge>}
+                  {caseData.confidentialFlag && <Badge variant="outline" className="border-amber-400 text-amber-200"><Shield className="h-3 w-3 mr-1" /> Confidential</Badge>}
                 </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h1 className="text-xl font-semibold">{caseData.trackingNumber}</h1>
-                    <Badge variant={getStatusBadgeVariant(caseData.caseStatus)} className="text-xs">
-                      {caseData.caseStatusLabel}
-                    </Badge>
-                    {caseData.urgencyFlag && (
-                      <Badge variant="destructive" className="text-xs">Urgent</Badge>
-                    )}
-                    {caseData.confidentialFlag && (
-                      <Badge variant="secondary" className="text-xs"><Shield className="h-3 w-3 mr-1" />Confidential</Badge>
-                    )}
-                  </div>
-                  <p className="text-sm text-white/80 mt-0.5">{caseData.correspondenceType} - {caseData.fromWhom}</p>
-                </div>
+                <p className="mt-1 text-white/80 line-clamp-2 max-w-2xl">{caseData.subject}</p>
               </div>
             </div>
-            <div className={`px-3 py-1.5 rounded-lg border ${getSlaColor(caseData.slaStatus)}`}>
-              <div className="flex items-center gap-2">
-                <Clock className="h-4 w-4" />
-                <span className="text-sm font-medium">{caseData.daysRemaining} days remaining</span>
-              </div>
-              <p className="text-xs">Due: {formatDate(caseData.dueDate)}</p>
+            
+            {/* Action Buttons - Context Sensitive */}
+            <div className="flex flex-wrap gap-2">
+              {canAssign() && (
+                <Button onClick={() => setShowAssignDialog(true)} className="bg-white text-blue-900 hover:bg-white/90">
+                  <UserPlus className="h-4 w-4 mr-2" /> Assign to Officer
+                </Button>
+              )}
+              {canProcess() && (
+                <>
+                  <Button onClick={() => setShowLiaisonDialog(true)} variant="secondary">
+                    <ExternalLink className="h-4 w-4 mr-2" /> Liaise with Agency
+                  </Button>
+                  <Button onClick={handleSubmitForApproval} className="bg-white text-blue-900 hover:bg-white/90">
+                    <Send className="h-4 w-4 mr-2" /> Submit for Approval
+                  </Button>
+                </>
+              )}
+              {canApprove() && (
+                <>
+                  <Button onClick={handleApprove} className="bg-white text-blue-900 hover:bg-white/90">
+                    <CheckCircle className="h-4 w-4 mr-2" /> Approve
+                  </Button>
+                  <Button onClick={() => setShowReturnDialog(true)} variant="secondary">
+                    <XCircle className="h-4 w-4 mr-2" /> Return
+                  </Button>
+                </>
+              )}
+              {caseData.caseStatus === "READY_DISPATCH" && (CURRENT_USER.role === "SG" || CURRENT_USER.role === "DSG" || CURRENT_USER.role === "REGISTRY_CLERK") && (
+                <Button onClick={handleDispatch} className="bg-white text-blue-900 hover:bg-white/90">
+                  <Send className="h-4 w-4 mr-2" /> Dispatch & Close
+                </Button>
+              )}
             </div>
           </div>
         </div>
       </div>
-
-      {/* Workflow Progress */}
-      <div className="bg-white border-b">
-        <div className="max-w-7xl mx-auto px-4 py-3">
-          <div className="flex items-center justify-between overflow-x-auto">
-            {workflowStages.map((stage, index) => (
-              <div key={stage.id} className="flex items-center">
-                <div className="flex flex-col items-center min-w-[100px]">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center ${getStageStatusColor(stage.status)} text-white text-xs font-medium`}>
-                    {stage.status === "completed" ? <CheckCircle className="h-4 w-4" /> : index + 1}
-                  </div>
-                  <span className={`text-xs mt-1 text-center ${stage.status === "current" ? "font-semibold text-emerald-700" : "text-gray-500"}`}>
-                    {stage.name}
-                  </span>
-                  {stage.completedDate && (
-                    <span className="text-[10px] text-gray-400">{formatDate(stage.completedDate)}</span>
-                  )}
+      
+      <div className="container mx-auto px-4 py-6">
+        {/* Key Dates & SLA Bar - Most Important Info at Top */}
+        <Card className="mb-6 border-l-4 border-l-blue-600">
+          <CardContent className="p-4">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 flex-1">
+                <div>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide">Date Received</p>
+                  <p className="font-semibold flex items-center gap-1">
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                    {formatDate(caseData.dateReceived)}
+                  </p>
                 </div>
-                {index < workflowStages.length - 1 && (
-                  <ChevronRight className="h-4 w-4 text-gray-300 mx-1" />
+                <div>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide">Due Date</p>
+                  <p className="font-semibold flex items-center gap-1 text-blue-600">
+                    <Timer className="h-4 w-4" />
+                    {formatDate(caseData.dueDate)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide">Days Remaining</p>
+                  <p className={`font-semibold ${caseData.daysRemaining <= 3 ? 'text-red-600' : caseData.daysRemaining <= 7 ? 'text-amber-600' : 'text-green-600'}`}>
+                    {caseData.daysRemaining} days
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide">SLA Status</p>
+                  {getSlaIndicator()}
+                </div>
+                {caseData.dateOfDirective && (
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Directive Date</p>
+                    <p className="font-semibold">{formatDate(caseData.dateOfDirective)}</p>
+                  </div>
+                )}
+                {caseData.bringUpDate && (
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Bring-Up Date</p>
+                    <p className="font-semibold">{formatDate(caseData.bringUpDate)}</p>
+                  </div>
                 )}
               </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Action Buttons */}
-      {availableActions.length > 0 && (
-        <div className="bg-emerald-50 border-b">
-          <div className="max-w-7xl mx-auto px-4 py-3">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-sm font-medium text-emerald-700 mr-2">Actions:</span>
-              {availableActions.map((action, index) => (
-                <Button 
-                  key={index} 
-                  variant={action.variant || "default"} 
-                  size="sm" 
-                  onClick={action.action}
-                  className={!action.variant ? "bg-emerald-600 hover:bg-emerald-700" : ""}
-                >
-                  <action.icon className="h-4 w-4 mr-1" />
-                  {action.label}
+              {canEditDates() && (
+                <Button variant="outline" size="sm" onClick={() => setShowEditDatesDialog(true)}>
+                  <Edit className="h-4 w-4 mr-1" /> Edit Dates
                 </Button>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+        
+        {/* Workflow Progress */}
+        <Card className="mb-6">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Workflow Progress</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between overflow-x-auto pb-2">
+              {workflowStages.map((stage, index) => (
+                <div key={stage.id} className="flex items-center">
+                  <div className="flex flex-col items-center">
+                    <div className={`
+                      flex h-10 w-10 items-center justify-center rounded-full border-2 transition-colors
+                      ${stage.status === 'completed' ? 'bg-green-600 border-green-600 text-white' : 
+                        stage.status === 'current' ? 'bg-blue-600 border-blue-600 text-white' : 
+                        'bg-muted border-muted-foreground/30 text-muted-foreground'}
+                    `}>
+                      {stage.status === 'completed' ? <CheckCircle2 className="h-5 w-5" /> : 
+                       stage.status === 'current' ? <PlayCircle className="h-5 w-5" /> : 
+                       <span className="text-sm">{index + 1}</span>}
+                    </div>
+                    <span className={`mt-2 text-xs text-center max-w-[80px] ${stage.status === 'current' ? 'font-semibold text-blue-600' : 'text-muted-foreground'}`}>
+                      {stage.name}
+                    </span>
+                  </div>
+                  {index < workflowStages.length - 1 && (
+                    <div className={`h-0.5 w-8 md:w-16 mx-1 ${stage.status === 'completed' ? 'bg-green-600' : 'bg-muted'}`} />
+                  )}
+                </div>
               ))}
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 py-6">
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="mb-6">
-            <TabsTrigger value="details">Case Details</TabsTrigger>
-            <TabsTrigger value="documents">Documents ({documents.length})</TabsTrigger>
-            <TabsTrigger value="liaison">Agency Liaison ({caseData.liaiseAgencies.length})</TabsTrigger>
-            <TabsTrigger value="tasks">Tasks ({tasks.length})</TabsTrigger>
-            <TabsTrigger value="comments">Comments ({comments.length})</TabsTrigger>
-            <TabsTrigger value="history">Activity Log ({activities.length})</TabsTrigger>
-          </TabsList>
-
-          {/* Details Tab */}
-          <TabsContent value="details" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              
-              {/* Tab 1: Correspondence Information */}
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between py-3">
-                  <CardTitle className="text-base">Tab 1: Correspondence Information</CardTitle>
-                  <Button variant="ghost" size="sm" onClick={handleEditCorrespondenceInfo}>
-                    <Edit className="h-4 w-4 mr-1" /> Edit
-                  </Button>
+          </CardContent>
+        </Card>
+        
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Main Content - 2 columns */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Assignment & Directive - Only show if assigned */}
+            {caseData.assignedOfficerId ? (
+              <Card className="border-l-4 border-l-green-600">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <User className="h-4 w-4" /> Assignment & SG Directive
+                  </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="grid grid-cols-2 gap-3">
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <Label className="text-xs text-muted-foreground">From Whom</Label>
-                      <p className="font-medium text-sm">{caseData.fromWhom}</p>
+                      <p className="text-xs text-muted-foreground uppercase tracking-wide">Assigned Officer</p>
+                      <p className="font-semibold text-green-700">{caseData.assignedOfficerName}</p>
                     </div>
                     <div>
-                      <Label className="text-xs text-muted-foreground">To Whom</Label>
-                      <p className="font-medium text-sm">{caseData.toWhom}</p>
-                    </div>
-                  </div>
-                  <div>
-                    <Label className="text-xs text-muted-foreground">Subject</Label>
-                    <p className="font-medium text-sm">{caseData.subject}</p>
-                  </div>
-                  <div className="grid grid-cols-3 gap-3">
-                    <div>
-                      <Label className="text-xs text-muted-foreground">File Reference #</Label>
-                      <p className="font-medium text-sm">{caseData.fileReferenceNo}</p>
-                    </div>
-                    <div>
-                      <Label className="text-xs text-muted-foreground">Volume</Label>
-                      <p className="font-medium text-sm">{caseData.volume}</p>
-                    </div>
-                    <div>
-                      <Label className="text-xs text-muted-foreground">Folio/Minute #</Label>
-                      <p className="font-medium text-sm">{caseData.folioMinuteNo}</p>
+                      <p className="text-xs text-muted-foreground uppercase tracking-wide">Assigned Date</p>
+                      <p className="font-medium">{caseData.dateOfDirective ? formatDate(caseData.dateOfDirective) : '-'}</p>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
-
-              {/* Tab 2: Case Information */}
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between py-3">
-                  <CardTitle className="text-base">Tab 2: Case Information</CardTitle>
-                  <Button variant="ghost" size="sm" onClick={handleEditCaseInfo}>
-                    <Edit className="h-4 w-4 mr-1" /> Edit
-                  </Button>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <Label className="text-xs text-muted-foreground">Type of Correspondence</Label>
-                      <p className="font-medium text-sm">{caseData.correspondenceType}</p>
-                    </div>
-                    <div>
-                      <Label className="text-xs text-muted-foreground">Correspondence From</Label>
-                      <p className="font-medium text-sm">{caseData.correspondenceFrom}</p>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <Label className="text-xs text-muted-foreground">Priority</Label>
-                      <Badge variant={caseData.priority === "urgent" ? "destructive" : "secondary"}>
-                        {caseData.priority === "urgent" ? "Urgent" : "Routine"}
-                      </Badge>
-                    </div>
-                    <div>
-                      <Label className="text-xs text-muted-foreground">Origination</Label>
-                      <p className="font-medium text-sm">{caseData.correspondenceOrigination}</p>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <Label className="text-xs text-muted-foreground">Date Received</Label>
-                      <p className="font-medium text-sm">{formatDate(caseData.dateCorrespondenceReceived)}</p>
-                    </div>
-                    <div>
-                      <Label className="text-xs text-muted-foreground">External Reference #</Label>
-                      <p className="font-medium text-sm">{caseData.externalReferenceNo}</p>
-                    </div>
-                  </div>
-                  <div>
-                    <Label className="text-xs text-muted-foreground">Officer Assigned</Label>
-                    <p className="font-medium text-sm">{caseData.officerAssigned || "Not Assigned"}</p>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Tab 3: SG Directive */}
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between py-3">
-                  <CardTitle className="text-base">Tab 3: SG Directive</CardTitle>
-                  <Button variant="ghost" size="sm" onClick={handleEditSgDirective}>
-                    <Edit className="h-4 w-4 mr-1" /> Edit
-                  </Button>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3">
-                    <Label className="text-xs text-muted-foreground">SG Directive</Label>
-                    <p className="font-medium text-sm mt-1">{caseData.sgDirective || "No directive provided"}</p>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <Label className="text-xs text-muted-foreground">Date of Directive</Label>
-                      <p className="font-medium text-sm">{caseData.dateOfDirective ? formatDateTime(caseData.dateOfDirective) : "N/A"}</p>
-                    </div>
-                    <div>
-                      <Label className="text-xs text-muted-foreground">Assigned To</Label>
-                      <p className="font-medium text-sm">{caseData.assignedTo || "Not Assigned"}</p>
-                    </div>
-                  </div>
-                  {caseData.returnToRegistryDirective && (
-                    <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                      <Label className="text-xs text-red-600">Return to Registry Directive</Label>
-                      <p className="font-medium text-sm mt-1 text-red-700">{caseData.returnToRegistryDirective}</p>
+                  {caseData.sgDirective && (
+                    <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                      <p className="text-xs text-blue-600 uppercase tracking-wide font-medium mb-1">SG Directive</p>
+                      <p className="text-sm text-blue-900">{caseData.sgDirective}</p>
                     </div>
                   )}
                 </CardContent>
               </Card>
-
-              {/* Dates & Deadlines */}
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between py-3">
-                  <CardTitle className="text-base">Dates & Deadlines</CardTitle>
-                  <Button variant="ghost" size="sm" onClick={handleEditDates}>
-                    <Edit className="h-4 w-4 mr-1" /> Edit
-                  </Button>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="grid grid-cols-2 gap-3">
+            ) : (
+              <Card className="border-l-4 border-l-amber-500 bg-amber-50/50">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <AlertCircle className="h-5 w-5 text-amber-600" />
                     <div>
-                      <Label className="text-xs text-muted-foreground">Date Received</Label>
-                      <p className="font-medium text-sm">{formatDate(caseData.dateCorrespondenceReceived)}</p>
-                    </div>
-                    <div>
-                      <Label className="text-xs text-muted-foreground">Recommended Deadline</Label>
-                      <p className="font-medium text-sm">{formatDate(caseData.recommendedDeadlineDate)}</p>
+                      <p className="font-medium text-amber-800">Pending SG/DSG Review</p>
+                      <p className="text-sm text-amber-600">This case is awaiting assignment by the Solicitor General or Deputy Solicitor General.</p>
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <Label className="text-xs text-muted-foreground">Due Date</Label>
-                      <p className="font-medium text-sm text-emerald-600">{formatDate(caseData.dueDate)}</p>
-                    </div>
-                    <div>
-                      <Label className="text-xs text-muted-foreground">Bring Up Date</Label>
-                      <p className="font-medium text-sm">{caseData.bringUpDate ? formatDate(caseData.bringUpDate) : "Not Set"}</p>
-                    </div>
-                  </div>
-                  {caseData.dispatchDate && (
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <Label className="text-xs text-muted-foreground">Dispatch Date</Label>
-                        <p className="font-medium text-sm">{formatDate(caseData.dispatchDate)}</p>
-                      </div>
-                      <div>
-                        <Label className="text-xs text-muted-foreground">Closure Date</Label>
-                        <p className="font-medium text-sm">{caseData.closureDate ? formatDate(caseData.closureDate) : "N/A"}</p>
-                      </div>
-                    </div>
-                  )}
                 </CardContent>
               </Card>
-
-              {/* Contact Information */}
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between py-3">
-                  <CardTitle className="text-base">Contact Information</CardTitle>
-                  <Button variant="ghost" size="sm" onClick={handleEditContact}>
-                    <Edit className="h-4 w-4 mr-1" /> Edit
+            )}
+            
+            {/* Correspondence Details */}
+            <Card>
+              <CardHeader className="pb-3 flex flex-row items-center justify-between">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Mail className="h-4 w-4" /> Correspondence Details
+                </CardTitle>
+                {canEditDates() && (
+                  <Button variant="ghost" size="sm" onClick={() => setShowEditClassificationDialog(true)}>
+                    <Edit className="h-4 w-4" />
                   </Button>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <Label className="text-xs text-muted-foreground">Contact Name</Label>
-                      <p className="font-medium text-sm">{caseData.contactName}</p>
-                    </div>
-                    <div>
-                      <Label className="text-xs text-muted-foreground">Job Title</Label>
-                      <p className="font-medium text-sm">{caseData.contactJobTitle}</p>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <Label className="text-xs text-muted-foreground">Email Address</Label>
-                      <p className="font-medium text-sm">{caseData.emailAddress}</p>
-                    </div>
-                    <div>
-                      <Label className="text-xs text-muted-foreground">Mobile Phone</Label>
-                      <p className="font-medium text-sm">{caseData.mobilePhone}</p>
-                    </div>
-                  </div>
-                  {caseData.mailingAddress && (
-                    <div>
-                      <Label className="text-xs text-muted-foreground">Mailing Address</Label>
-                      <p className="font-medium text-sm">{caseData.mailingAddress}</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* File Association */}
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between py-3">
-                  <CardTitle className="text-base">File Association</CardTitle>
-                  <Button variant="ghost" size="sm" onClick={handleEditFileAssoc}>
-                    <Edit className="h-4 w-4 mr-1" /> Edit
-                  </Button>
-                </CardHeader>
-                <CardContent className="space-y-3">
+                )}
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
                   <div>
-                    <Label className="text-xs text-muted-foreground">File Types</Label>
-                    <div className="flex flex-wrap gap-1 mt-1">
-                      {caseData.fileTypes.map((type, idx) => (
-                        <Badge key={idx} variant="outline" className="text-xs">{type}</Badge>
-                      ))}
-                    </div>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide">From</p>
+                    <p className="font-medium">{caseData.fromWhom}</p>
                   </div>
                   <div>
-                    <Label className="text-xs text-muted-foreground">Existing File References</Label>
-                    <div className="flex flex-wrap gap-1 mt-1">
-                      {caseData.existingFileRefs.map((ref, idx) => (
-                        <Badge key={idx} variant="secondary" className="text-xs">{ref}</Badge>
-                      ))}
-                    </div>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide">To</p>
+                    <p className="font-medium">{caseData.toWhom}</p>
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <Label className="text-xs text-muted-foreground">Association Status</Label>
-                      <Badge variant={caseData.registryFileAssocStatus === "Complete" ? "default" : "secondary"}>
-                        {caseData.registryFileAssocStatus}
-                      </Badge>
-                    </div>
-                    <div>
-                      <Label className="text-xs text-muted-foreground">Security Profile</Label>
-                      <p className="font-medium text-sm">{caseData.securityProfile}</p>
-                    </div>
+                  <div className="md:col-span-2">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Subject</p>
+                    <p className="font-medium">{caseData.subject}</p>
                   </div>
-                </CardContent>
-              </Card>
-
-              {/* Flags */}
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between py-3">
-                  <CardTitle className="text-base">Flags & Priority</CardTitle>
-                  <Button variant="ghost" size="sm" onClick={handleEditFlags}>
-                    <Edit className="h-4 w-4 mr-1" /> Edit
+                  <Separator className="md:col-span-2" />
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Correspondence Type</p>
+                    <Badge variant="outline">{caseData.correspondenceType}</Badge>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Priority</p>
+                    <Badge variant={caseData.priority === "urgent" ? "destructive" : "secondary"}>
+                      {caseData.priority === "urgent" ? "Urgent" : "Routine"}
+                    </Badge>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Submission Channel</p>
+                    <p className="font-medium">{caseData.submissionChannel}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide">External Reference No.</p>
+                    <p className="font-medium">{caseData.externalReferenceNo || '-'}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide">File Reference No.</p>
+                    <p className="font-medium">{caseData.fileReferenceNo}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Volume / Folio</p>
+                    <p className="font-medium">{caseData.volume} / {caseData.folioMinuteNo}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            {/* Originator / Contact Information */}
+            <Card>
+              <CardHeader className="pb-3 flex flex-row items-center justify-between">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Building2 className="h-4 w-4" /> Originator / Contact Information
+                </CardTitle>
+                {canEditDates() && (
+                  <Button variant="ghost" size="sm" onClick={() => setShowEditContactDialog(true)}>
+                    <Edit className="h-4 w-4" />
                   </Button>
+                )}
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Originating Entity</p>
+                    <p className="font-medium">{caseData.originatingEntity}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Submitter Type</p>
+                    <p className="font-medium">{caseData.submitterType}</p>
+                  </div>
+                  <Separator className="md:col-span-2" />
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Contact Name</p>
+                    <p className="font-medium">{caseData.contactName}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Job Title</p>
+                    <p className="font-medium">{caseData.contactJobTitle}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide flex items-center gap-1">
+                      <Phone className="h-3 w-3" /> Phone
+                    </p>
+                    <p className="font-medium">{caseData.contactPhone}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide flex items-center gap-1">
+                      <Mail className="h-3 w-3" /> Email
+                    </p>
+                    <p className="font-medium">{caseData.contactEmail}</p>
+                  </div>
+                  <div className="md:col-span-2">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide flex items-center gap-1">
+                      <MapPin className="h-3 w-3" /> Address
+                    </p>
+                    <p className="font-medium">{caseData.contactAddress}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            {/* External Liaisons - Only show if officer is working on case */}
+            {caseData.assignedOfficerId && (
+              <Card>
+                <CardHeader className="pb-3 flex flex-row items-center justify-between">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <ExternalLink className="h-4 w-4" /> External Liaisons
+                  </CardTitle>
+                  {canProcess() && (
+                    <Button variant="outline" size="sm" onClick={() => setShowLiaisonDialog(true)}>
+                      <UserPlus className="h-4 w-4 mr-1" /> Add Liaison
+                    </Button>
+                  )}
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-3 gap-4">
-                    <div className="flex items-center gap-2">
-                      <div className={`w-3 h-3 rounded-full ${caseData.urgencyFlag ? "bg-red-500" : "bg-gray-300"}`} />
-                      <span className="text-sm">Urgent</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className={`w-3 h-3 rounded-full ${caseData.confidentialFlag ? "bg-purple-500" : "bg-gray-300"}`} />
-                      <span className="text-sm">Confidential</span>
-                    </div>
-                    <div>
-                      <Label className="text-xs text-muted-foreground">Security</Label>
-                      <p className="font-medium text-sm">{caseData.securityProfile}</p>
-                    </div>
-                  </div>
+                  {caseData.liaiseAgencies.length > 0 ? (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Agency</TableHead>
+                          <TableHead>Contact</TableHead>
+                          <TableHead>Date Sent</TableHead>
+                          <TableHead>Feedback</TableHead>
+                          <TableHead>Status</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {caseData.liaiseAgencies.map(liaison => (
+                          <TableRow key={liaison.id}>
+                            <TableCell className="font-medium">{liaison.agencyName}</TableCell>
+                            <TableCell>{liaison.contactName}</TableCell>
+                            <TableCell>{formatDate(liaison.dateSubmitted)}</TableCell>
+                            <TableCell>{liaison.dateFeedbackReceived ? formatDate(liaison.dateFeedbackReceived) : '-'}</TableCell>
+                            <TableCell>
+                              <Badge variant={liaison.status === "Complete" ? "default" : "secondary"}>
+                                {liaison.status}
+                              </Badge>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  ) : (
+                    <p className="text-sm text-muted-foreground text-center py-4">No external liaisons initiated</p>
+                  )}
                 </CardContent>
               </Card>
-            </div>
-          </TabsContent>
-
-          {/* Documents Tab */}
-          <TabsContent value="documents">
+            )}
+            
+            {/* Documents */}
             <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle>Documents</CardTitle>
-                <Button size="sm">
-                  <Upload className="h-4 w-4 mr-1" /> Upload Document
+              <CardHeader className="pb-3 flex flex-row items-center justify-between">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <FileText className="h-4 w-4" /> Documents
+                </CardTitle>
+                <Button variant="outline" size="sm">
+                  <Upload className="h-4 w-4 mr-1" /> Upload
                 </Button>
               </CardHeader>
               <CardContent>
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Document Name</TableHead>
-                      <TableHead>Document Class</TableHead>
-                      <TableHead>Size</TableHead>
+                      <TableHead>Document</TableHead>
+                      <TableHead>Type</TableHead>
                       <TableHead>Uploaded By</TableHead>
                       <TableHead>Date</TableHead>
-                      <TableHead>Actions</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {documents.map((doc) => (
+                    {documents.map(doc => (
                       <TableRow key={doc.id}>
-                        <TableCell className="font-medium">
+                        <TableCell>
                           <div className="flex items-center gap-2">
                             <FileText className="h-4 w-4 text-muted-foreground" />
-                            {doc.name}
+                            <span className="font-medium">{doc.name}</span>
+                            <span className="text-xs text-muted-foreground">({doc.size})</span>
                           </div>
                         </TableCell>
-                        <TableCell><Badge variant="outline">{doc.documentClass}</Badge></TableCell>
-                        <TableCell>{doc.size}</TableCell>
+                        <TableCell>{doc.type}</TableCell>
                         <TableCell>{doc.uploadedBy}</TableCell>
                         <TableCell>{formatDate(doc.uploadedAt)}</TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-1">
-                            <Button variant="ghost" size="icon"><Eye className="h-4 w-4" /></Button>
-                            <Button variant="ghost" size="icon"><Download className="h-4 w-4" /></Button>
-                          </div>
+                        <TableCell className="text-right">
+                          <Button variant="ghost" size="sm"><Eye className="h-4 w-4" /></Button>
+                          <Button variant="ghost" size="sm"><Download className="h-4 w-4" /></Button>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -1096,492 +847,96 @@ export default function CorrespondenceCaseDetailPage() {
                 </Table>
               </CardContent>
             </Card>
-          </TabsContent>
-
-          {/* Agency Liaison Tab */}
-          <TabsContent value="liaison">
+          </div>
+          
+          {/* Sidebar - 1 column */}
+          <div className="space-y-6">
+            {/* File Association */}
             <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <div>
-                  <CardTitle>Agency Liaison</CardTitle>
-                  <CardDescription>Track communications with external government agencies</CardDescription>
-                </div>
-                <Button size="sm" onClick={handleLiaiseAgency}>
-                  <ExternalLink className="h-4 w-4 mr-1" /> New Liaison
-                </Button>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Agency Name</TableHead>
-                      <TableHead>Contact Name</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Date Submitted</TableHead>
-                      <TableHead>Feedback Received</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {caseData.liaiseAgencies.map((liaison) => (
-                      <TableRow key={liaison.id}>
-                        <TableCell className="font-medium">{liaison.agencyName}</TableCell>
-                        <TableCell>{liaison.contactName}</TableCell>
-                        <TableCell>{liaison.emailAddress}</TableCell>
-                        <TableCell>{formatDate(liaison.dateSubmitted)}</TableCell>
-                        <TableCell>{liaison.dateFeedbackReceived ? formatDate(liaison.dateFeedbackReceived) : "Pending"}</TableCell>
-                        <TableCell>
-                          <Badge variant={liaison.status === "Complete" ? "default" : "secondary"}>
-                            {liaison.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Button variant="ghost" size="sm">Follow Up</Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Tasks Tab */}
-          <TabsContent value="tasks">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle>Tasks</CardTitle>
-                <Button size="sm">
-                  <PlayCircle className="h-4 w-4 mr-1" /> Add Task
-                </Button>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {tasks.map((task) => (
-                    <div key={task.id} className="flex items-center justify-between p-3 border rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <Checkbox checked={task.status === "completed"} />
-                        <div>
-                          <p className={`font-medium ${task.status === "completed" ? "line-through text-muted-foreground" : ""}`}>
-                            {task.title}
-                          </p>
-                          <p className="text-sm text-muted-foreground">
-                            {task.assignee} - Due {formatDate(task.dueDate)}
-                          </p>
-                        </div>
-                      </div>
-                      <Badge variant={
-                        task.status === "completed" ? "secondary" :
-                        task.status === "in_progress" ? "default" : "outline"
-                      }>
-                        {task.status === "in_progress" ? "In Progress" : task.status}
-                      </Badge>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Comments Tab */}
-          <TabsContent value="comments">
-            <Card>
-              <CardHeader>
-                <CardTitle>Comments & Notes</CardTitle>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <FolderOpen className="h-4 w-4" /> File Association
+                </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="space-y-3">
-                  <Textarea 
-                    placeholder="Add a comment or note..."
-                    value={newComment}
-                    onChange={(e) => setNewComment(e.target.value)}
-                  />
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Switch 
-                        checked={isInternalComment} 
-                        onCheckedChange={setIsInternalComment}
-                        id="internal"
-                      />
-                      <Label htmlFor="internal" className="text-sm">Internal note (not visible to submitter)</Label>
-                    </div>
-                    <Button onClick={handleAddComment} disabled={!newComment.trim()}>
-                      <Send className="h-4 w-4 mr-1" /> Add Comment
-                    </Button>
+                <div>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide">Status</p>
+                  <Badge variant={caseData.registryFileAssocStatus === "Complete" ? "default" : "secondary"}>
+                    {caseData.registryFileAssocStatus}
+                  </Badge>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">File Types</p>
+                  <div className="flex flex-wrap gap-1">
+                    {caseData.fileTypes.map(ft => (
+                      <Badge key={ft} variant="outline" className="text-xs">{ft}</Badge>
+                    ))}
                   </div>
                 </div>
-                <Separator />
-                <div className="space-y-4">
-                  {comments.map((comment) => (
-                    <div key={comment.id} className={`p-4 rounded-lg ${comment.isInternal ? "bg-amber-50 border border-amber-200" : "bg-gray-50"}`}>
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <User className="h-4 w-4 text-muted-foreground" />
-                          <span className="font-medium text-sm">{comment.author}</span>
-                          {comment.isInternal && <Badge variant="outline" className="text-xs">Internal</Badge>}
-                        </div>
-                        <span className="text-xs text-muted-foreground">{formatDateTime(comment.timestamp)}</span>
-                      </div>
-                      <p className="text-sm">{comment.content}</p>
-                    </div>
-                  ))}
+                <div>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">Linked Files</p>
+                  <div className="space-y-1">
+                    {caseData.existingFileRefs.map(ref => (
+                      <p key={ref} className="text-sm font-mono bg-muted px-2 py-1 rounded">{ref}</p>
+                    ))}
+                  </div>
                 </div>
               </CardContent>
             </Card>
-          </TabsContent>
-
-          {/* Activity Log Tab */}
-          <TabsContent value="history">
+            
+            {/* Activity Timeline */}
             <Card>
-              <CardHeader>
-                <CardTitle>Activity Log</CardTitle>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <History className="h-4 w-4" /> Activity Timeline
+                </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {activities.map((activity) => (
-                    <div key={activity.id} className="flex gap-4 pb-4 border-b last:border-0">
-                      <div className="flex-shrink-0">
-                        <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center">
-                          <History className="h-4 w-4 text-emerald-600" />
+                <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2">
+                  {activities.map((activity, index) => (
+                    <div key={activity.id} className="flex gap-3">
+                      <div className="flex flex-col items-center">
+                        <div className={`
+                          flex h-8 w-8 items-center justify-center rounded-full
+                          ${activity.type === 'assignment' ? 'bg-green-100 text-green-600' :
+                            activity.type === 'intake' ? 'bg-blue-100 text-blue-600' :
+                            activity.type === 'liaison' ? 'bg-purple-100 text-purple-600' :
+                            'bg-muted text-muted-foreground'}
+                        `}>
+                          {activity.type === 'assignment' ? <UserPlus className="h-4 w-4" /> :
+                           activity.type === 'intake' ? <Mail className="h-4 w-4" /> :
+                           activity.type === 'liaison' ? <ExternalLink className="h-4 w-4" /> :
+                           <FileCheck className="h-4 w-4" />}
                         </div>
+                        {index < activities.length - 1 && <div className="w-0.5 h-full bg-muted mt-2" />}
                       </div>
-                      <div className="flex-1">
-                        <p className="font-medium text-sm">{activity.description}</p>
-                        <p className="text-sm text-muted-foreground">{activity.details}</p>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {activity.user} - {formatDateTime(activity.timestamp)}
-                        </p>
+                      <div className="flex-1 pb-4">
+                        <p className="text-sm font-medium">{activity.description}</p>
+                        <p className="text-xs text-muted-foreground">{activity.user} - {formatDateTime(activity.timestamp)}</p>
                       </div>
                     </div>
                   ))}
                 </div>
               </CardContent>
             </Card>
-          </TabsContent>
-        </Tabs>
+          </div>
+        </div>
       </div>
-
-      {/* Edit Correspondence Information Dialog */}
-      <Dialog open={editCorrespondenceInfoOpen} onOpenChange={setEditCorrespondenceInfoOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Edit Correspondence Information</DialogTitle>
-            <DialogDescription>Update Tab 1 correspondence details</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>From Whom</Label>
-                <Input 
-                  value={editForm.fromWhom || ""} 
-                  onChange={(e) => setEditForm({...editForm, fromWhom: e.target.value})}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>To Whom</Label>
-                <Input 
-                  value={editForm.toWhom || ""} 
-                  onChange={(e) => setEditForm({...editForm, toWhom: e.target.value})}
-                />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label>Subject</Label>
-              <Textarea 
-                value={editForm.subject || ""} 
-                onChange={(e) => setEditForm({...editForm, subject: e.target.value})}
-              />
-            </div>
-            <div className="grid grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label>File Reference #</Label>
-                <Input 
-                  value={editForm.fileReferenceNo || ""} 
-                  onChange={(e) => setEditForm({...editForm, fileReferenceNo: e.target.value})}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Volume</Label>
-                <Input 
-                  value={editForm.volume || ""} 
-                  onChange={(e) => setEditForm({...editForm, volume: e.target.value})}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Folio/Minute #</Label>
-                <Input 
-                  value={editForm.folioMinuteNo || ""} 
-                  onChange={(e) => setEditForm({...editForm, folioMinuteNo: e.target.value})}
-                />
-              </div>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEditCorrespondenceInfoOpen(false)}>Cancel</Button>
-            <Button onClick={saveCorrespondenceInfo} className="bg-emerald-600 hover:bg-emerald-700">Save Changes</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Edit Case Information Dialog */}
-      <Dialog open={editCaseInfoOpen} onOpenChange={setEditCaseInfoOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Edit Case Information</DialogTitle>
-            <DialogDescription>Update Tab 2 case details</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Type of Correspondence</Label>
-                <Select value={editForm.correspondenceType} onValueChange={(v) => setEditForm({...editForm, correspondenceType: v})}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {CORRESPONDENCE_TYPES.map(type => (
-                      <SelectItem key={type} value={type}>{type}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Correspondence From</Label>
-                <Select value={editForm.correspondenceFrom} onValueChange={(v) => setEditForm({...editForm, correspondenceFrom: v})}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="MDA">Ministry/Department/Agency</SelectItem>
-                    <SelectItem value="Public">Member of the Public</SelectItem>
-                    <SelectItem value="Private">Private Sector</SelectItem>
-                    <SelectItem value="Regional">Regional/International Body</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Priority</Label>
-                <Select value={editForm.priority} onValueChange={(v) => setEditForm({...editForm, priority: v})}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="urgent">Urgent</SelectItem>
-                    <SelectItem value="routine">Routine</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Correspondence Origination</Label>
-                <Select value={editForm.correspondenceOrigination} onValueChange={(v) => setEditForm({...editForm, correspondenceOrigination: v})}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {SUBMISSION_CHANNELS.map(ch => (
-                      <SelectItem key={ch} value={ch}>{ch}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label>External Reference #</Label>
-              <Input 
-                value={editForm.externalReferenceNo || ""} 
-                onChange={(e) => setEditForm({...editForm, externalReferenceNo: e.target.value})}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEditCaseInfoOpen(false)}>Cancel</Button>
-            <Button onClick={saveCaseInfo} className="bg-emerald-600 hover:bg-emerald-700">Save Changes</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Edit SG Directive Dialog */}
-      <Dialog open={editSgDirectiveOpen} onOpenChange={setEditSgDirectiveOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Edit SG Directive</DialogTitle>
-            <DialogDescription>Update the SG directive and assignment</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>SG Directive</Label>
-              <Textarea 
-                value={editForm.sgDirective || ""} 
-                onChange={(e) => setEditForm({...editForm, sgDirective: e.target.value})}
-                rows={4}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Assign To</Label>
-              <Select value={editForm.assignedTo} onValueChange={(v) => setEditForm({...editForm, assignedTo: v})}>
-                <SelectTrigger><SelectValue placeholder="Select officer" /></SelectTrigger>
-                <SelectContent>
-                  {LEGAL_OFFICERS.map(officer => (
-                    <SelectItem key={officer.id} value={officer.name}>{officer.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEditSgDirectiveOpen(false)}>Cancel</Button>
-            <Button onClick={saveSgDirective} className="bg-emerald-600 hover:bg-emerald-700">Save Changes</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Edit Dates Dialog */}
-      <Dialog open={editDatesOpen} onOpenChange={setEditDatesOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit Dates & Deadlines</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>Recommended Deadline Date</Label>
-              <Input 
-                type="date"
-                value={editForm.recommendedDeadlineDate || ""} 
-                onChange={(e) => setEditForm({...editForm, recommendedDeadlineDate: e.target.value})}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Due Date</Label>
-              <Input 
-                type="date"
-                value={editForm.dueDate || ""} 
-                onChange={(e) => setEditForm({...editForm, dueDate: e.target.value})}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Bring Up Date</Label>
-              <Input 
-                type="date"
-                value={editForm.bringUpDate || ""} 
-                onChange={(e) => setEditForm({...editForm, bringUpDate: e.target.value})}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEditDatesOpen(false)}>Cancel</Button>
-            <Button onClick={saveDates} className="bg-emerald-600 hover:bg-emerald-700">Save Changes</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Edit Contact Dialog */}
-      <Dialog open={editContactOpen} onOpenChange={setEditContactOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit Contact Information</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Contact Name</Label>
-                <Input 
-                  value={editForm.contactName || ""} 
-                  onChange={(e) => setEditForm({...editForm, contactName: e.target.value})}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Job Title</Label>
-                <Input 
-                  value={editForm.contactJobTitle || ""} 
-                  onChange={(e) => setEditForm({...editForm, contactJobTitle: e.target.value})}
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Email Address</Label>
-                <Input 
-                  type="email"
-                  value={editForm.emailAddress || ""} 
-                  onChange={(e) => setEditForm({...editForm, emailAddress: e.target.value})}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Mobile Phone</Label>
-                <Input 
-                  value={editForm.mobilePhone || ""} 
-                  onChange={(e) => setEditForm({...editForm, mobilePhone: e.target.value})}
-                />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label>Mailing Address</Label>
-              <Textarea 
-                value={editForm.mailingAddress || ""} 
-                onChange={(e) => setEditForm({...editForm, mailingAddress: e.target.value})}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEditContactOpen(false)}>Cancel</Button>
-            <Button onClick={saveContact} className="bg-emerald-600 hover:bg-emerald-700">Save Changes</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Edit Flags Dialog */}
-      <Dialog open={editFlagsOpen} onOpenChange={setEditFlagsOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit Flags & Priority</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <Label>Urgent</Label>
-                <p className="text-sm text-muted-foreground">Mark as urgent priority</p>
-              </div>
-              <Switch 
-                checked={editForm.urgencyFlag || false} 
-                onCheckedChange={(v) => setEditForm({...editForm, urgencyFlag: v})}
-              />
-            </div>
-            <div className="flex items-center justify-between">
-              <div>
-                <Label>Confidential</Label>
-                <p className="text-sm text-muted-foreground">Restrict access to authorized personnel</p>
-              </div>
-              <Switch 
-                checked={editForm.confidentialFlag || false} 
-                onCheckedChange={(v) => setEditForm({...editForm, confidentialFlag: v})}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Security Profile</Label>
-              <Select value={editForm.securityProfile} onValueChange={(v) => setEditForm({...editForm, securityProfile: v})}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {SECURITY_PROFILES.map(profile => (
-                    <SelectItem key={profile} value={profile}>{profile}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEditFlagsOpen(false)}>Cancel</Button>
-            <Button onClick={saveFlags} className="bg-emerald-600 hover:bg-emerald-700">Save Changes</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
+      
       {/* Assign Officer Dialog */}
-      <Dialog open={assignOfficerOpen} onOpenChange={setAssignOfficerOpen}>
-        <DialogContent>
+      <Dialog open={showAssignDialog} onOpenChange={setShowAssignDialog}>
+        <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Assign to Officer</DialogTitle>
-            <DialogDescription>Select an officer and provide directive</DialogDescription>
+            <DialogTitle>Assign to Legal Officer</DialogTitle>
+            <DialogDescription>Assign this case to a legal officer with your directive.</DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label>Select Officer</Label>
-              <Select value={actionForm.officerId} onValueChange={(v) => setActionForm({...actionForm, officerId: v})}>
-                <SelectTrigger><SelectValue placeholder="Select officer" /></SelectTrigger>
+              <Label>Select Officer *</Label>
+              <Select value={assignForm.officerId} onValueChange={(v) => setAssignForm(prev => ({ ...prev, officerId: v }))}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select an officer" />
+                </SelectTrigger>
                 <SelectContent>
                   {LEGAL_OFFICERS.map(officer => (
                     <SelectItem key={officer.id} value={officer.id}>{officer.name}</SelectItem>
@@ -1590,146 +945,207 @@ export default function CorrespondenceCaseDetailPage() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Directive (Optional)</Label>
-              <Textarea 
-                value={actionForm.directive || ""} 
-                onChange={(e) => setActionForm({...actionForm, directive: e.target.value})}
-                placeholder="Enter directive for the officer..."
+              <Label>Due Date *</Label>
+              <Input 
+                type="date" 
+                value={assignForm.dueDate} 
+                onChange={(e) => setAssignForm(prev => ({ ...prev, dueDate: e.target.value }))} 
               />
             </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setAssignOfficerOpen(false)}>Cancel</Button>
-            <Button onClick={confirmAssignOfficer} className="bg-emerald-600 hover:bg-emerald-700">Assign Officer</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Return to Registry Dialog */}
-      <Dialog open={returnToRegistryOpen} onOpenChange={setReturnToRegistryOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Return to Registry</DialogTitle>
-            <DialogDescription>Provide reason for returning the case</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
             <div className="space-y-2">
-              <Label>Return Directive</Label>
+              <Label>SG Directive</Label>
               <Textarea 
-                value={actionForm.returnDirective || ""} 
-                onChange={(e) => setActionForm({...actionForm, returnDirective: e.target.value})}
-                placeholder="Enter reason for return..."
+                placeholder="Enter your directive for the assigned officer..."
+                value={assignForm.directive}
+                onChange={(e) => setAssignForm(prev => ({ ...prev, directive: e.target.value }))}
                 rows={4}
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setReturnToRegistryOpen(false)}>Cancel</Button>
-            <Button onClick={confirmReturnToRegistry} variant="destructive">Return Case</Button>
+            <Button variant="outline" onClick={() => setShowAssignDialog(false)}>Cancel</Button>
+            <Button onClick={handleAssignOfficer} disabled={!assignForm.officerId}>Assign</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      {/* Submit Outgoing Correspondence Dialog */}
-      <Dialog open={submitOutgoingOpen} onOpenChange={setSubmitOutgoingOpen}>
-        <DialogContent className="max-w-2xl">
+      
+      {/* Edit Dates Dialog */}
+      <Dialog open={showEditDatesDialog} onOpenChange={setShowEditDatesDialog}>
+        <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Submit Outgoing Correspondence</DialogTitle>
-            <DialogDescription>Send response to the originator</DialogDescription>
+            <DialogTitle>Edit Dates & Deadlines</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Recipient Name</Label>
-                <Input 
-                  value={actionForm.recipientName || ""} 
-                  onChange={(e) => setActionForm({...actionForm, recipientName: e.target.value})}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Recipient Email</Label>
-                <Input 
-                  type="email"
-                  value={actionForm.recipientEmail || ""} 
-                  onChange={(e) => setActionForm({...actionForm, recipientEmail: e.target.value})}
-                />
-              </div>
-            </div>
+          <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label>Message</Label>
-              <Textarea 
-                value={actionForm.message || ""} 
-                onChange={(e) => setActionForm({...actionForm, message: e.target.value})}
-                rows={4}
+              <Label>Due Date *</Label>
+              <Input 
+                type="date" 
+                value={datesForm.dueDate} 
+                onChange={(e) => setDatesForm(prev => ({ ...prev, dueDate: e.target.value }))} 
               />
             </div>
             <div className="space-y-2">
-              <Label>Attach Response Document</Label>
-              <Input type="file" />
+              <Label>Bring-Up Date</Label>
+              <Input 
+                type="date" 
+                value={datesForm.bringUpDate} 
+                onChange={(e) => setDatesForm(prev => ({ ...prev, bringUpDate: e.target.value }))} 
+              />
+              <p className="text-xs text-muted-foreground">Set a reminder date for follow-up</p>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setSubmitOutgoingOpen(false)}>Cancel</Button>
-            <Button onClick={confirmSubmitOutgoing} className="bg-emerald-600 hover:bg-emerald-700">
-              <Send className="h-4 w-4 mr-1" /> Send & Close Case
-            </Button>
+            <Button variant="outline" onClick={() => setShowEditDatesDialog(false)}>Cancel</Button>
+            <Button onClick={handleUpdateDates}>Save Changes</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      {/* Liaise with Agency Dialog */}
-      <Dialog open={liaiseAgencyOpen} onOpenChange={setLiaiseAgencyOpen}>
-        <DialogContent>
+      
+      {/* Edit Classification Dialog */}
+      <Dialog open={showEditClassificationDialog} onOpenChange={setShowEditClassificationDialog}>
+        <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Liaise with Government Agency</DialogTitle>
-            <DialogDescription>Initiate communication with external agency</DialogDescription>
+            <DialogTitle>Edit Classification</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label>Agency Name</Label>
-              <Select value={actionForm.agencyName} onValueChange={(v) => {
-                const mda = MDAS.find(m => m.name === v)
-                setActionForm({...actionForm, agencyName: v})
-              }}>
-                <SelectTrigger><SelectValue placeholder="Select agency" /></SelectTrigger>
+              <Label>Correspondence Type</Label>
+              <Select value={classificationForm.correspondenceType} onValueChange={(v) => setClassificationForm(prev => ({ ...prev, correspondenceType: v }))}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
-                  {MDAS.map(mda => (
-                    <SelectItem key={mda.id} value={mda.name}>{mda.name}</SelectItem>
+                  {CORRESPONDENCE_TYPES.map(type => (
+                    <SelectItem key={type} value={type}>{type}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Contact Name</Label>
-                <Input 
-                  value={actionForm.contactName || ""} 
-                  onChange={(e) => setActionForm({...actionForm, contactName: e.target.value})}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Email Address</Label>
-                <Input 
-                  type="email"
-                  value={actionForm.emailAddress || ""} 
-                  onChange={(e) => setActionForm({...actionForm, emailAddress: e.target.value})}
-                />
-              </div>
-            </div>
             <div className="space-y-2">
-              <Label>Message</Label>
-              <Textarea 
-                value={actionForm.message || ""} 
-                onChange={(e) => setActionForm({...actionForm, message: e.target.value})}
-                placeholder="Enter message to agency..."
-                rows={4}
+              <Label>Priority</Label>
+              <Select value={classificationForm.priority} onValueChange={(v) => setClassificationForm(prev => ({ ...prev, priority: v }))}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {PRIORITY_LEVELS.map(p => (
+                    <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-center justify-between">
+              <Label>Confidential</Label>
+              <Switch 
+                checked={classificationForm.confidentialFlag} 
+                onCheckedChange={(v) => setClassificationForm(prev => ({ ...prev, confidentialFlag: v }))} 
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <Label>Urgent</Label>
+              <Switch 
+                checked={classificationForm.urgencyFlag} 
+                onCheckedChange={(v) => setClassificationForm(prev => ({ ...prev, urgencyFlag: v }))} 
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setLiaiseAgencyOpen(false)}>Cancel</Button>
-            <Button onClick={confirmLiaiseAgency} className="bg-emerald-600 hover:bg-emerald-700">
-              <ExternalLink className="h-4 w-4 mr-1" /> Send to Agency
+            <Button variant="outline" onClick={() => setShowEditClassificationDialog(false)}>Cancel</Button>
+            <Button onClick={handleUpdateClassification}>Save Changes</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Edit Contact Dialog */}
+      <Dialog open={showEditContactDialog} onOpenChange={setShowEditContactDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Contact Information</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Contact Name</Label>
+              <Input 
+                value={contactForm.contactName} 
+                onChange={(e) => setContactForm(prev => ({ ...prev, contactName: e.target.value }))} 
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Job Title</Label>
+              <Input 
+                value={contactForm.contactJobTitle} 
+                onChange={(e) => setContactForm(prev => ({ ...prev, contactJobTitle: e.target.value }))} 
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Phone</Label>
+              <Input 
+                value={contactForm.contactPhone} 
+                onChange={(e) => setContactForm(prev => ({ ...prev, contactPhone: e.target.value }))} 
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Email</Label>
+              <Input 
+                type="email"
+                value={contactForm.contactEmail} 
+                onChange={(e) => setContactForm(prev => ({ ...prev, contactEmail: e.target.value }))} 
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Address</Label>
+              <Textarea 
+                value={contactForm.contactAddress} 
+                onChange={(e) => setContactForm(prev => ({ ...prev, contactAddress: e.target.value }))} 
+                rows={2}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowEditContactDialog(false)}>Cancel</Button>
+            <Button onClick={handleUpdateContact}>Save Changes</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Add Liaison Dialog */}
+      <Dialog open={showLiaisonDialog} onOpenChange={setShowLiaisonDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Liaise with External Agency</DialogTitle>
+            <DialogDescription>Initiate correspondence with an external agency for input.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Agency / Ministry Name *</Label>
+              <Input 
+                placeholder="e.g., Ministry of Foreign Affairs"
+                value={liaisonForm.agencyName} 
+                onChange={(e) => setLiaisonForm(prev => ({ ...prev, agencyName: e.target.value }))} 
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Contact Name *</Label>
+              <Input 
+                placeholder="Contact person name"
+                value={liaisonForm.contactName} 
+                onChange={(e) => setLiaisonForm(prev => ({ ...prev, contactName: e.target.value }))} 
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Email Address *</Label>
+              <Input 
+                type="email"
+                placeholder="email@agency.gov.bb"
+                value={liaisonForm.emailAddress} 
+                onChange={(e) => setLiaisonForm(prev => ({ ...prev, emailAddress: e.target.value }))} 
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowLiaisonDialog(false)}>Cancel</Button>
+            <Button onClick={handleAddLiaison} disabled={!liaisonForm.agencyName || !liaisonForm.contactName || !liaisonForm.emailAddress}>
+              Send Request
             </Button>
           </DialogFooter>
         </DialogContent>
