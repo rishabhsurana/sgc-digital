@@ -33,9 +33,10 @@ export default function CaseManagementLayout({
 }) {
   const pathname = usePathname()
   
-  // If we're in a specific module (contracts or correspondence), don't wrap
-  // The module layouts handle their own navigation
-  if (pathname.startsWith('/case-management/contracts') || 
+  // If we're on the landing page or in a specific module, don't wrap
+  // The pages/module layouts handle their own navigation
+  if (pathname === '/case-management' ||
+      pathname.startsWith('/case-management/contracts') || 
       pathname.startsWith('/case-management/correspondence')) {
     return <>{children}</>
   }
