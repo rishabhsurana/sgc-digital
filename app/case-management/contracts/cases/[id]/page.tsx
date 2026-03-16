@@ -796,6 +796,23 @@ export default function ContractCaseDetailPage() {
 
   return (
     <div className="space-y-6">
+      {/* Breadcrumbs */}
+      <nav className="flex items-center gap-2 text-sm text-muted-foreground">
+        <Link href="/case-management" className="hover:text-foreground transition-colors">
+          SGC Digital - Case Management
+        </Link>
+        <ChevronRight className="h-4 w-4" />
+        <Link href="/case-management/contracts" className="hover:text-foreground transition-colors">
+          Contracts
+        </Link>
+        <ChevronRight className="h-4 w-4" />
+        <Link href="/case-management/contracts/workqueue" className="hover:text-foreground transition-colors">
+          Workqueue
+        </Link>
+        <ChevronRight className="h-4 w-4" />
+        <span className="text-foreground font-medium">{caseData.contractTransactionNo}</span>
+      </nav>
+
       {/* Header */}
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" asChild>

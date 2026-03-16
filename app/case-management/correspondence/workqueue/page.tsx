@@ -16,7 +16,8 @@ import {
   ArrowUpDown,
   FileText,
   MessageSquare,
-  ExternalLink
+  ExternalLink,
+  ChevronRight
 } from "lucide-react"
 import { formatDate } from "@/lib/utils/date-utils"
 import { Button } from "@/components/ui/button"
@@ -182,6 +183,19 @@ export default function CorrespondenceWorkqueuePage() {
 
   return (
     <div className="space-y-6">
+      {/* Breadcrumbs */}
+      <nav className="flex items-center gap-2 text-sm text-muted-foreground">
+        <Link href="/case-management" className="hover:text-foreground transition-colors">
+          SGC Digital - Case Management
+        </Link>
+        <ChevronRight className="h-4 w-4" />
+        <Link href="/case-management/correspondence" className="hover:text-foreground transition-colors">
+          Correspondence
+        </Link>
+        <ChevronRight className="h-4 w-4" />
+        <span className="text-foreground font-medium">Workqueue</span>
+      </nav>
+
       {/* Hero Banner */}
       <div className="rounded-xl bg-gradient-to-r from-blue-700 via-blue-800 to-blue-900 p-6 text-white">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">

@@ -456,12 +456,22 @@ export default function CorrespondenceCaseDetailPage() {
       {/* Header */}
       <div className="bg-gradient-to-r from-blue-900 via-blue-800 to-blue-900 text-white">
         <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center gap-4">
-            <Link href="/case-management/correspondence" className="flex items-center gap-2 text-white/80 hover:text-white transition-colors">
-              <ArrowLeft className="h-4 w-4" />
-              <span className="text-sm">Back to Dashboard</span>
+          {/* Breadcrumbs */}
+          <nav className="flex items-center gap-2 text-sm text-white/70">
+            <Link href="/case-management" className="hover:text-white transition-colors">
+              SGC Digital - Case Management
             </Link>
-          </div>
+            <ChevronRight className="h-4 w-4" />
+            <Link href="/case-management/correspondence" className="hover:text-white transition-colors">
+              Correspondence
+            </Link>
+            <ChevronRight className="h-4 w-4" />
+            <Link href="/case-management/correspondence/workqueue" className="hover:text-white transition-colors">
+              Workqueue
+            </Link>
+            <ChevronRight className="h-4 w-4" />
+            <span className="text-white font-medium">{caseData.trackingNumber}</span>
+          </nav>
           
           <div className="mt-4 flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
             <div className="flex items-start gap-4">
