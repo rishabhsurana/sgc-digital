@@ -206,10 +206,12 @@ const STATUS_CONFIG: Record<SubmissionStatus, { label: string; color: string; ic
 // Submission Detail Dialog with tabs
 function SubmissionDetailDialog({ 
   submission, 
-  status 
+  status,
+  defaultTab = "details"
 }: { 
   submission: Submission
   status: { label: string; color: string; icon: typeof Clock }
+  defaultTab?: "details" | "documents" | "respond"
 }) {
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([])
   const [responseMessage, setResponseMessage] = useState("")
@@ -256,7 +258,7 @@ function SubmissionDetailDialog({
         <DialogDescription>{submission.title}</DialogDescription>
       </DialogHeader>
       
-      <Tabs defaultValue="details" className="flex-1 overflow-hidden flex flex-col">
+      <Tabs defaultValue={defaultTab} className="flex-1 overflow-hidden flex flex-col">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="details">Details</TabsTrigger>
           <TabsTrigger value="documents" className="relative">
@@ -537,10 +539,15 @@ function SubmissionCard({ submission }: { submission: Submission }) {
           
           <div className="flex items-center gap-2 shrink-0">
             {submission.status === "clarification" && (
-              <Button size="sm" variant="outline" className="text-orange-600 border-orange-200 hover:bg-orange-50">
-                <MessageSquare className="h-4 w-4 mr-1" />
-                Respond
-              </Button>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button size="sm" variant="outline" className="text-orange-600 border-orange-200 hover:bg-orange-50">
+                    <MessageSquare className="h-4 w-4 mr-1" />
+                    Respond
+                  </Button>
+                </DialogTrigger>
+                <SubmissionDetailDialog submission={submission} status={status} defaultTab="respond" />
+              </Dialog>
             )}
             {submission.status === "completed" && (
               <Button size="sm" variant="outline">
