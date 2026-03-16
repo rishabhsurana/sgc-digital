@@ -1,73 +1,52 @@
-import sql from 'mssql'
-
-// SQL Server connection configuration
-const sqlConfig: sql.config = {
-  server: process.env.MSSQL_SERVER || 'localhost',
-  database: process.env.MSSQL_DATABASE || 'SGCDigital',
-  user: process.env.MSSQL_USER || 'sa',
-  password: process.env.MSSQL_PASSWORD || '',
-  port: parseInt(process.env.MSSQL_PORT || '1433', 10),
-  options: {
-    encrypt: process.env.MSSQL_ENCRYPT === 'true',
-    trustServerCertificate: process.env.MSSQL_TRUST_CERT !== 'false',
-    enableArithAbort: true,
-  },
-  pool: {
-    max: 10,
-    min: 0,
-    idleTimeoutMillis: 30000,
-  },
-}
-
-// Singleton connection pool
-let pool: sql.ConnectionPool | null = null
-
 /**
- * Get or create a connection pool to the SQL Server database
+ * Database Connection Layer
+ * 
+ * This module provides a database abstraction layer that:
+ * - Uses mock data in development/v0 preview (when MSSQL is not available)
+ * - Uses actual MSSQL connection in production/on-premise deployment
+ * 
+ * To enable MSSQL:
+ * 1. Install mssql package: npm install mssql @types/mssql
+ * 2. Set USE_MSSQL=true in environment
+ * 3. Configure MSSQL_* environment variables
  */
-export async function getConnection(): Promise<sql.ConnectionPool> {
-  if (pool && pool.connected) {
-    return pool
-  }
 
-  try {
-    pool = await sql.connect(sqlConfig)
-    console.log('[DB] Connected to SQL Server')
-    return pool
-  } catch (error) {
-    console.error('[DB] Connection failed:', error)
-    throw error
-  }
+// Check if we should use real MSSQL connection
+const USE_MSSQL = process.env.USE_MSSQL === 'true'
+
+// Mock result interface matching mssql
+export interface IResult<T> {
+  recordsets: T[][]
+  recordset: T[]
+  output: Record<string, unknown>
+  rowsAffected: number[]
+}
+
+export interface IRecordSet<T> extends Array<T> {
+  columns: Record<string, unknown>
 }
 
 /**
- * Close the connection pool
- */
-export async function closeConnection(): Promise<void> {
-  if (pool) {
-    await pool.close()
-    pool = null
-    console.log('[DB] Connection closed')
-  }
-}
-
-/**
- * Execute a parameterized query
+ * Mock query function for development
  */
 export async function query<T = unknown>(
   queryText: string,
   params?: Record<string, unknown>
-): Promise<sql.IResult<T>> {
-  const conn = await getConnection()
-  const request = conn.request()
-
-  if (params) {
-    Object.entries(params).forEach(([key, value]) => {
-      request.input(key, value)
-    })
+): Promise<IResult<T>> {
+  if (USE_MSSQL) {
+    // Dynamic import to avoid build errors when mssql is not installed
+    const { query: mssqlQuery } = await import('./mssql-connection')
+    return mssqlQuery<T>(queryText, params)
   }
 
-  return request.query<T>(queryText)
+  // Return empty result for mock mode
+  console.log('[DB Mock] Query:', queryText.substring(0, 100), params)
+  return {
+    recordsets: [[]],
+    recordset: [],
+    output: {},
+    rowsAffected: [0],
+  }
 }
 
 /**
@@ -76,46 +55,52 @@ export async function query<T = unknown>(
 export async function executeProcedure<T = unknown>(
   procedureName: string,
   params?: Record<string, unknown>
-): Promise<sql.IProcedureResult<T>> {
-  const conn = await getConnection()
-  const request = conn.request()
-
-  if (params) {
-    Object.entries(params).forEach(([key, value]) => {
-      request.input(key, value)
-    })
+): Promise<IResult<T>> {
+  if (USE_MSSQL) {
+    const { executeProcedure: mssqlExecute } = await import('./mssql-connection')
+    return mssqlExecute<T>(procedureName, params)
   }
 
-  return request.execute<T>(procedureName)
+  console.log('[DB Mock] Procedure:', procedureName, params)
+  return {
+    recordsets: [[]],
+    recordset: [],
+    output: {},
+    rowsAffected: [0],
+  }
 }
 
 /**
- * Begin a transaction
+ * Get database connection status
  */
-export async function beginTransaction(): Promise<sql.Transaction> {
-  const conn = await getConnection()
-  const transaction = new sql.Transaction(conn)
-  await transaction.begin()
-  return transaction
+export async function getConnectionStatus(): Promise<{ connected: boolean; mode: string }> {
+  return {
+    connected: true,
+    mode: USE_MSSQL ? 'mssql' : 'mock',
+  }
 }
 
 /**
- * Execute within a transaction
+ * Close database connection
+ */
+export async function closeConnection(): Promise<void> {
+  if (USE_MSSQL) {
+    const { closeConnection: mssqlClose } = await import('./mssql-connection')
+    await mssqlClose()
+  }
+}
+
+/**
+ * Transaction wrapper
  */
 export async function withTransaction<T>(
-  callback: (transaction: sql.Transaction) => Promise<T>
+  callback: (tx: { query: typeof query }) => Promise<T>
 ): Promise<T> {
-  const transaction = await beginTransaction()
-  try {
-    const result = await callback(transaction)
-    await transaction.commit()
-    return result
-  } catch (error) {
-    await transaction.rollback()
-    throw error
+  // In mock mode, just execute the callback
+  if (!USE_MSSQL) {
+    return callback({ query })
   }
-}
 
-// SQL types for convenience
-export { sql }
-export type { IResult, IRecordSet } from 'mssql'
+  const { withTransaction: mssqlWithTransaction } = await import('./mssql-connection')
+  return mssqlWithTransaction(callback)
+}

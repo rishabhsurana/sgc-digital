@@ -171,9 +171,6 @@ importers:
       '@types/bcryptjs':
         specifier: ^2.4.6
         version: 2.4.6
-      '@types/mssql':
-        specifier: ^9.1.5
-        version: 9.1.9(@azure/core-client@1.10.1)
       '@types/node':
         specifier: ^22
         version: 22.19.11
@@ -1313,9 +1310,6 @@ packages:
 
   '@types/d3-timer@3.0.2':
     resolution: {integrity: sha512-Ps3T8E8dZDam6fUyNiMkekK3XUsaUEik+idO9/YjPtfj2qruF8tFBXS7XhtE4iIXBLxhmLjP3SXpLhVf21I9Lw==}
-
-  '@types/mssql@9.1.9':
-    resolution: {integrity: sha512-P0nCgw6vzY23UxZMnbI4N7fnLGANt4LI4yvxze1paPj+LuN28cFv5EI+QidP8udnId/BKhkcRhm/BleNsjK65A==}
 
   '@types/node@22.19.11':
     resolution: {integrity: sha512-BH7YwL6rA93ReqeQS1c4bsPpcfOmJasG+Fkr6Y59q83f9M1WcBRHR2vM+P9eOisYRcN3ujQoiZY8uk5W+1WL8w==}
@@ -3164,15 +3158,6 @@ snapshots:
   '@types/d3-time@3.0.4': {}
 
   '@types/d3-timer@3.0.2': {}
-
-  '@types/mssql@9.1.9(@azure/core-client@1.10.1)':
-    dependencies:
-      '@types/node': 22.19.11
-      tarn: 3.0.2
-      tedious: 19.2.1(@azure/core-client@1.10.1)
-    transitivePeerDependencies:
-      - '@azure/core-client'
-      - supports-color
 
   '@types/node@22.19.11':
     dependencies:
