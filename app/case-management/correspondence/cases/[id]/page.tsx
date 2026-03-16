@@ -630,174 +630,216 @@ export default function CorrespondenceCaseDetailPage() {
           <TabsTrigger value="comments">Comments ({comments.length})</TabsTrigger>
         </TabsList>
         
-        {/* Details Tab */}
-        <TabsContent value="details" className="space-y-6 mt-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Correspondence Information */}
-            <Card>
-              <CardHeader className="pb-3 flex flex-row items-center justify-between">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Mail className="h-4 w-4" /> Correspondence Information
-                </CardTitle>
-                {canEditDates() && (
-                  <Button variant="ghost" size="sm" onClick={() => setShowEditClassificationDialog(true)}>
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                )}
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 gap-x-8 gap-y-4">
-                  <div>
-                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Type</p>
-                    <p className="font-medium">{caseData.correspondenceType}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Priority</p>
-                    <Badge variant={caseData.priority === "Urgent" || caseData.priority === "Critical" ? "destructive" : "secondary"}>
+        {/* Details Tab - Redesigned with sophisticated layout */}
+        <TabsContent value="details" className="mt-6">
+          {/* Subject Matter Hero - Full width at top */}
+          <div className="mb-6 p-6 rounded-xl bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 border">
+            <div className="flex items-start justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-lg bg-blue-600 text-white">
+                  <Mail className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Subject Matter</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Badge variant={caseData.priority === "Urgent" || caseData.priority === "Critical" ? "destructive" : "secondary"} className="text-xs">
                       {caseData.priority}
                     </Badge>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground uppercase tracking-wide">From Whom</p>
-                    <p className="font-medium">{caseData.fromWhom}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground uppercase tracking-wide">To Whom</p>
-                    <p className="font-medium">{caseData.toWhom}</p>
-                  </div>
-                  <div className="col-span-2">
-                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Subject Matter</p>
-                    <p className="font-medium">{caseData.subjectMatter}</p>
+                    <Badge variant="outline" className="text-xs bg-white dark:bg-slate-800">
+                      {caseData.correspondenceTypeLabel || caseData.correspondenceType}
+                    </Badge>
+                    {caseData.isConfidential && <Badge variant="outline" className="text-xs border-amber-500 text-amber-600">Confidential</Badge>}
+                    {caseData.isUrgent && <Badge variant="destructive" className="text-xs">Urgent</Badge>}
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-            
-            {/* Reference Numbers */}
-            <Card>
-              <CardHeader className="pb-3 flex flex-row items-center justify-between">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Hash className="h-4 w-4" /> Reference Numbers
-                </CardTitle>
+              </div>
+              {canEditDates() && (
+                <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground" onClick={() => setShowEditClassificationDialog(true)}>
+                  <Edit className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+            <p className="text-lg font-medium leading-relaxed text-foreground">{caseData.subjectMatter}</p>
+            <div className="flex items-center gap-6 mt-4 pt-4 border-t border-slate-200 dark:border-slate-700">
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground">From:</span>
+                <span className="text-sm font-medium">{caseData.fromWhom}</span>
+              </div>
+              <div className="h-4 w-px bg-slate-300 dark:bg-slate-600" />
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground">To:</span>
+                <span className="text-sm font-medium">{caseData.toWhomLabel || caseData.toWhom}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Reference Numbers - Prominent horizontal strip */}
+          <div className="mb-6 p-4 rounded-xl border bg-card">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Hash className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm font-semibold">Reference Numbers</span>
+              </div>
+              {canEditDates() && (
+                <Button variant="ghost" size="sm" className="h-7 text-muted-foreground hover:text-foreground" onClick={() => setShowEditReferencesDialog(true)}>
+                  <Edit className="h-3.5 w-3.5" />
+                </Button>
+              )}
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-800/50">
+                <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-1">Tracking Number</p>
+                <p className="font-mono text-sm font-semibold text-blue-600 dark:text-blue-400">{caseData.trackingNumber}</p>
+              </div>
+              <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-800/50">
+                <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-1">File Reference</p>
+                <p className="font-mono text-sm font-medium">{caseData.fileReferenceNo}</p>
+              </div>
+              <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-800/50">
+                <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-1">External Ref</p>
+                <p className="text-sm font-medium">{caseData.externalReferenceNo || <span className="text-muted-foreground">-</span>}</p>
+              </div>
+              <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-800/50">
+                <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-1">Volume / Folio</p>
+                <p className="text-sm font-medium">{caseData.volume} / {caseData.folioMinuteNo}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Two column layout for Originator and File Association */}
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+            {/* Originator / Contact - Takes 3 columns */}
+            <div className="lg:col-span-3 rounded-xl border bg-card overflow-hidden">
+              <div className="px-5 py-4 border-b bg-slate-50/50 dark:bg-slate-800/30 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400">
+                    <Building2 className="h-4 w-4" />
+                  </div>
+                  <span className="font-semibold">Originator / Contact</span>
+                </div>
                 {canEditDates() && (
-                  <Button variant="ghost" size="sm" onClick={() => setShowEditReferencesDialog(true)}>
-                    <Edit className="h-4 w-4" />
+                  <Button variant="ghost" size="sm" className="h-7 text-muted-foreground hover:text-foreground" onClick={() => setShowEditContactDialog(true)}>
+                    <Edit className="h-3.5 w-3.5" />
                   </Button>
                 )}
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 gap-x-8 gap-y-4">
-                  <div>
-                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Tracking Number</p>
-                    <p className="font-medium font-mono">{caseData.trackingNumber}</p>
+              </div>
+              <div className="p-5">
+                <div className="flex items-start gap-4 mb-5 pb-5 border-b">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white font-semibold text-lg">
+                    {caseData.contactName.split(' ').map(n => n[0]).join('').slice(0, 2)}
                   </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground uppercase tracking-wide">External Reference</p>
-                    <p className="font-medium">{caseData.externalReferenceNo || '-'}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground uppercase tracking-wide">File Reference No.</p>
-                    <p className="font-medium">{caseData.fileReferenceNo}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Volume / Folio</p>
-                    <p className="font-medium">{caseData.volume} / {caseData.folioMinuteNo}</p>
+                  <div className="flex-1">
+                    <p className="font-semibold text-lg">{caseData.contactName}</p>
+                    <p className="text-sm text-muted-foreground">{caseData.contactJobTitle}</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <Badge variant="outline" className="text-xs font-normal">{caseData.originatingEntityType || 'Ministry/Department'}</Badge>
+                    </div>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-            
-            {/* Originator / Contact */}
-            <Card>
-              <CardHeader className="pb-3 flex flex-row items-center justify-between">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Building2 className="h-4 w-4" /> Originator / Contact
-                </CardTitle>
-                {canEditDates() && (
-                  <Button variant="ghost" size="sm" onClick={() => setShowEditContactDialog(true)}>
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                )}
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 gap-x-8 gap-y-4">
-                  <div>
-                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Originating Entity</p>
-                    <p className="font-medium">{caseData.originatingEntity}</p>
+                <div className="space-y-4">
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center flex-shrink-0">
+                      <Building2 className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Originating Entity</p>
+                      <p className="font-medium">{caseData.originatingEntity}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Submitter Type</p>
-                    <p className="font-medium">{caseData.submitterType}</p>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="flex items-start gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center flex-shrink-0">
+                        <Phone className="h-4 w-4 text-muted-foreground" />
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Phone</p>
+                        <p className="font-medium">{caseData.contactPhone}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center flex-shrink-0">
+                        <Mail className="h-4 w-4 text-muted-foreground" />
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Email</p>
+                        <p className="font-medium text-blue-600 dark:text-blue-400">{caseData.contactEmail}</p>
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Contact Name</p>
-                    <p className="font-medium">{caseData.contactName}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Job Title</p>
-                    <p className="font-medium">{caseData.contactJobTitle}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground uppercase tracking-wide flex items-center gap-1">
-                      <Phone className="h-3 w-3" /> Phone
-                    </p>
-                    <p className="font-medium">{caseData.contactPhone}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground uppercase tracking-wide flex items-center gap-1">
-                      <Mail className="h-3 w-3" /> Email
-                    </p>
-                    <p className="font-medium">{caseData.contactEmail}</p>
-                  </div>
-                  <div className="col-span-2">
-                    <p className="text-xs text-muted-foreground uppercase tracking-wide flex items-center gap-1">
-                      <MapPin className="h-3 w-3" /> Address
-                    </p>
-                    <p className="font-medium">{caseData.contactAddress}</p>
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center flex-shrink-0">
+                      <MapPin className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Address</p>
+                      <p className="font-medium">{caseData.contactAddress}</p>
+                    </div>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
             
-            {/* File Association */}
-            <Card>
-              <CardHeader className="pb-3 flex flex-row items-center justify-between">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <FolderOpen className="h-4 w-4" /> File Association
-                </CardTitle>
+            {/* File Association - Takes 2 columns */}
+            <div className="lg:col-span-2 rounded-xl border bg-card overflow-hidden">
+              <div className="px-5 py-4 border-b bg-slate-50/50 dark:bg-slate-800/30 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-violet-100 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400">
+                    <FolderOpen className="h-4 w-4" />
+                  </div>
+                  <span className="font-semibold">File Association</span>
+                </div>
                 {canEditDates() && (
-                  <Button variant="ghost" size="sm" onClick={() => setShowEditFileAssocDialog(true)}>
-                    <Edit className="h-4 w-4" />
+                  <Button variant="ghost" size="sm" className="h-7 text-muted-foreground hover:text-foreground" onClick={() => setShowEditFileAssocDialog(true)}>
+                    <Edit className="h-3.5 w-3.5" />
                   </Button>
                 )}
-              </CardHeader>
-              <CardContent className="space-y-4">
+              </div>
+              <div className="p-5 space-y-5">
                 <div>
-                  <p className="text-xs text-muted-foreground uppercase tracking-wide">Registry File Status</p>
-                  <Badge variant={caseData.registryFileAssocStatus === "Complete" ? "default" : "secondary"}>
-                    {caseData.registryFileAssocStatus}
-                  </Badge>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">File Types</p>
-                  <div className="flex flex-wrap gap-1">
-                    {caseData.fileTypes.map(ft => (
-                      <Badge key={ft} variant="outline" className="text-xs">{ft}</Badge>
-                    ))}
+                  <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-2">Registry Status</p>
+                  <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800">
+                    <span className={`w-2 h-2 rounded-full ${
+                      caseData.registryFileAssocStatus === "Complete" || caseData.registryFileAssocStatus === "COMPLETE" 
+                        ? "bg-green-500" 
+                        : caseData.registryFileAssocStatus === "IN_PROGRESS" 
+                        ? "bg-blue-500" 
+                        : "bg-amber-500"
+                    }`} />
+                    <span className="text-sm font-medium">
+                      {REGISTRY_FILE_ASSOCIATION_STATUS.find(s => s.code === caseData.registryFileAssocStatus)?.label || caseData.registryFileAssocStatus}
+                    </span>
                   </div>
                 </div>
+                
+                <div>
+                  <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-2">File Types</p>
+                  <div className="flex flex-wrap gap-2">
+                    {caseData.fileTypes.map(ft => {
+                      const fileType = REGISTRY_FILE_TYPES.find(t => t.code === ft)
+                      return (
+                        <div key={ft} className="px-3 py-1.5 rounded-lg bg-violet-50 dark:bg-violet-900/20 border border-violet-200 dark:border-violet-800">
+                          <span className="text-xs font-medium text-violet-700 dark:text-violet-300">{fileType?.label || ft}</span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+                
                 {caseData.existingFileRefs.length > 0 && (
                   <div>
-                    <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">Linked Files</p>
-                    <div className="space-y-1">
+                    <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-2">Linked Files</p>
+                    <div className="space-y-2">
                       {caseData.existingFileRefs.map(ref => (
-                        <p key={ref} className="text-sm font-mono bg-muted px-2 py-1 rounded">{ref}</p>
+                        <div key={ref} className="flex items-center gap-2 p-2 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-dashed">
+                          <FileText className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm font-mono">{ref}</span>
+                        </div>
                       ))}
                     </div>
                   </div>
                 )}
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </div>
         </TabsContent>
         
