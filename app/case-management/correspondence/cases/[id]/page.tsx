@@ -285,17 +285,19 @@ export default function CorrespondenceCaseDetailPage() {
   const canProcess = () => (CURRENT_USER.role === 'legal_officer' && caseData.assignedOfficerId === CURRENT_USER.id) || CURRENT_USER.role === 'sg' || CURRENT_USER.role === 'dsg'
   const canApprove = () => CURRENT_USER.role === 'sg' || CURRENT_USER.role === 'dsg'
   
+  // Status configuration - defined outside getStatusBadge for reuse
+  const statusConfig: Record<string, { variant: "default" | "secondary" | "destructive" | "outline", label: string }> = {
+    "NEW": { variant: "outline", label: "New" },
+    "PENDING_REVIEW": { variant: "secondary", label: "Pending SG/DSG Review" },
+    "ASSIGNED": { variant: "default", label: "Assigned" },
+    "IN_PROGRESS": { variant: "default", label: "In Progress" },
+    "PENDING_EXTERNAL": { variant: "secondary", label: "Pending External" },
+    "ON_HOLD": { variant: "outline", label: "On Hold" },
+    "CLOSED": { variant: "secondary", label: "Closed" },
+  }
+  
   // Status helpers
   const getStatusBadge = (status: string) => {
-    const statusConfig: Record<string, { variant: "default" | "secondary" | "destructive" | "outline", label: string }> = {
-      "NEW": { variant: "outline", label: "New" },
-      "PENDING_REVIEW": { variant: "secondary", label: "Pending SG/DSG Review" },
-      "ASSIGNED": { variant: "default", label: "Assigned" },
-      "IN_PROGRESS": { variant: "default", label: "In Progress" },
-      "PENDING_EXTERNAL": { variant: "secondary", label: "Pending External" },
-      "ON_HOLD": { variant: "outline", label: "On Hold" },
-      "CLOSED": { variant: "secondary", label: "Closed" },
-    }
     const config = statusConfig[status] || { variant: "outline", label: status }
     return <Badge variant={config.variant}>{config.label}</Badge>
   }
