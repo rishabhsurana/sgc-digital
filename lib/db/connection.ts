@@ -26,6 +26,38 @@ export interface IRecordSet<T> extends Array<T> {
   columns: Record<string, unknown>
 }
 
+
+/**
+ * Get the underlying connection pool 
+ * (Needed by services that use the raw request().input().query() pattern)
+ */
+export async function getConnection(): Promise<any> {
+  if (USE_MSSQL) {
+    const { getConnection: mssqlGetConnection } = await import('./mssql-connection')
+    return mssqlGetConnection()
+  }
+
+  // Mock pool object for development fallback
+  return {
+    request: () => {
+      const req = {
+        input: function (name: string, typeOrValue: any, value?: any) {
+          return this
+        },
+        query: async (queryText: string) => {
+          console.log('[DB Mock Pool] Query:', queryText.substring(0, 50))
+          return { recordsets: [[]], recordset: [], output: {}, rowsAffected: [0] }
+        },
+        execute: async (proc: string) => {
+          console.log('[DB Mock Pool] Procedure:', proc)
+          return { recordsets: [[]], recordset: [], output: {}, rowsAffected: [0] }
+        }
+      }
+      return req
+    }
+  }
+}
+
 /**
  * Mock query function for development
  */
