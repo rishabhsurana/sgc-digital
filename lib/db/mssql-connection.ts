@@ -67,9 +67,9 @@ async function loadMssql() {
   return sql
 }
 
-async function getConnection() {
+export async function getConnection() {
   const mssql = await loadMssql()
-  
+
   if (pool && pool.connected) {
     return pool
   }
@@ -132,26 +132,26 @@ export async function withTransaction<T>(
   const mssql = await loadMssql()
   const conn = await getConnection()
   const transaction = new mssql.Transaction(conn)
-  
+
   await transaction.begin()
-  
+
   try {
     const txQuery = async <R = unknown>(
       queryText: string,
       params?: Record<string, unknown>
     ): Promise<IResult<R>> => {
       const request = new mssql.Request(transaction)
-      
+
       if (params) {
         Object.entries(params).forEach(([key, value]) => {
           request.input(key, value)
         })
       }
-      
+
       const result = await request.query<R>(queryText)
       return result as IResult<R>
     }
-    
+
     const result = await callback({ query: txQuery })
     await transaction.commit()
     return result
