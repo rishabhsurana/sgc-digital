@@ -1,7 +1,7 @@
 import { CorrespondenceRepository } from '@/lib/db/repositories/correspondence-repository'
-import { BpmCaseRepository } from '@/lib/db/repositories/bpm-case-repository'
+import { BPMCaseRepository } from '@/lib/db/repositories/bpm-case-repository'
 import { WorkflowEngine } from '@/lib/services/workflow-engine'
-import { Correspondence, BpmCase, CorrespondenceStatus, BpmCaseStatus } from '@/lib/types/database'
+import { Correspondence, BPMCase, CorrespondenceStatus } from '@/lib/types/database'
 
 export interface CreateCorrespondenceInput {
   typeId: string
@@ -39,19 +39,19 @@ export interface UpdateCorrespondenceStatusInput {
 
 export class CorrespondenceService {
   private correspondenceRepo: CorrespondenceRepository
-  private bpmCaseRepo: BpmCaseRepository
+  private bpmCaseRepo: BPMCaseRepository
   private workflowEngine: WorkflowEngine
 
   constructor() {
     this.correspondenceRepo = new CorrespondenceRepository()
-    this.bpmCaseRepo = new BpmCaseRepository()
+    this.bpmCaseRepo = new BPMCaseRepository()
     this.workflowEngine = new WorkflowEngine()
   }
 
   /**
    * Submit new correspondence from public portal
    */
-  async submitCorrespondence(input: CreateCorrespondenceInput): Promise<{ correspondence: Correspondence; bpmCase: BpmCase }> {
+  async submitCorrespondence(input: CreateCorrespondenceInput): Promise<{ correspondence: Correspondence; bpmCase: BPMCase }> {
     // Generate reference number
     const referenceNumber = await this.generateReferenceNumber()
 
@@ -120,7 +120,7 @@ export class CorrespondenceService {
   /**
    * Handle urgent submissions - route immediately to SG/DSG
    */
-  private async handleUrgentSubmission(correspondence: Correspondence, bpmCase: BpmCase): Promise<void> {
+  private async handleUrgentSubmission(correspondence: Correspondence, bpmCase: BPMCase): Promise<void> {
     await this.bpmCaseRepo.addActivity({
       caseId: bpmCase.id,
       activityType: 'system_action',
