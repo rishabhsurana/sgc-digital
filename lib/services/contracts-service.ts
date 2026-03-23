@@ -1,7 +1,7 @@
 import { ContractsRepository } from '@/lib/db/repositories/contracts-repository'
-import { BpmCaseRepository } from '@/lib/db/repositories/bpm-case-repository'
+import { BPMCaseRepository } from '@/lib/db/repositories/bpm-case-repository'
 import { WorkflowEngine } from '@/lib/services/workflow-engine'
-import { Contract, BpmCase, ContractStatus } from '@/lib/types/database'
+import { Contract, BPMCase, ContractStatus } from '@/lib/types/database'
 
 export interface CreateContractInput {
   typeId: string
@@ -68,19 +68,19 @@ export interface AdjudicationInput {
 
 export class ContractsService {
   private contractsRepo: ContractsRepository
-  private bpmCaseRepo: BpmCaseRepository
+  private bpmCaseRepo: BPMCaseRepository
   private workflowEngine: WorkflowEngine
 
   constructor() {
     this.contractsRepo = new ContractsRepository()
-    this.bpmCaseRepo = new BpmCaseRepository()
+    this.bpmCaseRepo = new BPMCaseRepository()
     this.workflowEngine = new WorkflowEngine()
   }
 
   /**
    * Submit new contract from public portal (Post-Award)
    */
-  async submitContract(input: CreateContractInput): Promise<{ contract: Contract; bpmCase: BpmCase }> {
+  async submitContract(input: CreateContractInput): Promise<{ contract: Contract; bpmCase: BPMCase }> {
     // Generate reference number
     const referenceNumber = await this.generateReferenceNumber()
 

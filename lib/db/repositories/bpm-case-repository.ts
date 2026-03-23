@@ -351,6 +351,65 @@ export class BPMCaseRepository extends BaseRepository<BPMCase> {
     })
   }
 
+  async createCase(data: any): Promise<BPMCase> {
+    const referenceNumber = data.referenceNumber || await this.generateCaseNumber()
+    return this.create({
+      entity_type: data.caseType,
+      entity_id: data.entityId,
+      case_number: referenceNumber,
+      current_stage_code: data.currentStage,
+      case_status: 'IN_PROGRESS' as CaseStatus,
+      priority: data.priority,
+      opened_at: new Date(),
+    } as any)
+  }
+
+  async findByEntityId(entityType: string, entityId: string): Promise<BPMCase | null> {
+    return this.findByEntity(entityType as 'correspondence' | 'contract', entityId)
+  }
+
+  async addActivity(data: any): Promise<void> {
+    await bpmActivityRepository.addActivity(
+      data.caseId, data.activityType, data.description || data.activityType, 
+      data.performedById, data.performedByType, { metadata: data.metadata }
+    )
+  }
+
+  async createTask(data: any): Promise<void> {
+    await bpmTaskRepository.create({
+      case_id: data.caseId,
+      task_type: data.taskType,
+      title: data.title,
+      description: data.description,
+      assigned_to_role: data.assignedToRole,
+      assigned_to_id: data.assignedToId,
+      priority: data.priority,
+      due_date: data.dueDate,
+      status: 'pending' as TaskStatus
+    } as any)
+  }
+
+  async findTaskByType(caseId: string, taskType: string): Promise<BPMTask | null> {
+    const tasks = await bpmTaskRepository.findByCaseId(caseId)
+    return tasks.find(t => t.task_type === taskType && t.status !== 'completed') || null
+  }
+
+  async completeTask(taskId: string, completedById: string): Promise<void> {
+    await bpmTaskRepository.completeTask(taskId, completedById, 'Completed')
+  }
+
+  async getActivities(caseId: string): Promise<BPMActivity[]> {
+    return bpmActivityRepository.findByCaseId(caseId)
+  }
+
+  async getTasks(caseId: string): Promise<BPMTask[]> {
+    return bpmTaskRepository.findByCaseId(caseId)
+  }
+
+  async getWorkflowHistory(caseId: string): Promise<any[]> {
+    return []
+  }
+
   /**
    * Generate next case number
    */

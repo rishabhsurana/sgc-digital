@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useState, Suspense } from "react"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import { 
@@ -163,7 +163,7 @@ const formatCurrency = (value: number) => {
   }).format(value)
 }
 
-export default function ContractsWorkQueuePage() {
+function ContractsWorkQueueContent() {
   const searchParams = useSearchParams()
   const basket = searchParams.get('basket') || 'all'
   const [searchQuery, setSearchQuery] = useState("")
@@ -413,5 +413,13 @@ export default function ContractsWorkQueuePage() {
         </div>
       )}
     </div>
+  )
+}
+
+export default function ContractsWorkQueuePage() {
+  return (
+    <Suspense fallback={<div className="font-medium p-8">Loading work queue...</div>}>
+      <ContractsWorkQueueContent />
+    </Suspense>
   )
 }
