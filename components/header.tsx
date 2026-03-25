@@ -100,14 +100,6 @@ export function Header() {
               <LayoutDashboard className="h-4 w-4 text-amber-600" />
               Dashboard
             </Link>
-            
-            <Link 
-              href="/management" 
-              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-foreground/80 rounded-lg transition-all hover:text-primary hover:bg-primary/5"
-            >
-              <Settings className="h-4 w-4 text-slate-600" />
-              Management
-            </Link>
           </nav>
 
           <div className="flex items-center gap-2">
@@ -193,14 +185,6 @@ export function Header() {
                   >
                     <LayoutDashboard className="h-5 w-5 text-amber-600" />
                     Dashboard
-                  </Link>
-                  <Link 
-                    href="/management" 
-                    onClick={() => setIsOpen(false)}
-                    className="flex items-center gap-3 px-4 py-3 text-foreground rounded-lg hover:bg-primary/10 hover:text-primary transition-colors ml-2"
-                  >
-                    <Settings className="h-5 w-5 text-slate-600" />
-                    Management
                   </Link>
                   
                   <hr className="my-4 border-primary/20" />

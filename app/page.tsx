@@ -341,6 +341,22 @@ export default function HomePage() {
             </div>
           </div>
         </section>
+
+        {/* Staff Portal Access - Subtle link for SGC staff */}
+        <section className="py-6 bg-slate-100 dark:bg-slate-900 border-t">
+          <div className="container mx-auto px-4 lg:px-8">
+            <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+              <Shield className="h-4 w-4" />
+              <span>SGC Staff?</span>
+              <Link 
+                href="/management" 
+                className="font-medium text-primary hover:underline"
+              >
+                Access Management Portal
+              </Link>
+            </div>
+          </div>
+        </section>
       </main>
 
       <Footer />
