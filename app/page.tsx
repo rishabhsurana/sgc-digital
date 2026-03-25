@@ -349,7 +349,7 @@ export default function HomePage() {
               <Shield className="h-4 w-4" />
               <span>SGC Staff?</span>
               <Link 
-                href="/management" 
+                href="/management/landing" 
                 className="font-medium text-primary hover:underline"
               >
                 Access Management Portal

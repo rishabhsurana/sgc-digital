@@ -246,10 +246,14 @@ export default function ManagementLayout({
   const [adminSession, setAdminSession] = useState<AdminSession | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
+  // Pages that don't require authentication
+  const publicPages = ["/management/login", "/management/register", "/management/landing"]
+  const isPublicPage = publicPages.includes(pathname)
+
   // Check for admin session on mount
   useEffect(() => {
-    // Skip auth check for login page
-    if (pathname === "/management/login") {
+    // Skip auth check for public pages (login, register)
+    if (isPublicPage) {
       setIsLoading(false)
       return
     }
@@ -259,10 +263,10 @@ export default function ManagementLayout({
       setAdminSession(JSON.parse(storedAdmin))
       setIsLoading(false)
     } else {
-      // Redirect to management login
-      router.push("/management/login")
+      // Redirect to management landing page
+      router.push("/management/landing")
     }
-  }, [pathname, router])
+  }, [pathname, router, isPublicPage])
 
   const handleSignOut = () => {
     sessionStorage.removeItem("sgc_admin")
@@ -270,7 +274,7 @@ export default function ManagementLayout({
   }
 
   // Show loading state
-  if (isLoading && pathname !== "/management/login") {
+  if (isLoading && !isPublicPage) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-muted/30">
         <div className="text-center">
@@ -281,8 +285,8 @@ export default function ManagementLayout({
     )
   }
 
-  // Render login page without sidebar
-  if (pathname === "/management/login") {
+  // Render public pages (login, register) without sidebar
+  if (isPublicPage) {
     return <>{children}</>
   }
 
