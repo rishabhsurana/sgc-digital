@@ -140,11 +140,15 @@ export default function ManagementLoginPage() {
               </Button>
             </form>
 
-            <div className="mt-6 rounded-lg bg-muted/50 p-4 text-center">
+            <div className="mt-6 rounded-lg bg-muted/50 p-4 text-center space-y-2">
               <p className="text-xs text-muted-foreground">
                 This portal is restricted to authorized SGC staff only.
-                <br />
-                Contact the System Administrator for access requests.
+              </p>
+              <p className="text-sm">
+                <span className="text-muted-foreground">Need access? </span>
+                <Link href="/management/register" className="text-primary hover:underline font-medium">
+                  Request Registration
+                </Link>
               </p>
             </div>
           </CardContent>

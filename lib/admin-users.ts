@@ -21,6 +21,14 @@ export const APPROVED_ADMIN_USERS: AdminUser[] = [
     role: "admin",
     department: "Registry"
   },
+  // Temporary approver for management registration requests
+  // TODO: Update to correct SGC approver email
+  {
+    email: "ehenckel@lpacaribbean.com",
+    name: "Eric Henckel",
+    role: "super_admin",
+    department: "Administration"
+  },
   // Add your email here to get access
   {
     email: "user@example.com",
@@ -29,6 +37,10 @@ export const APPROVED_ADMIN_USERS: AdminUser[] = [
     department: "Solicitor General's Chambers"
   }
 ]
+
+// Email address that receives management registration approval requests
+// Temporary until correct SGC approver is configured
+export const MANAGEMENT_REGISTRATION_APPROVER = "ehenckel@lpacaribbean.com"
 
 export function isApprovedAdmin(email: string): AdminUser | undefined {
   return APPROVED_ADMIN_USERS.find(

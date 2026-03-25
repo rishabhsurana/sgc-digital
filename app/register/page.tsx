@@ -10,47 +10,173 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
-import { ArrowLeft, UserPlus, CheckCircle, Building2, Scale, Landmark, Users, Briefcase, HelpCircle } from "lucide-react"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { ArrowLeft, UserPlus, CheckCircle, Building2, Scale, Landmark, Users, Briefcase, HelpCircle, Plus, Trash2, AlertCircle } from "lucide-react"
 import { MINISTRIES_DEPARTMENTS_AGENCIES } from "@/lib/constants"
 
+// Entity/Submitter Types per requirements document
 const SUBMITTER_TYPES = [
-  { value: "ministry", label: "Ministry / Government Agency (MDA)", icon: Building2, color: "text-blue-600", bgColor: "bg-blue-50" },
-  { value: "court", label: "Court", icon: Scale, color: "text-purple-600", bgColor: "bg-purple-50" },
-  { value: "statutory", label: "Statutory Body", icon: Landmark, color: "text-green-600", bgColor: "bg-green-50" },
-  { value: "public", label: "Member of the Public", icon: Users, color: "text-orange-600", bgColor: "bg-orange-50" },
-  { value: "attorney", label: "Attorney-at-Law", icon: Briefcase, color: "text-red-600", bgColor: "bg-red-50" },
-  { value: "other", label: "Other", icon: HelpCircle, color: "text-gray-600", bgColor: "bg-gray-50" }
+  { value: "ministry", label: "Ministry / Government Agency (MDA)", icon: Building2, color: "text-blue-600", bgColor: "bg-blue-50", description: "Government ministry, department, or agency" },
+  { value: "court", label: "Court", icon: Scale, color: "text-purple-600", bgColor: "bg-purple-50", description: "Court or judicial body" },
+  { value: "statutory", label: "Statutory Body", icon: Landmark, color: "text-green-600", bgColor: "bg-green-50", description: "State-owned enterprise or statutory body" },
+  { value: "public", label: "Member of the Public", icon: Users, color: "text-orange-600", bgColor: "bg-orange-50", description: "Individual citizen or resident" },
+  { value: "attorney", label: "Attorney-at-Law", icon: Briefcase, color: "text-red-600", bgColor: "bg-red-50", description: "Legal practitioner or law firm" },
+  { value: "company", label: "Company / Business", icon: Building2, color: "text-cyan-600", bgColor: "bg-cyan-50", description: "Private sector company or business" },
+  { value: "other", label: "Other (Specify)", icon: HelpCircle, color: "text-gray-600", bgColor: "bg-gray-50", description: "Other entity type" }
 ]
+
+// Generate entity number based on type
+const generateEntityNumber = (type: string): string => {
+  const prefix = {
+    ministry: "MDA",
+    court: "CRT",
+    statutory: "STB",
+    public: "PUB",
+    attorney: "ATT",
+    company: "COM",
+    other: "OTH"
+  }[type] || "ENT"
+  
+  const timestamp = Date.now().toString(36).toUpperCase()
+  const random = Math.random().toString(36).substring(2, 6).toUpperCase()
+  return `${prefix}-${timestamp}-${random}`
+}
 
 export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [isRegistered, setIsRegistered] = useState(false)
+  const [entityNumber, setEntityNumber] = useState("")
+  
   const [formData, setFormData] = useState({
+    // Entity Type
     submitterType: "",
-    fullName: "",
-    email: "",
-    phone: "",
-    organization: "",
+    otherTypeSpecify: "",
+    
+    // Member of Public - Individual name fields
+    firstName: "",
+    middleName: "",
+    lastName: "",
+    
+    // Company fields
+    companyName: "",
+    companyNumber: "",
+    tradingName: "",
+    
+    // MDA / Statutory / Court
+    selectedMDA: "",
+    courtName: "",
+    
+    // Attorney fields
+    lawFirmName: "",
+    barNumber: "",
+    
+    // Primary contact (always required)
+    contactEmail: "",
+    contactPhone: "",
     password: "",
     confirmPassword: "",
+    
+    // Additional authorized users (for Company/MDA - multiple users per entity)
+    additionalUsers: [] as Array<{ name: string; email: string }>,
+    
+    // Address (optional)
+    address: "",
+    
+    // Terms
     terms: false
   })
+
+  const addAdditionalUser = () => {
+    if (formData.additionalUsers.length < 5) {
+      setFormData(prev => ({
+        ...prev,
+        additionalUsers: [...prev.additionalUsers, { name: "", email: "" }]
+      }))
+    }
+  }
+
+  const removeAdditionalUser = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      additionalUsers: prev.additionalUsers.filter((_, i) => i !== index)
+    }))
+  }
+
+  const updateAdditionalUser = (index: number, field: "name" | "email", value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      additionalUsers: prev.additionalUsers.map((user, i) => 
+        i === index ? { ...user, [field]: value } : user
+      )
+    }))
+  }
+
+  // Check if entity type supports multiple users
+  const supportsMultipleUsers = ["ministry", "statutory", "company"].includes(formData.submitterType)
+
+  const getDisplayName = (): string => {
+    switch (formData.submitterType) {
+      case "public":
+        return `${formData.firstName} ${formData.middleName ? formData.middleName + " " : ""}${formData.lastName}`.trim()
+      case "company":
+        return formData.companyName
+      case "ministry":
+      case "statutory":
+        return formData.selectedMDA
+      case "court":
+        return formData.courtName
+      case "attorney":
+        return formData.lawFirmName || `${formData.firstName} ${formData.lastName}`
+      default:
+        return formData.firstName
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
+    
+    // Generate entity number
+    const newEntityNumber = generateEntityNumber(formData.submitterType)
+    setEntityNumber(newEntityNumber)
+    
     // Simulate registration
     await new Promise(resolve => setTimeout(resolve, 2000))
     
-    // Store user data in sessionStorage for demo purposes
-    const entityNumber = `ENT-${Date.now().toString(36).toUpperCase()}`
+    // Build user data based on entity type
     const userData = {
-      fullName: formData.fullName,
-      email: formData.email,
+      entityNumber: newEntityNumber,
       submitterType: formData.submitterType,
-      organization: formData.organization,
-      entityNumber: entityNumber
+      displayName: getDisplayName(),
+      primaryEmail: formData.contactEmail,
+      phone: formData.contactPhone,
+      // Additional data based on type
+      ...(formData.submitterType === "public" && {
+        firstName: formData.firstName,
+        middleName: formData.middleName,
+        lastName: formData.lastName
+      }),
+      ...(formData.submitterType === "company" && {
+        companyName: formData.companyName,
+        companyNumber: formData.companyNumber,
+        tradingName: formData.tradingName
+      }),
+      ...((formData.submitterType === "ministry" || formData.submitterType === "statutory") && {
+        mdaName: formData.selectedMDA
+      }),
+      ...(formData.submitterType === "court" && {
+        courtName: formData.courtName
+      }),
+      ...(formData.submitterType === "attorney" && {
+        lawFirmName: formData.lawFirmName,
+        barNumber: formData.barNumber
+      }),
+      // Authorized users (for multi-user entities)
+      authorizedUsers: supportsMultipleUsers 
+        ? [{ name: getDisplayName(), email: formData.contactEmail, isPrimary: true }, ...formData.additionalUsers.map(u => ({ ...u, isPrimary: false }))]
+        : [{ name: getDisplayName(), email: formData.contactEmail, isPrimary: true }]
     }
+    
     sessionStorage.setItem("sgc_user", JSON.stringify(userData))
     
     setIsRegistered(true)
@@ -59,7 +185,6 @@ export default function RegisterPage() {
 
   if (isRegistered) {
     const selectedType = SUBMITTER_TYPES.find(t => t.value === formData.submitterType)
-    const entityNumber = `ENT-${Date.now().toString(36).toUpperCase()}`
     
     return (
       <div className="flex min-h-screen flex-col bg-background">
@@ -74,7 +199,7 @@ export default function RegisterPage() {
                 </div>
                 <h1 className="text-2xl font-bold text-white mb-1">Registration Successful</h1>
                 <p className="text-green-100">
-                  Welcome to SGC Digital, {formData.fullName}
+                  Welcome to SGC Digital
                 </p>
               </div>
               <CardContent className="pt-6 pb-8">
@@ -83,21 +208,33 @@ export default function RegisterPage() {
                   <h3 className="font-semibold text-sm text-foreground mb-3">Your Registration Details</h3>
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
+                      <span className="text-muted-foreground">Entity Type:</span>
+                      <span className="font-medium text-foreground">{selectedType?.label.split("/")[0].trim()}</span>
+                    </div>
+                    <div className="flex justify-between">
                       <span className="text-muted-foreground">Name:</span>
-                      <span className="font-medium text-foreground">{formData.fullName}</span>
+                      <span className="font-medium text-foreground">{getDisplayName()}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Email:</span>
-                      <span className="font-medium text-foreground">{formData.email}</span>
+                      <span className="font-medium text-foreground">{formData.contactEmail}</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Type:</span>
-                      <span className="font-medium text-foreground">{selectedType?.label.split("/")[0].trim()}</span>
-                    </div>
-                    {formData.organization && (
+                    {formData.submitterType === "company" && formData.companyNumber && (
                       <div className="flex justify-between">
-                        <span className="text-muted-foreground">Organization:</span>
-                        <span className="font-medium text-foreground">{formData.organization}</span>
+                        <span className="text-muted-foreground">Company No:</span>
+                        <span className="font-medium text-foreground">{formData.companyNumber}</span>
+                      </div>
+                    )}
+                    {supportsMultipleUsers && formData.additionalUsers.length > 0 && (
+                      <div className="pt-2 border-t mt-2">
+                        <span className="text-muted-foreground text-xs">Additional Authorized Users:</span>
+                        <div className="mt-1 space-y-1">
+                          {formData.additionalUsers.map((user, i) => (
+                            <div key={i} className="text-xs bg-muted px-2 py-1 rounded">
+                              {user.name} ({user.email})
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     )}
                   </div>
@@ -111,7 +248,7 @@ export default function RegisterPage() {
                 </div>
                 
                 <p className="text-sm text-muted-foreground mb-6 text-center">
-                  A verification email has been sent to <strong>{formData.email}</strong>. 
+                  A verification email has been sent to <strong>{formData.contactEmail}</strong>. 
                   Please verify your account before signing in.
                 </p>
                 
@@ -137,7 +274,7 @@ export default function RegisterPage() {
       <Header />
       
       <main className="flex-1 py-12 lg:py-20">
-        <div className="container mx-auto px-4 lg:px-8 max-w-lg">
+        <div className="container mx-auto px-4 lg:px-8 max-w-2xl">
           <Link 
             href="/" 
             className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-8"
@@ -153,18 +290,19 @@ export default function RegisterPage() {
               </div>
               <h1 className="text-2xl font-bold text-white">Create an Account</h1>
               <p className="text-primary-foreground/80 mt-1">
-                Register to submit and track your requests
+                Register to submit and track your requests with the SGC
               </p>
             </div>
             <CardHeader className="text-center pt-6">
               <CardDescription>
-                Select your submitter type and fill in your details below.
+                Select your entity type and complete the registration form below.
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-4">
+              <form onSubmit={handleSubmit} className="space-y-6">
+                {/* Step 1: Entity Type Selection */}
                 <div className="space-y-3">
-                  <Label className="text-base font-semibold">Submitter Type <span className="text-destructive">*</span></Label>
+                  <Label className="text-base font-semibold">Entity / Submitter Type <span className="text-destructive">*</span></Label>
                   <div className="grid grid-cols-2 gap-2">
                     {SUBMITTER_TYPES.map((type) => {
                       const Icon = type.icon
@@ -173,136 +311,412 @@ export default function RegisterPage() {
                         <button
                           type="button"
                           key={type.value}
-                          onClick={() => setFormData(prev => ({ ...prev, submitterType: type.value }))}
-                          className={`flex items-center gap-2 p-3 rounded-lg border-2 text-left transition-all ${
+                          onClick={() => setFormData(prev => ({ 
+                            ...prev, 
+                            submitterType: type.value,
+                            // Reset type-specific fields
+                            firstName: "", middleName: "", lastName: "",
+                            companyName: "", companyNumber: "", tradingName: "",
+                            selectedMDA: "", courtName: "",
+                            lawFirmName: "", barNumber: "",
+                            additionalUsers: []
+                          }))}
+                          className={`flex flex-col items-start gap-2 p-3 rounded-lg border-2 text-left transition-all ${
                             isSelected 
                               ? `border-primary ${type.bgColor} shadow-sm` 
                               : "border-border hover:border-muted-foreground/30 hover:bg-muted/50"
                           }`}
                         >
-                          <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${isSelected ? type.bgColor : "bg-muted"}`}>
-                            <Icon className={`h-4 w-4 ${isSelected ? type.color : "text-muted-foreground"}`} />
+                          <div className="flex items-center gap-2 w-full">
+                            <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${isSelected ? type.bgColor : "bg-muted"}`}>
+                              <Icon className={`h-4 w-4 ${isSelected ? type.color : "text-muted-foreground"}`} />
+                            </div>
+                            <span className={`text-xs font-medium flex-1 ${isSelected ? "text-foreground" : "text-muted-foreground"}`}>
+                              {type.label.split("/")[0].trim()}
+                            </span>
                           </div>
-                          <span className={`text-xs font-medium ${isSelected ? "text-foreground" : "text-muted-foreground"}`}>
-                            {type.label.split("/")[0].trim()}
-                          </span>
                         </button>
                       )
                     })}
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="fullName">Full Name <span className="text-destructive">*</span></Label>
-                  <Input
-                    id="fullName"
-                    value={formData.fullName}
-                    onChange={(e) => setFormData(prev => ({ ...prev, fullName: e.target.value }))}
-                    placeholder="Enter your full name"
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email Address <span className="text-destructive">*</span></Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                    placeholder="email@example.com"
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Phone Number</Label>
-                  <Input
-                    id="phone"
-                    type="tel"
-                    value={formData.phone}
-                    onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-                    placeholder="+1 (246) XXX-XXXX"
-                  />
-                </div>
-
-                {(formData.submitterType === "ministry" || formData.submitterType === "statutory") && (
+                {/* Other Type Specification */}
+                {formData.submitterType === "other" && (
                   <div className="space-y-2">
-                    <Label htmlFor="organization">Ministry / Department / Agency <span className="text-destructive">*</span></Label>
-                    <Select
-                      value={formData.organization}
-                      onValueChange={(value) => setFormData(prev => ({ ...prev, organization: value }))}
-                    >
-                      <SelectTrigger id="organization">
-                        <SelectValue placeholder="Select MDA" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {MINISTRIES_DEPARTMENTS_AGENCIES.map((mda) => (
-                          <SelectItem key={mda.value} value={mda.label}>
-                            {mda.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
-                
-                {formData.submitterType === "court" && (
-                  <div className="space-y-2">
-                    <Label htmlFor="organization">Court Name <span className="text-destructive">*</span></Label>
+                    <Label htmlFor="otherTypeSpecify">Please Specify Entity Type <span className="text-destructive">*</span></Label>
                     <Input
-                      id="organization"
-                      value={formData.organization}
-                      onChange={(e) => setFormData(prev => ({ ...prev, organization: e.target.value }))}
-                      placeholder="Enter court name"
+                      id="otherTypeSpecify"
+                      value={formData.otherTypeSpecify}
+                      onChange={(e) => setFormData(prev => ({ ...prev, otherTypeSpecify: e.target.value }))}
+                      placeholder="Describe your entity type"
+                      required
                     />
                   </div>
                 )}
 
-                <div className="space-y-2">
-                  <Label htmlFor="password">Password <span className="text-destructive">*</span></Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    value={formData.password}
-                    onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
-                    placeholder="Create a password"
-                    required
-                  />
-                </div>
+                {/* Type-specific fields */}
+                {formData.submitterType && (
+                  <div className="space-y-4 pt-4 border-t">
+                    <h3 className="text-sm font-semibold text-foreground">
+                      {formData.submitterType === "public" && "Personal Information"}
+                      {formData.submitterType === "company" && "Company Information"}
+                      {(formData.submitterType === "ministry" || formData.submitterType === "statutory") && "Organization Information"}
+                      {formData.submitterType === "court" && "Court Information"}
+                      {formData.submitterType === "attorney" && "Legal Practice Information"}
+                      {formData.submitterType === "other" && "Entity Information"}
+                    </h3>
 
-                <div className="space-y-2">
-                  <Label htmlFor="confirmPassword">Confirm Password <span className="text-destructive">*</span></Label>
-                  <Input
-                    id="confirmPassword"
-                    type="password"
-                    value={formData.confirmPassword}
-                    onChange={(e) => setFormData(prev => ({ ...prev, confirmPassword: e.target.value }))}
-                    placeholder="Confirm your password"
-                    required
-                  />
-                </div>
+                    {/* Member of Public - First, Middle, Last Name */}
+                    {formData.submitterType === "public" && (
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="firstName">First Name <span className="text-destructive">*</span></Label>
+                          <Input
+                            id="firstName"
+                            value={formData.firstName}
+                            onChange={(e) => setFormData(prev => ({ ...prev, firstName: e.target.value }))}
+                            placeholder="First name"
+                            required
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="middleName">Middle Name</Label>
+                          <Input
+                            id="middleName"
+                            value={formData.middleName}
+                            onChange={(e) => setFormData(prev => ({ ...prev, middleName: e.target.value }))}
+                            placeholder="Middle name"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="lastName">Last Name <span className="text-destructive">*</span></Label>
+                          <Input
+                            id="lastName"
+                            value={formData.lastName}
+                            onChange={(e) => setFormData(prev => ({ ...prev, lastName: e.target.value }))}
+                            placeholder="Last name"
+                            required
+                          />
+                        </div>
+                      </div>
+                    )}
 
-                <div className="flex items-start gap-3 pt-2">
-                  <Checkbox
-                    id="terms"
-                    checked={formData.terms}
-                    onCheckedChange={(checked) => setFormData(prev => ({ ...prev, terms: checked === true }))}
-                    required
-                  />
-                  <Label htmlFor="terms" className="text-sm leading-relaxed cursor-pointer">
-                    I agree to the <Link href="/terms" className="text-primary hover:underline">Terms of Service</Link> and{" "}
-                    <Link href="/privacy" className="text-primary hover:underline">Privacy Policy</Link>.
-                  </Label>
-                </div>
+                    {/* Company - Name and Registration Number */}
+                    {formData.submitterType === "company" && (
+                      <>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="companyName">Company Name <span className="text-destructive">*</span></Label>
+                            <Input
+                              id="companyName"
+                              value={formData.companyName}
+                              onChange={(e) => setFormData(prev => ({ ...prev, companyName: e.target.value }))}
+                              placeholder="Registered company name"
+                              required
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="companyNumber">Company Registration Number <span className="text-destructive">*</span></Label>
+                            <Input
+                              id="companyNumber"
+                              value={formData.companyNumber}
+                              onChange={(e) => setFormData(prev => ({ ...prev, companyNumber: e.target.value }))}
+                              placeholder="e.g., BB-12345-2020"
+                              required
+                            />
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="tradingName">Trading Name (if different)</Label>
+                          <Input
+                            id="tradingName"
+                            value={formData.tradingName}
+                            onChange={(e) => setFormData(prev => ({ ...prev, tradingName: e.target.value }))}
+                            placeholder="Trading or DBA name"
+                          />
+                        </div>
+                      </>
+                    )}
 
-                <Button type="submit" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground shadow-md" size="lg" disabled={isLoading || !formData.terms}>
+                    {/* MDA / Statutory Body - Select from list */}
+                    {(formData.submitterType === "ministry" || formData.submitterType === "statutory") && (
+                      <div className="space-y-2">
+                        <Label htmlFor="selectedMDA">Select Ministry / Department / Agency <span className="text-destructive">*</span></Label>
+                        <Select
+                          value={formData.selectedMDA}
+                          onValueChange={(value) => setFormData(prev => ({ ...prev, selectedMDA: value }))}
+                          required
+                        >
+                          <SelectTrigger id="selectedMDA">
+                            <SelectValue placeholder="Select your MDA" />
+                          </SelectTrigger>
+                          <SelectContent className="max-h-[300px]">
+                            {MINISTRIES_DEPARTMENTS_AGENCIES.map((mda) => (
+                              <SelectItem key={mda.value} value={mda.label}>
+                                {mda.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <p className="text-xs text-muted-foreground">Select your organization from the list of registered government entities</p>
+                      </div>
+                    )}
+
+                    {/* Court */}
+                    {formData.submitterType === "court" && (
+                      <div className="space-y-2">
+                        <Label htmlFor="courtName">Court Name <span className="text-destructive">*</span></Label>
+                        <Input
+                          id="courtName"
+                          value={formData.courtName}
+                          onChange={(e) => setFormData(prev => ({ ...prev, courtName: e.target.value }))}
+                          placeholder="e.g., Supreme Court of Barbados"
+                          required
+                        />
+                      </div>
+                    )}
+
+                    {/* Attorney */}
+                    {formData.submitterType === "attorney" && (
+                      <>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="firstName">First Name <span className="text-destructive">*</span></Label>
+                            <Input
+                              id="firstName"
+                              value={formData.firstName}
+                              onChange={(e) => setFormData(prev => ({ ...prev, firstName: e.target.value }))}
+                              placeholder="First name"
+                              required
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="lastName">Last Name <span className="text-destructive">*</span></Label>
+                            <Input
+                              id="lastName"
+                              value={formData.lastName}
+                              onChange={(e) => setFormData(prev => ({ ...prev, lastName: e.target.value }))}
+                              placeholder="Last name"
+                              required
+                            />
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="lawFirmName">Law Firm Name</Label>
+                            <Input
+                              id="lawFirmName"
+                              value={formData.lawFirmName}
+                              onChange={(e) => setFormData(prev => ({ ...prev, lawFirmName: e.target.value }))}
+                              placeholder="Firm name (if applicable)"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="barNumber">Bar Number / Registration <span className="text-destructive">*</span></Label>
+                            <Input
+                              id="barNumber"
+                              value={formData.barNumber}
+                              onChange={(e) => setFormData(prev => ({ ...prev, barNumber: e.target.value }))}
+                              placeholder="Bar registration number"
+                              required
+                            />
+                          </div>
+                        </div>
+                      </>
+                    )}
+
+                    {/* Other */}
+                    {formData.submitterType === "other" && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="firstName">Contact First Name <span className="text-destructive">*</span></Label>
+                          <Input
+                            id="firstName"
+                            value={formData.firstName}
+                            onChange={(e) => setFormData(prev => ({ ...prev, firstName: e.target.value }))}
+                            placeholder="First name"
+                            required
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="lastName">Contact Last Name <span className="text-destructive">*</span></Label>
+                          <Input
+                            id="lastName"
+                            value={formData.lastName}
+                            onChange={(e) => setFormData(prev => ({ ...prev, lastName: e.target.value }))}
+                            placeholder="Last name"
+                            required
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Contact Details - Always required */}
+                {formData.submitterType && (
+                  <div className="space-y-4 pt-4 border-t">
+                    <h3 className="text-sm font-semibold text-foreground">
+                      {supportsMultipleUsers ? "Primary Contact / Administrator" : "Contact Information"}
+                    </h3>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="contactEmail">Email Address <span className="text-destructive">*</span></Label>
+                        <Input
+                          id="contactEmail"
+                          type="email"
+                          value={formData.contactEmail}
+                          onChange={(e) => setFormData(prev => ({ ...prev, contactEmail: e.target.value }))}
+                          placeholder="email@example.com"
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="contactPhone">Phone Number</Label>
+                        <Input
+                          id="contactPhone"
+                          type="tel"
+                          value={formData.contactPhone}
+                          onChange={(e) => setFormData(prev => ({ ...prev, contactPhone: e.target.value }))}
+                          placeholder="+1 (246) XXX-XXXX"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="address">Address</Label>
+                      <Input
+                        id="address"
+                        value={formData.address}
+                        onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
+                        placeholder="Street address, City, Parish"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Additional Authorized Users (for Company/MDA) */}
+                {supportsMultipleUsers && formData.submitterType && (
+                  <div className="space-y-4 pt-4 border-t">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-sm font-semibold text-foreground">Additional Authorized Users</h3>
+                        <p className="text-xs text-muted-foreground">Add other users who can log in for this entity (optional)</p>
+                      </div>
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        size="sm"
+                        onClick={addAdditionalUser}
+                        disabled={formData.additionalUsers.length >= 5}
+                      >
+                        <Plus className="h-4 w-4 mr-1" />
+                        Add User
+                      </Button>
+                    </div>
+                    
+                    {formData.additionalUsers.length > 0 && (
+                      <div className="space-y-3">
+                        {formData.additionalUsers.map((user, index) => (
+                          <div key={index} className="flex gap-3 items-start p-3 rounded-lg bg-muted/50">
+                            <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-3">
+                              <Input
+                                value={user.name}
+                                onChange={(e) => updateAdditionalUser(index, "name", e.target.value)}
+                                placeholder="Full name"
+                              />
+                              <Input
+                                type="email"
+                                value={user.email}
+                                onChange={(e) => updateAdditionalUser(index, "email", e.target.value)}
+                                placeholder="Email address"
+                              />
+                            </div>
+                            <Button 
+                              type="button" 
+                              variant="ghost" 
+                              size="icon"
+                              className="text-destructive hover:text-destructive"
+                              onClick={() => removeAdditionalUser(index)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    
+                    <Alert>
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertDescription className="text-xs">
+                        All authorized users will be able to log in using their email address and will be linked to this entity number.
+                      </AlertDescription>
+                    </Alert>
+                  </div>
+                )}
+
+                {/* Password */}
+                {formData.submitterType && (
+                  <div className="space-y-4 pt-4 border-t">
+                    <h3 className="text-sm font-semibold text-foreground">Create Password</h3>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="password">Password <span className="text-destructive">*</span></Label>
+                        <Input
+                          id="password"
+                          type="password"
+                          value={formData.password}
+                          onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
+                          placeholder="Create a password"
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="confirmPassword">Confirm Password <span className="text-destructive">*</span></Label>
+                        <Input
+                          id="confirmPassword"
+                          type="password"
+                          value={formData.confirmPassword}
+                          onChange={(e) => setFormData(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                          placeholder="Confirm your password"
+                          required
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Terms */}
+                {formData.submitterType && (
+                  <div className="flex items-start gap-3 pt-4 border-t">
+                    <Checkbox
+                      id="terms"
+                      checked={formData.terms}
+                      onCheckedChange={(checked) => setFormData(prev => ({ ...prev, terms: checked === true }))}
+                      required
+                    />
+                    <Label htmlFor="terms" className="text-sm leading-relaxed cursor-pointer">
+                      I agree to the <Link href="/terms" className="text-primary hover:underline">Terms of Service</Link> and{" "}
+                      <Link href="/privacy" className="text-primary hover:underline">Privacy Policy</Link>.
+                    </Label>
+                  </div>
+                )}
+
+                <Button 
+                  type="submit" 
+                  className="w-full bg-accent hover:bg-accent/90 text-accent-foreground shadow-md" 
+                  size="lg" 
+                  disabled={isLoading || !formData.terms || !formData.submitterType}
+                >
                   {isLoading ? (
                     "Creating Account..."
                   ) : (
                     <>
                       <UserPlus className="mr-2 h-4 w-4" />
-                      Create Account
+                      Submit Registration
                     </>
                   )}
                 </Button>
