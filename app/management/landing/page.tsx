@@ -124,10 +124,34 @@ export default function ManagementLandingPage() {
                 Management Portal
               </h1>
               <p className="mt-6 text-lg leading-relaxed text-blue-100 sm:text-xl">
-                Internal administrative system for the Solicitor General&apos;s Chambers. 
-                Manage registers, cases, reports, and system configuration.
+                SGC-Digital Management Portal for tracking, managing and monitoring 
+                Contracts and Correspondence Applications.
               </p>
-              <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
+              
+              {/* Quick Action Buttons */}
+              <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
+                <Button size="lg" asChild className="bg-blue-600 hover:bg-blue-700 text-white min-w-[180px]">
+                  <Link href="/management/login?redirect=/case-management/correspondence">
+                    <FileText className="mr-2 h-5 w-5" />
+                    Correspondence
+                  </Link>
+                </Button>
+                <Button size="lg" asChild className="bg-emerald-600 hover:bg-emerald-700 text-white min-w-[180px]">
+                  <Link href="/management/login?redirect=/case-management/contracts">
+                    <ClipboardList className="mr-2 h-5 w-5" />
+                    Contract Request
+                  </Link>
+                </Button>
+                <Button size="lg" asChild className="bg-slate-800 hover:bg-slate-900 text-white min-w-[180px]">
+                  <Link href="/management/login?redirect=/management/dashboard">
+                    <BarChart3 className="mr-2 h-5 w-5" />
+                    My Dashboard
+                  </Link>
+                </Button>
+              </div>
+              
+              {/* Sign In / Register Links */}
+              <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
                 <Button size="lg" variant="secondary" asChild className="min-w-[180px]">
                   <Link href="/management/login">
                     <Shield className="mr-2 h-5 w-5" />
