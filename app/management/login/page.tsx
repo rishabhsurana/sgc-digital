@@ -44,6 +44,16 @@ export default function ManagementLoginPage() {
     }
     sessionStorage.setItem("sgc_admin", JSON.stringify(adminSession))
 
+    // Also store user session for seamless navigation to user portal
+    const userSession = {
+      email: adminUser.email,
+      name: adminUser.name,
+      organization: adminUser.department || "Solicitor General's Chambers",
+      entityNumber: `SGC-${Date.now().toString(36).toUpperCase()}`,
+      isStaff: true
+    }
+    sessionStorage.setItem("sgc_user", JSON.stringify(userSession))
+
     // Redirect to management dashboard
     window.location.href = "/management"
   }
