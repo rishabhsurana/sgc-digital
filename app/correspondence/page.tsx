@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useCallback } from "react"
+import { useSearchParams } from "next/navigation"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { FormStepper } from "@/components/form-stepper"
@@ -14,10 +15,11 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { ArrowLeft, ArrowRight, Save, Send, Info, FileText, Gavel, FileStack, HelpCircle, CheckCircle, Scale, Globe, UserCheck, Lock } from "lucide-react"
+import { ArrowLeft, ArrowRight, Save, Send, Info, FileText, Gavel, FileStack, HelpCircle, CheckCircle, Scale, Globe, UserCheck, Lock, AlertCircle } from "lucide-react"
 import { AskRex } from "@/components/ask-rex"
 import Link from "next/link"
 import { MINISTRIES_DEPARTMENTS_AGENCIES } from "@/lib/constants"
+import { saveDraft, getDraft, recordSubmissionAttempt } from "@/lib/actions/draft-actions"
 
 const STEPS = [
   { id: "type", title: "Type", description: "Select correspondence type" },
@@ -140,6 +142,58 @@ export default function CorrespondencePage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
   const [transactionNumber, setTransactionNumber] = useState("")
+  const [draftId, setDraftId] = useState<string | null>(null)
+  const [isSavingDraft, setIsSavingDraft] = useState(false)
+  const [lastSaved, setLastSaved] = useState<Date | null>(null)
+  const [submissionError, setSubmissionError] = useState<string | null>(null)
+  const [isLoadingDraft, setIsLoadingDraft] = useState(false)
+  
+  const searchParams = useSearchParams()
+  
+  // Load draft if URL has draft parameter
+  useEffect(() => {
+    const draftParam = searchParams.get('draft')
+    if (draftParam) {
+      setIsLoadingDraft(true)
+      getDraft(draftParam).then(result => {
+        if (result.success && result.draft) {
+          setDraftId(result.draft.draftId)
+          setFormData(result.draft.formData as typeof formData)
+          setCurrentStep(result.draft.currentStep)
+          setLastSaved(result.draft.updatedAt)
+        }
+        setIsLoadingDraft(false)
+      })
+    }
+  }, [searchParams])
+  
+  // Auto-save draft every 30 seconds
+  useEffect(() => {
+    const autoSaveTimer = setInterval(async () => {
+      if (formData.correspondenceType || formData.subject) {
+        const userId = 'current-user'
+        const result = await saveDraft(userId, 'correspondence', formData, currentStep, STEPS.length, draftId || undefined)
+        if (result.success && result.draftId) {
+          setDraftId(result.draftId)
+          setLastSaved(new Date())
+        }
+      }
+    }, 30000)
+    
+    return () => clearInterval(autoSaveTimer)
+  }, [formData, currentStep, draftId])
+  
+  // Manual save draft
+  const handleSaveDraft = useCallback(async () => {
+    setIsSavingDraft(true)
+    const userId = 'current-user'
+    const result = await saveDraft(userId, 'correspondence', formData, currentStep, STEPS.length, draftId || undefined)
+    if (result.success && result.draftId) {
+      setDraftId(result.draftId)
+      setLastSaved(new Date())
+    }
+    setIsSavingDraft(false)
+  }, [formData, currentStep, draftId])
 
   const updateFormData = (field: string, value: string | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }))
@@ -169,12 +223,67 @@ export default function CorrespondencePage() {
 
   const handleSubmit = async () => {
     setIsSubmitting(true)
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 2000))
-    const txn = `COR-${Date.now().toString(36).toUpperCase()}`
-    setTransactionNumber(txn)
-    setIsSubmitted(true)
-    setIsSubmitting(false)
+    setSubmissionError(null)
+    
+    try {
+      await new Promise(resolve => setTimeout(resolve, 2000))
+      
+      // Simulate occasional failures (10% rate)
+      const shouldFail = Math.random() < 0.1
+      if (shouldFail) {
+        throw new Error('Network error: Unable to connect to server')
+      }
+      
+      const txn = `COR-${Date.now().toString(36).toUpperCase()}`
+      setTransactionNumber(txn)
+      
+      if (draftId) {
+        await recordSubmissionAttempt(draftId, true, undefined, undefined, txn)
+      }
+      
+      setIsSubmitted(true)
+    } catch (error) {
+      console.error('[v0] Submission failed:', error)
+      
+      const userId = 'current-user'
+      const result = await saveDraft(userId, 'correspondence', formData, currentStep, STEPS.length, draftId || undefined)
+      
+      if (result.success && result.draftId) {
+        setDraftId(result.draftId)
+        await recordSubmissionAttempt(
+          result.draftId,
+          false,
+          'NETWORK',
+          error instanceof Error ? error.message : 'Unknown error'
+        )
+      }
+      
+      setSubmissionError(
+        `We're sorry, your application could not be submitted. ${error instanceof Error ? error.message : 'Please try again.'}`
+      )
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+  
+  // Loading state when resuming a draft
+  if (isLoadingDraft) {
+    return (
+      <div className="flex min-h-screen flex-col bg-background">
+        <Header />
+        <main className="flex-1 py-12">
+          <div className="container mx-auto px-4 lg:px-8 max-w-4xl">
+            <Card className="bg-card border-border">
+              <CardContent className="py-12 text-center">
+                <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto mb-4" />
+                <p className="text-muted-foreground">Loading your draft...</p>
+              </CardContent>
+            </Card>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    )
   }
 
   if (isSubmitted) {
@@ -658,21 +767,67 @@ export default function CorrespondencePage() {
               </>
             )}
 
+            {/* Submission Error Alert */}
+            {submissionError && (
+              <div className="border-t border-border p-4">
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription className="ml-2">
+                    <p className="font-medium">{submissionError}</p>
+                    <p className="text-sm mt-2">
+                      Your application has been saved. You can{' '}
+                      <button 
+                        onClick={handleSubmit}
+                        className="underline font-medium hover:no-underline"
+                      >
+                        try again now
+                      </button>
+                      {' '}or resume later from your{' '}
+                      <Link href="/dashboard" className="underline font-medium hover:no-underline">
+                        Dashboard
+                      </Link>.
+                    </p>
+                  </AlertDescription>
+                </Alert>
+              </div>
+            )}
+
             {/* Navigation Buttons */}
             <div className="flex items-center justify-between border-t border-border p-6">
-              <Button
-                variant="outline"
-                onClick={() => setCurrentStep(prev => prev - 1)}
-                disabled={currentStep === 0}
-              >
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Previous
-              </Button>
+              <div className="flex items-center gap-4">
+                <Button
+                  variant="outline"
+                  onClick={() => setCurrentStep(prev => prev - 1)}
+                  disabled={currentStep === 0}
+                >
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  Previous
+                </Button>
+                
+                {lastSaved && (
+                  <span className="text-xs text-muted-foreground">
+                    Saved {lastSaved.toLocaleTimeString()}
+                  </span>
+                )}
+              </div>
               
               <div className="flex gap-2">
-                <Button variant="ghost">
-                  <Save className="mr-2 h-4 w-4" />
-                  Save Draft
+                <Button 
+                  variant="ghost" 
+                  onClick={handleSaveDraft}
+                  disabled={isSavingDraft}
+                >
+                  {isSavingDraft ? (
+                    <>
+                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent mr-2" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="mr-2 h-4 w-4" />
+                      Save Draft
+                    </>
+                  )}
                 </Button>
                 
                 {currentStep < STEPS.length - 1 ? (
@@ -687,9 +842,13 @@ export default function CorrespondencePage() {
                   <Button
                     onClick={handleSubmit}
                     disabled={!canProceed() || isSubmitting}
+                    className="bg-emerald-600 hover:bg-emerald-700"
                   >
                     {isSubmitting ? (
-                      <>Processing...</>
+                      <>
+                        <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent mr-2" />
+                        Submitting...
+                      </>
                     ) : (
                       <>
                         <Send className="mr-2 h-4 w-4" />
