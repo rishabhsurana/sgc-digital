@@ -1,9 +1,10 @@
 # SGC Digital - Complete Database Table List
 
-**Version:** 1.3.0  
+**Version:** 1.4.0  
 **Last Updated:** 2024  
-**Total Tables:** 100+  
-**Total Views:** 25+
+**Total Tables:** 115+  
+**Total Views:** 30+  
+**SQL Scripts:** 13
 
 ---
 
@@ -14,19 +15,21 @@
 | Lookup Tables (Core) | 8 |
 | Lookup Tables (Contracts) | 9 |
 | Lookup Tables (Correspondence) | 5 |
-| **Lookup Tables (Submissions)** | **1** |
+| Lookup Tables (Submissions) | 1 |
+| **Lookup Tables (Workflow & Corrections)** | **2** |
 | User & Entity Tables | 8 |
 | Correspondence Tables | 4 |
 | Contract Tables | 13 |
 | Contract Renewals Tables | 3 |
 | Document Requirements Tables | 2 |
-| **Draft & Failed Submissions Tables** | **6** |
+| Draft & Failed Submissions Tables | 6 |
+| **Workflow, Corrections & Stage Duration Tables** | **7** |
 | Tracking & Notifications Tables | 5 |
 | Audit & Activity Tables | 3 |
 | Reporting & Analytics Tables | 8 |
 | Ask Rex AI Tables | 9 |
 | System Configuration Tables | 4 |
-| **TOTAL TABLES** | **~100** |
+| **TOTAL TABLES** | **~115** |
 
 ---
 
@@ -198,6 +201,111 @@ This module handles **saving drafts**, **failed submissions**, and **retry funct
 **Retry URL Format:**
 - `/contracts?draft={DraftId}` - Resume contract submission
 - `/correspondence?draft={DraftId}` - Resume correspondence submission
+
+---
+
+## MODULE 8C: WORKFLOW, CORRECTIONS & STAGE DURATION (9 Tables)
+
+This module handles **status updates**, **return for corrections**, and **stage duration tracking**.
+
+### Lookup Tables
+
+| # | Table Name | Purpose | Key Columns |
+|---|------------|---------|-------------|
+| 1 | `LookupCorrectionReasons` | Reasons for returning applications | CorrectionReasonId, ReasonCode, ReasonName, DefaultDeadlineDays, AppliesTo |
+| 2 | `LookupWorkflowStages` | All workflow stages | StageId, StageCode, StageName, StageOrder, ExpectedDurationDays, SLADays, AllowsCorrections, IsTerminal |
+
+**Correction Reason Values:**
+| Reason | Description | Default Deadline |
+|--------|-------------|------------------|
+| `MISSING_DOCS` | Required documents missing | 7 days |
+| `INVALID_DOCS` | Documents invalid/expired | 7 days |
+| `INCOMPLETE_INFO` | Form fields incomplete | 5 days |
+| `INCORRECT_INFO` | Information contains errors | 5 days |
+| `SIGNATURE_REQUIRED` | Missing signatures | 5 days |
+| `VALUE_DISCREPANCY` | Contract values don't match | 5 days |
+| `SCOPE_UNCLEAR` | Scope needs clarification | 7 days |
+| `LEGAL_ISSUES` | Legal concerns to address | 10 days |
+| `COMPLIANCE_ISSUES` | Policy/regulatory issues | 10 days |
+| `PROCUREMENT_ISSUES` | Procurement docs incomplete | 7 days |
+
+**Workflow Stage Values:**
+| Stage | Description | SLA Days | Allows Corrections |
+|-------|-------------|----------|-------------------|
+| `DRAFT` | Application being prepared | - | No |
+| `SUBMITTED` | Awaiting initial review | 2 | No |
+| `INITIAL_REVIEW` | Document/completeness check | 3 | Yes |
+| `AWAITING_CORRECTIONS` | Returned to applicant | - | No |
+| `CORRECTIONS_SUBMITTED` | Corrections awaiting re-review | 2 | No |
+| `LEGAL_REVIEW` | Under legal review | 10 | Yes |
+| `NEGOTIATION` | Terms being negotiated | 15 | No |
+| `FINAL_REVIEW` | Final review before approval | 3 | Yes |
+| `PENDING_APPROVAL` | Awaiting final approval | 3 | No |
+| `APPROVED` | Application approved | 1 | No |
+| `EXECUTION` | Contract being signed | 5 | No |
+| `COMPLETED` | Process complete (Terminal) | - | No |
+| `REJECTED` | Application rejected (Terminal) | - | No |
+| `WITHDRAWN` | Withdrawn by applicant (Terminal) | - | No |
+
+### Correction Request Tables
+
+| # | Table Name | Purpose | Key Columns |
+|---|------------|---------|-------------|
+| 3 | `ContractCorrectionRequests` | **Correction requests for contracts** | CorrectionRequestId, ContractId, CorrectionCycleNumber, PrimaryCorrectionReasonId, CorrectionInstructions, DeadlineDate, Status, ResponseSubmittedAt, WereCorrectionsAccepted |
+| 4 | `CorrespondenceCorrectionRequests` | **Correction requests for correspondence** | CorrectionRequestId, CorrespondenceId, CorrectionCycleNumber, PrimaryCorrectionReasonId, CorrectionInstructions, DeadlineDate, Status |
+| 5 | `CorrectionDocuments` | **Documents submitted as corrections** | DocumentId, ContractCorrectionRequestId, CorrespondenceCorrectionRequestId, ReplacesDocumentId, FileName |
+
+### Stage Duration Tracking Tables
+
+| # | Table Name | Purpose | Key Columns |
+|---|------------|---------|-------------|
+| 6 | `ContractStageDurations` | **Time tracking per stage for contracts** | StageDurationId, ContractId, StageId, EnteredAt, ExitedAt, DurationMinutes, DurationBusinessDays, WasOverdue, DaysOverdue, ExitReason |
+| 7 | `CorrespondenceStageDurations` | **Time tracking per stage for correspondence** | StageDurationId, CorrespondenceId, StageId, EnteredAt, ExitedAt, DurationMinutes, DurationBusinessDays, WasOverdue |
+
+### New Columns Added to Main Tables
+
+**ContractsRegister - New Columns:**
+| Column | Type | Description |
+|--------|------|-------------|
+| `CurrentStageId` | INT FK | Current workflow stage |
+| `StageEnteredAt` | DATETIME2 | When current stage started |
+| `TotalCorrectionCycles` | INT | Number of correction cycles |
+| `IsAwaitingCorrections` | BIT | Currently awaiting corrections? |
+| `CorrectionDeadline` | DATETIME2 | Deadline for corrections |
+| `LastCorrectionRequestId` | UNIQUEIDENTIFIER FK | Last correction request |
+| `TotalProcessingDays` | INT | Total days in processing |
+| `TotalBusinessDays` | DECIMAL(5,2) | Total business days |
+
+**CorrespondenceRegister - Same columns added**
+
+**StatusHistory Tables - New Columns:**
+| Column | Type | Description |
+|--------|------|-------------|
+| `StageId` | INT FK | New stage entered |
+| `PreviousStageId` | INT FK | Previous stage exited |
+| `StageDurationMinutes` | INT | Time spent in previous stage |
+| `StageDurationBusinessDays` | DECIMAL(5,2) | Business days in stage |
+| `WasOverdue` | BIT | Was stage overdue? |
+| `DaysOverdue` | INT | Days over SLA |
+| `IsCorrection` | BIT | Is this a correction cycle? |
+| `CorrectionCycleNumber` | INT | Which correction cycle |
+
+### Views for Workflow Reporting
+
+| View | Purpose |
+|------|---------|
+| `vw_ContractCurrentStage` | Current stage status for all contracts with SLA tracking |
+| `vw_CorrespondenceCurrentStage` | Current stage status for all correspondence |
+| `vw_PendingCorrections` | All pending correction requests (combined) |
+| `vw_StageDurationAnalytics` | Stage duration statistics and overdue percentages |
+
+### Stored Procedures
+
+| Procedure | Purpose |
+|-----------|---------|
+| `sp_RequestContractCorrections` | Create correction request, set deadline, update status |
+| `sp_SubmitContractCorrections` | Mark corrections as submitted, move to re-review |
+| `sp_ChangeContractStage` | Change stage with automatic duration tracking |
 
 ---
 
@@ -495,14 +603,9 @@ For contracts with multiple parties (joint ventures, subcontractors):
 | 8 | `008-ask-rex-ai-assistant.sql` | Ask Rex AI tables |
 | 9 | `009-missing-fields-comprehensive.sql` | Categories, instruments, funding |
 | 10 | `010-document-requirements-junction.sql` | Document requirements by category |
-| 11 | `011-contracts-complete-fields.sql` | All contract fields (70+ columns) |
-| 12 | `012-drafts-failed-submissions.sql` | **Draft & failed submission handling** and reports |
-| 6 | `006-renewals-and-tracking.sql` | Renewals and SLA |
-| 7 | `007-entities-reports-comprehensive.sql` | Entities and reporting |
-| 8 | `008-ask-rex-ai-assistant.sql` | Ask Rex AI tables |
-| 9 | `009-missing-fields-comprehensive.sql` | Additional form fields |
-| 10 | `010-document-requirements-junction.sql` | Document requirements mapping |
-| 11 | `011-contracts-complete-fields.sql` | **Complete contract fields (parties, milestones, values, dates)** |
+| 11 | `011-contracts-complete-fields.sql` | Complete contract fields (70+ columns) |
+| 12 | `012-drafts-failed-submissions.sql` | Draft & failed submission handling |
+| 13 | `013-workflow-corrections-stages.sql` | **Workflow, corrections & stage duration tracking** |
 
 **OR use `CONSOLIDATED_SCHEMA.sql` for single-file deployment.**
 
@@ -514,4 +617,6 @@ For contracts with multiple parties (joint ventures, subcontractors):
 |---------|------|---------|
 | 1.0 | 2024 | Initial schema |
 | 1.1 | 2024 | Added Entity master, Ask Rex, Reports |
-| 1.2 | 2024 | **Added complete contract fields: ContractValue, ContractStartDate, ContractEndDate, ContractCounterparties, ContractMilestones, ContractValueBreakdown, ContractGuarantees, ContractSignatories, ContractTerms** |
+| 1.2 | 2024 | Added complete contract fields: ContractValue, ContractStartDate, ContractEndDate, ContractCounterparties, ContractMilestones |
+| 1.3 | 2024 | Added draft/failed submission handling with retry functionality |
+| 1.4 | 2024 | **Added workflow, corrections & stage duration tracking: LookupCorrectionReasons, LookupWorkflowStages, ContractCorrectionRequests, CorrespondenceCorrectionRequests, CorrectionDocuments, ContractStageDurations, CorrespondenceStageDurations** |
