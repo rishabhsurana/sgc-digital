@@ -267,7 +267,7 @@ export const MOCK_USERS: UserProfile[] = [
     organizationName: "Solicitor General's Chambers",
     departmentId: 1,
     position: 'Legal Manager',
-    roleId: 7, // Admin role - can access both portals
+    roleId: 7,
     statusId: 5,
     emailVerified: true,
     lastLoginAt: new Date(),

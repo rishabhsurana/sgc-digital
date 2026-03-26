@@ -148,7 +148,11 @@ export async function getUserById(userId: string): Promise<UserProfile | null> {
 
 export async function getUserByEmail(email: string): Promise<UserProfile | null> {
   if (USE_MOCK_DATA) {
-    return MOCK_USERS.find(u => u.email.toLowerCase() === email.toLowerCase()) || null
+    console.log('[v0] getUserByEmail searching for:', email.toLowerCase())
+    console.log('[v0] Available emails:', MOCK_USERS.map(u => u.email.toLowerCase()))
+    const found = MOCK_USERS.find(u => u.email.toLowerCase() === email.toLowerCase()) || null
+    console.log('[v0] Found user:', found ? found.email : 'null')
+    return found
   }
   return MOCK_USERS.find(u => u.email.toLowerCase() === email.toLowerCase()) || null
 }
@@ -533,6 +537,10 @@ export async function authenticateUser(
   if (USE_MOCK_DATA) {
     // Demo mode - accept specific passwords for demo users
     const user = await getUserByEmail(email)
+    
+    console.log('[v0] authenticateUser called with email:', email)
+    console.log('[v0] User found:', user ? `${user.firstName} ${user.lastName} (roleId: ${user.roleId}, statusId: ${user.statusId})` : 'null')
+    console.log('[v0] Total users in MOCK_USERS:', MOCK_USERS.length)
     
     if (!user) {
       return { success: false, error: 'Invalid email or password' }
