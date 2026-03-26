@@ -1,8 +1,9 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import Image from "next/image"
+import { useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -16,6 +17,8 @@ export default function ManagementLoginPage() {
   const [password, setPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
+  const searchParams = useSearchParams()
+  const redirectTo = searchParams.get("redirect") || "/management"
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -54,8 +57,8 @@ export default function ManagementLoginPage() {
     }
     sessionStorage.setItem("sgc_user", JSON.stringify(userSession))
 
-    // Redirect to management dashboard
-    window.location.href = "/management"
+    // Redirect to the requested page or management dashboard
+    window.location.href = redirectTo
   }
 
   return (
