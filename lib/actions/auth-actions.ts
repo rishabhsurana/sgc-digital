@@ -137,20 +137,29 @@ export async function loginUser(
   
   await createSession(result.user)
   
+  // Check if user is staff (Staff, Supervisor, Admin, Super Admin)
+  const isStaffUser = [5, 6, 7, 8].includes(result.user.roleId)
+  
   // Log the activity
   await logActivity({
     userId: result.user.userId,
     userName: `${result.user.firstName} ${result.user.lastName}`,
     userRole: result.user.roleName,
     activityType: 'login',
-    activityDescription: 'User logged into Client Portal',
+    activityDescription: isStaffUser 
+      ? 'Staff user logged into Portal' 
+      : 'User logged into Client Portal',
     entityType: 'User',
     entityId: result.user.userId
   })
   
   // Determine redirect based on user type
   let redirectTo = '/dashboard'
-  if (result.user.entityTypeId === 5) {
+  
+  // Staff users go to management portal by default when logging in via public portal
+  if (isStaffUser) {
+    redirectTo = '/management'
+  } else if (result.user.entityTypeId === 5) {
     redirectTo = '/attorney/dashboard'
   } else if (result.user.entityTypeId === 6) {
     redirectTo = '/company/dashboard'

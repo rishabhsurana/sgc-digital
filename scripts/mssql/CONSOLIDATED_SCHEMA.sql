@@ -1,7 +1,7 @@
 -- =============================================
 -- SGC DIGITAL - CONSOLIDATED DATABASE SCHEMA
 -- =============================================
--- Version: 1.0.0
+-- Version: 1.0.1
 -- Date: 2024
 -- Database: Microsoft SQL Server
 -- 
@@ -12,6 +12,26 @@
 --
 -- TOTAL TABLES: 60+
 -- TOTAL VIEWS: 15+
+--
+-- UNIFIED USER MODEL:
+-- -------------------
+-- All users (staff and public) are stored in UserProfiles.
+-- Staff users (RoleId 5-8) can access BOTH portals:
+--   - Public Portal (/login)
+--   - Management Portal (/management/login)
+--
+-- Staff do NOT need to register on Public Portal separately.
+-- A single login works for both portals based on role.
+--
+-- Role Hierarchy:
+--   1 = Public User (Public Portal only)
+--   2 = Attorney (Public Portal only)
+--   3 = Company Representative (Public Portal only)
+--   4 = MDA User (Public Portal only)
+--   5 = Staff (Both Portals)
+--   6 = Supervisor (Both Portals)
+--   7 = Administrator (Both Portals)
+--   8 = Super Administrator (Both Portals)
 -- =============================================
 
 -- Create Database (if not exists)

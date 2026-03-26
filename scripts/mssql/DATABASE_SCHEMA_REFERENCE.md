@@ -6,6 +6,39 @@ This document provides a comprehensive overview of all database tables, their re
 
 ---
 
+## Unified User Authentication Model
+
+**Key Principle:** Staff users do NOT need to register separately on the Public Portal.
+
+### How It Works
+
+1. **Single UserProfiles Table** - All users (staff and public) are stored in one table
+2. **Role-Based Access** - The `RoleId` determines which portals a user can access:
+   - **Roles 1-4 (Public Users)**: Can only access Public Portal
+   - **Roles 5-8 (Staff Users)**: Can access BOTH Public Portal AND Management Portal
+
+### Role Definitions
+
+| RoleId | RoleCode | Access |
+|--------|----------|--------|
+| 1 | PUBLIC_USER | Public Portal only |
+| 2 | ATTORNEY | Public Portal only |
+| 3 | COMPANY | Public Portal only |
+| 4 | MDA_USER | Public Portal only |
+| 5 | STAFF | Both Portals |
+| 6 | SUPERVISOR | Both Portals |
+| 7 | ADMIN | Both Portals |
+| 8 | SUPER_ADMIN | Both Portals |
+
+### Login Flow
+
+1. User enters credentials at `/login` (Public) or `/management/login` (Staff)
+2. System authenticates against `UserProfiles` table
+3. If user is Staff (RoleId 5-8) logging in via Public Portal, they get access to Management Portal button
+4. Session cookie stores role information for portal access control
+
+---
+
 ## Schema Files
 
 | File | Purpose |

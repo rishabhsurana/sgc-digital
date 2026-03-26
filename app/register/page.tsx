@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
@@ -11,7 +12,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { ArrowLeft, UserPlus, CheckCircle, Building2, Scale, Landmark, Users, Briefcase, HelpCircle, Plus, Trash2, AlertCircle } from "lucide-react"
+import { ArrowLeft, UserPlus, CheckCircle, Building2, Scale, Landmark, Users, Briefcase, HelpCircle, Plus, Trash2, AlertCircle, Info } from "lucide-react"
 import { MINISTRIES_DEPARTMENTS_AGENCIES } from "@/lib/constants"
 
 // Entity/Submitter Types per requirements document
@@ -46,6 +47,11 @@ export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [isRegistered, setIsRegistered] = useState(false)
   const [entityNumber, setEntityNumber] = useState("")
+  const [existingUserError, setExistingUserError] = useState<{
+    isStaff: boolean
+    message: string
+  } | null>(null)
+  const router = useRouter()
   
   const [formData, setFormData] = useState({
     // Entity Type
@@ -135,52 +141,85 @@ export default function RegisterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
+    setExistingUserError(null)
     
-    // Generate entity number
-    const newEntityNumber = generateEntityNumber(formData.submitterType)
-    setEntityNumber(newEntityNumber)
-    
-    // Simulate registration
-    await new Promise(resolve => setTimeout(resolve, 2000))
-    
-    // Build user data based on entity type
-    const userData = {
-      entityNumber: newEntityNumber,
-      submitterType: formData.submitterType,
-      displayName: getDisplayName(),
-      primaryEmail: formData.contactEmail,
-      phone: formData.contactPhone,
-      // Additional data based on type
-      ...(formData.submitterType === "public" && {
-        firstName: formData.firstName,
-        middleName: formData.middleName,
-        lastName: formData.lastName
-      }),
-      ...(formData.submitterType === "company" && {
-        companyName: formData.companyName,
-        companyNumber: formData.companyNumber,
-        tradingName: formData.tradingName
-      }),
-      ...((formData.submitterType === "ministry" || formData.submitterType === "statutory") && {
-        mdaName: formData.selectedMDA
-      }),
-      ...(formData.submitterType === "court" && {
-        courtName: formData.courtName
-      }),
-      ...(formData.submitterType === "attorney" && {
-        lawFirmName: formData.lawFirmName,
-        barNumber: formData.barNumber
-      }),
-      // Authorized users (for multi-user entities)
-      authorizedUsers: supportsMultipleUsers 
-        ? [{ name: getDisplayName(), email: formData.contactEmail, isPrimary: true }, ...formData.additionalUsers.map(u => ({ ...u, isPrimary: false }))]
-        : [{ name: getDisplayName(), email: formData.contactEmail, isPrimary: true }]
+    try {
+      // Check if user already exists via API
+      const checkResponse = await fetch('/api/auth/check-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: formData.contactEmail })
+      })
+      
+      const checkResult = await checkResponse.json()
+      
+      if (checkResult.exists) {
+        // User already exists
+        if (checkResult.isStaff) {
+          setExistingUserError({
+            isStaff: true,
+            message: 'This email is already registered as a staff member. You can access both the Public Portal and Management Portal with your existing credentials.'
+          })
+        } else {
+          setExistingUserError({
+            isStaff: false,
+            message: 'An account with this email already exists. Please sign in instead.'
+          })
+        }
+        setIsLoading(false)
+        return
+      }
+      
+      // Generate entity number
+      const newEntityNumber = generateEntityNumber(formData.submitterType)
+      setEntityNumber(newEntityNumber)
+      
+      // Register via API
+      const registerResponse = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          entityNumber: newEntityNumber,
+          submitterType: formData.submitterType,
+          displayName: getDisplayName(),
+          email: formData.contactEmail,
+          phone: formData.contactPhone,
+          password: formData.password,
+          firstName: formData.firstName,
+          middleName: formData.middleName,
+          lastName: formData.lastName,
+          companyName: formData.companyName,
+          companyNumber: formData.companyNumber,
+          tradingName: formData.tradingName,
+          selectedMDA: formData.selectedMDA,
+          courtName: formData.courtName,
+          lawFirmName: formData.lawFirmName,
+          barNumber: formData.barNumber,
+          additionalUsers: formData.additionalUsers
+        })
+      })
+      
+      const registerResult = await registerResponse.json()
+      
+      if (!registerResult.success) {
+        setExistingUserError({
+          isStaff: false,
+          message: registerResult.error || 'Registration failed. Please try again.'
+        })
+        setIsLoading(false)
+        return
+      }
+      
+      setIsRegistered(true)
+    } catch (error) {
+      console.error('Registration error:', error)
+      setExistingUserError({
+        isStaff: false,
+        message: 'An error occurred during registration. Please try again.'
+      })
+    } finally {
+      setIsLoading(false)
     }
-    
-    sessionStorage.setItem("sgc_user", JSON.stringify(userData))
-    
-    setIsRegistered(true)
-    setIsLoading(false)
   }
 
   if (isRegistered) {
@@ -285,10 +324,10 @@ export default function RegisterPage() {
           
           <Card className="bg-card border-border overflow-hidden">
             <div className="bg-gradient-to-r from-primary to-primary/80 px-6 py-8 text-center">
-              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-white/20 backdrop-blur shadow-lg">
-                <span className="font-serif text-xl font-bold text-white">SGC</span>
+              <div className="mx-auto mb-4 flex h-14 w-auto px-3 items-center justify-center rounded-xl bg-white/20 backdrop-blur shadow-lg">
+                <span className="font-serif text-base font-semibold text-white">SGC Digital</span>
               </div>
-              <h1 className="text-2xl font-bold text-white">Create an Account</h1>
+              <h1 className="text-2xl font-medium text-white">Create an Account</h1>
               <p className="text-primary-foreground/80 mt-1">
                 Register to submit and track your requests with the SGC
               </p>
@@ -299,6 +338,35 @@ export default function RegisterPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
+              {/* Existing User Error Alert */}
+              {existingUserError && (
+                <Alert variant={existingUserError.isStaff ? "default" : "destructive"} className="mb-6">
+                  {existingUserError.isStaff ? (
+                    <Info className="h-4 w-4" />
+                  ) : (
+                    <AlertCircle className="h-4 w-4" />
+                  )}
+                  <AlertDescription className="ml-2">
+                    <p>{existingUserError.message}</p>
+                    {existingUserError.isStaff && (
+                      <div className="mt-3 flex gap-2">
+                        <Button asChild size="sm" variant="outline">
+                          <Link href="/login">Sign In to Public Portal</Link>
+                        </Button>
+                        <Button asChild size="sm">
+                          <Link href="/management/login">Sign In to Management Portal</Link>
+                        </Button>
+                      </div>
+                    )}
+                    {!existingUserError.isStaff && (
+                      <Button asChild size="sm" className="mt-2">
+                        <Link href="/login">Sign In Instead</Link>
+                      </Button>
+                    )}
+                  </AlertDescription>
+                </Alert>
+              )}
+              
               <form onSubmit={handleSubmit} className="space-y-6">
                 {/* Step 1: Entity Type Selection */}
                 <div className="space-y-3">

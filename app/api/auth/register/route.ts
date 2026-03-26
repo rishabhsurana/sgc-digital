@@ -1,92 +1,142 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { authService } from '@/lib/services/auth-service'
-import { cookies } from 'next/headers'
+import { getUserByEmail, createUser, logActivity } from '@/lib/data/data-service'
 
-export async function POST(req: NextRequest) {
+// Map submitter type to entity type ID
+const ENTITY_TYPE_MAP: Record<string, number> = {
+  ministry: 1,
+  court: 2,
+  statutory: 3,
+  public: 4,
+  attorney: 5,
+  company: 6,
+  other: 4 // Default to public
+}
+
+// Map submitter type to role ID
+const ROLE_MAP: Record<string, number> = {
+  ministry: 4,    // MDA User
+  court: 4,       // MDA User
+  statutory: 4,   // MDA User
+  public: 1,      // Public User
+  attorney: 2,    // Attorney
+  company: 3,     // Company
+  other: 1        // Public User
+}
+
+export async function POST(request: NextRequest) {
   try {
-    const body = await req.json()
-    const { email, password, firstName, lastName, userType, phone, title, organizationId } = body
-
-    // Validate required fields
-    if (!email || !password || !firstName || !lastName || !userType) {
-      return NextResponse.json(
-        { error: 'Missing required fields' },
-        { status: 400 }
-      )
-    }
-
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(email)) {
-      return NextResponse.json(
-        { error: 'Invalid email format' },
-        { status: 400 }
-      )
-    }
-
-    // Validate password strength
-    if (password.length < 8) {
-      return NextResponse.json(
-        { error: 'Password must be at least 8 characters' },
-        { status: 400 }
-      )
-    }
-
-    // MDA staff must have organization
-    if (userType === 'mda_staff' && !organizationId) {
-      return NextResponse.json(
-        { error: 'Organization is required for MDA staff' },
-        { status: 400 }
-      )
-    }
-
-    const result = await authService.registerPublicUser({
+    const data = await request.json()
+    
+    const {
+      entityNumber,
+      submitterType,
+      displayName,
       email,
+      phone,
       password,
       firstName,
       lastName,
-      userType,
-      phone,
-      title,
-      organizationId
-    })
-
-    if (!result.success) {
-      return NextResponse.json(
-        { error: result.error },
-        { status: 400 }
-      )
-    }
-
-    // Set cookies
-    const cookieStore = await cookies()
+      companyName,
+      selectedMDA,
+      courtName,
+      lawFirmName,
+      barNumber,
+    } = data
     
-    cookieStore.set('access_token', result.accessToken!, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 60 * 60 * 24,
-      path: '/'
+    // Validation
+    if (!email || !password || !submitterType) {
+      return NextResponse.json({ 
+        success: false, 
+        error: 'Email, password, and entity type are required' 
+      }, { status: 400 })
+    }
+    
+    // Password validation
+    if (password.length < 8) {
+      return NextResponse.json({ 
+        success: false, 
+        error: 'Password must be at least 8 characters' 
+      }, { status: 400 })
+    }
+    
+    // Check if email already exists
+    const existingUser = await getUserByEmail(email)
+    if (existingUser) {
+      const isStaff = [5, 6, 7, 8].includes(existingUser.roleId)
+      return NextResponse.json({ 
+        success: false, 
+        exists: true,
+        isStaff,
+        error: isStaff 
+          ? 'This email is already registered as a staff member. Please sign in with your existing credentials to access both portals.'
+          : 'An account with this email already exists. Please sign in instead.'
+      })
+    }
+    
+    // Determine organization name based on submitter type
+    let organizationName: string | null = null
+    if (submitterType === 'company') {
+      organizationName = companyName
+    } else if (submitterType === 'ministry' || submitterType === 'statutory') {
+      organizationName = selectedMDA
+    } else if (submitterType === 'court') {
+      organizationName = courtName
+    } else if (submitterType === 'attorney') {
+      organizationName = lawFirmName
+    }
+    
+    // Determine position/additional info
+    let position: string | null = null
+    if (submitterType === 'attorney' && barNumber) {
+      position = `Bar #: ${barNumber}`
+    }
+    
+    // Determine status - some types require approval
+    const requiresApproval = ['attorney', 'company'].includes(submitterType)
+    const statusId = requiresApproval ? 1 : 5 // Pending or Active
+    
+    // Create user
+    const newUser = await createUser({
+      email,
+      firstName: firstName || displayName?.split(' ')[0] || '',
+      lastName: lastName || displayName?.split(' ').slice(1).join(' ') || '',
+      phone: phone || null,
+      entityTypeId: ENTITY_TYPE_MAP[submitterType] || 4,
+      entityNumber,
+      organizationName,
+      departmentId: null,
+      position,
+      roleId: ROLE_MAP[submitterType] || 1,
+      statusId
     })
-
-    cookieStore.set('refresh_token', result.refreshToken!, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 7,
-      path: '/'
+    
+    // Log the activity
+    await logActivity({
+      userId: newUser.userId,
+      userName: `${newUser.firstName} ${newUser.lastName}`,
+      userRole: newUser.roleName || 'New User',
+      activityType: 'registration',
+      activityDescription: `New ${submitterType} user registered`,
+      entityType: 'User',
+      entityId: newUser.userId,
+      entityReference: entityNumber
     })
-
+    
     return NextResponse.json({
       success: true,
-      user: result.user,
-      accessToken: result.accessToken
+      userId: newUser.userId,
+      entityNumber,
+      requiresApproval,
+      message: requiresApproval 
+        ? 'Registration submitted successfully. Your account is pending approval.'
+        : 'Registration successful. You can now sign in.'
     })
+    
   } catch (error) {
     console.error('Registration error:', error)
-    return NextResponse.json(
-      { error: 'An error occurred during registration' },
-      { status: 500 }
-    )
+    return NextResponse.json({ 
+      success: false, 
+      error: 'Registration failed. Please try again.' 
+    }, { status: 500 })
   }
 }

@@ -255,6 +255,29 @@ export const MOCK_USERS: UserProfile[] = [
     roleName: 'Public User',
     statusName: 'Active'
   },
+  // Manager user for testing unified auth
+  {
+    userId: '550e8400-e29b-41d4-a716-446655440006',
+    email: 'manager@sgc.gov.bb',
+    firstName: 'Patricia',
+    lastName: 'Manager',
+    phone: '246-555-0006',
+    entityTypeId: 1,
+    entityNumber: 'SGC-MGR-001',
+    organizationName: "Solicitor General's Chambers",
+    departmentId: 1,
+    position: 'Legal Manager',
+    roleId: 7, // Admin role - can access both portals
+    statusId: 5,
+    emailVerified: true,
+    lastLoginAt: new Date(),
+    createdAt: new Date('2024-01-10'),
+    updatedAt: new Date(),
+    entityTypeName: 'Ministry',
+    departmentName: "Solicitor General's Chambers",
+    roleName: 'Administrator',
+    statusName: 'Active'
+  },
 ]
 
 // =============================================
