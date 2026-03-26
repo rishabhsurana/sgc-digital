@@ -609,7 +609,8 @@ For contracts with multiple parties (joint ventures, subcontractors):
 | 12 | `012-drafts-failed-submissions.sql` | Draft & failed submission handling |
 | 13 | `013-workflow-corrections-stages.sql` | Workflow, corrections & stage duration tracking |
 | 14 | `014-renewal-supplemental-validation.sql` | Renewal/supplemental validation & entity ownership |
-| 15 | `015-missing-columns-audit-fix.sql` | **Audit fix: missing form fields, SLA, sessions, audit log** |
+| 15 | `015-missing-columns-audit-fix.sql` | Audit fix: missing form fields, SLA, sessions, audit log |
+| 16 | `016-correction-response-tracking.sql` | **Correction response: data changes, drafts, documents, field history** |
 
 **OR use `CONSOLIDATED_SCHEMA.sql` for single-file deployment.**
 
@@ -625,4 +626,5 @@ For contracts with multiple parties (joint ventures, subcontractors):
 | 1.3 | 2024 | Added draft/failed submission handling with retry functionality |
 | 1.4 | 2024 | Added workflow, corrections & stage duration tracking |
 | 1.5 | 2024 | Added renewal/supplemental validation |
-| 1.6 | 2024 | **Comprehensive audit fix: Missing form columns (CorrespondenceRegister: ContactUnit, MinistryFileReference, UrgentReason; Entities: CourtName, LawFirmName, BarNumber), Contract financial/legal fields, LookupDisputeResolutionMethods, LookupAuthorizedSignatories, PasswordResetTokens, UserSessions, AuditLog, SLA tracking columns, notification tracking, sp_CalculateSLADates, sp_UpdateOverdueStatus, sp_LogAuditEntry** |
+| 1.6 | 2024 | Comprehensive audit fix: missing form columns, SLA, sessions, audit log |
+| 1.7 | 2024 | **Correction response tracking: ContractCorrectionDataChanges, CorrespondenceCorrectionDataChanges, ContractCorrectionResponseDrafts, CorrespondenceCorrectionResponseDrafts, CorrectionDocuments, ContractFieldVersionHistory, sp_SubmitContractCorrections, vw_ApplicantPendingCorrections, vw_CorrectionChangeSummary** |
