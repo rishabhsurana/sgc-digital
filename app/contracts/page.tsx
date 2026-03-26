@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect, useCallback, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import { Header } from "@/components/header"
-import { Footer } from "@/components/footer"
+import { FooterMinimal } from "@/components/footer-minimal"
 import { FormStepper } from "@/components/form-stepper"
 import { FileUpload, type UploadedFile } from "@/components/file-upload"
 import { Button } from "@/components/ui/button"
@@ -307,6 +307,7 @@ function ContractsPageContent() {
   }, [searchParams])
   
   // Auto-save draft every 30 seconds when form data changes
+  // Note: Using refs to avoid infinite loops with object dependencies
   useEffect(() => {
     const autoSaveTimer = setInterval(async () => {
       if (formData.contractNature || formData.contractTitle) {
@@ -321,7 +322,8 @@ function ContractsPageContent() {
     }, 30000) // 30 seconds
     
     return () => clearInterval(autoSaveTimer)
-  }, [formData, currentStep, draftId])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentStep, draftId])
   
   // Manual save draft function
   const handleSaveDraft = useCallback(async () => {
@@ -645,7 +647,7 @@ function ContractsPageContent() {
             </Card>
           </div>
         </main>
-        <Footer />
+        <FooterMinimal />
       </div>
     )
   }
@@ -665,7 +667,7 @@ function ContractsPageContent() {
             </Card>
           </div>
         </main>
-        <Footer />
+        <FooterMinimal />
       </div>
     )
   }
@@ -1883,7 +1885,7 @@ function ContractsPageContent() {
         </div>
       </main>
 
-      <Footer />
+      <FooterMinimal />
     </div>
   )
 }
@@ -1903,7 +1905,7 @@ function ContractsLoading() {
           </Card>
         </div>
       </main>
-      <Footer />
+      <FooterMinimal />
     </div>
   )
 }

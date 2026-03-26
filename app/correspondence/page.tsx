@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import { Header } from "@/components/header"
-import { Footer } from "@/components/footer"
+import { FooterMinimal } from "@/components/footer-minimal"
 import { FormStepper } from "@/components/form-stepper"
 import { FileUpload, type UploadedFile } from "@/components/file-upload"
 import { Button } from "@/components/ui/button"
@@ -168,6 +168,7 @@ function CorrespondencePageContent() {
   }, [searchParams])
   
   // Auto-save draft every 30 seconds
+  // Note: Using interval with current state - dependencies kept minimal to avoid infinite loops
   useEffect(() => {
     const autoSaveTimer = setInterval(async () => {
       if (formData.correspondenceType || formData.subject) {
@@ -181,7 +182,8 @@ function CorrespondencePageContent() {
     }, 30000)
     
     return () => clearInterval(autoSaveTimer)
-  }, [formData, currentStep, draftId])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentStep, draftId])
   
   // Manual save draft
   const handleSaveDraft = useCallback(async () => {
@@ -281,7 +283,7 @@ function CorrespondencePageContent() {
             </Card>
           </div>
         </main>
-        <Footer />
+        <FooterMinimal />
       </div>
     )
   }
@@ -366,7 +368,7 @@ function CorrespondencePageContent() {
             </Card>
           </div>
         </main>
-        <Footer />
+        <FooterMinimal />
       </div>
     )
   }
@@ -863,7 +865,7 @@ function CorrespondencePageContent() {
         </div>
       </main>
 
-      <Footer />
+      <FooterMinimal />
     </div>
   )
 }
@@ -883,7 +885,7 @@ function CorrespondenceLoading() {
           </Card>
         </div>
       </main>
-      <Footer />
+      <FooterMinimal />
     </div>
   )
 }
