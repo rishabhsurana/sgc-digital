@@ -159,13 +159,13 @@ export default function ManagementLandingPage() {
                   </Link>
                 </Button>
                 <Button size="lg" className="w-full sm:w-48 bg-blue-600 hover:bg-blue-700 text-white shadow-lg" asChild>
-                  <Link href={getLink("/management/monitoring")}>
+                  <Link href={getLink("/management/activity")}>
                     <BarChart3 className="mr-2 h-5 w-5" />
                     Monitoring
                   </Link>
                 </Button>
                 <Button size="lg" className="w-full sm:w-48 bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg" asChild>
-                  <Link href={getLink("/management/transactions")}>
+                  <Link href={getLink("/management/correspondence-history")}>
                     <History className="mr-2 h-5 w-5" />
                     Transaction History
                   </Link>
