@@ -2,7 +2,48 @@ import Link from "next/link"
 import Image from "next/image"
 import { FileText, FileSignature, LayoutDashboard, BarChart3, HelpCircle, Mail, Shield, Phone, MapPin } from "lucide-react"
 
-export function Footer() {
+interface FooterProps {
+  compact?: boolean
+}
+
+export function Footer({ compact = false }: FooterProps) {
+  // Compact footer for form pages - just the bottom bar
+  if (compact) {
+    return (
+      <footer className="border-t border-primary/20 mt-auto">
+        <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white">
+          <div className="flex h-10 items-center justify-between px-4 lg:px-6 text-xs">
+            <div className="flex items-center gap-3">
+              <Image
+                src="/images/barbados-coat-of-arms.png"
+                alt="Barbados Coat of Arms"
+                width={28}
+                height={28}
+              />
+              <span className="font-medium hidden sm:inline">Government of Barbados</span>
+              <span className="hidden sm:inline mx-2 opacity-50">|</span>
+              <span className="hidden sm:inline text-white/70">© {new Date().getFullYear()}</span>
+            </div>
+            <div className="flex items-center gap-4">
+              <Link href="/help" className="hover:underline">Help</Link>
+              <Link href="/privacy" className="hover:underline">Privacy</Link>
+              <Link href="/contact" className="hover:underline">Contact</Link>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="font-medium hidden sm:inline">SGC Digital</span>
+              <Image
+                src="/images/sgc-digital-logo.png"
+                alt="SGC Digital"
+                width={28}
+                height={28}
+              />
+            </div>
+          </div>
+        </div>
+      </footer>
+    )
+  }
+
   return (
     <footer className="border-t border-primary/20">
       {/* Main Footer */}

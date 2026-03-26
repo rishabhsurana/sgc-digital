@@ -647,7 +647,7 @@ function ContractsPageContent() {
             </Card>
           </div>
         </main>
-        <Footer />
+        <Footer compact />
       </div>
     )
   }
@@ -667,7 +667,7 @@ function ContractsPageContent() {
             </Card>
           </div>
         </main>
-        <Footer />
+        <Footer compact />
       </div>
     )
   }
@@ -1885,7 +1885,7 @@ function ContractsPageContent() {
         </div>
       </main>
 
-      <Footer />
+      <Footer compact />
     </div>
   )
 }
@@ -1905,7 +1905,7 @@ function ContractsLoading() {
           </Card>
         </div>
       </main>
-      <Footer />
+      <Footer compact />
     </div>
   )
 }

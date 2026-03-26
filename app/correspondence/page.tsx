@@ -283,7 +283,7 @@ function CorrespondencePageContent() {
             </Card>
           </div>
         </main>
-        <Footer />
+        <Footer compact />
       </div>
     )
   }
@@ -368,7 +368,7 @@ function CorrespondencePageContent() {
             </Card>
           </div>
         </main>
-        <Footer />
+        <Footer compact />
       </div>
     )
   }
@@ -865,7 +865,7 @@ function CorrespondencePageContent() {
         </div>
       </main>
 
-      <Footer />
+      <Footer compact />
     </div>
   )
 }
@@ -885,7 +885,7 @@ function CorrespondenceLoading() {
           </Card>
         </div>
       </main>
-      <Footer />
+      <Footer compact />
     </div>
   )
 }
