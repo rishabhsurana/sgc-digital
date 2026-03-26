@@ -121,6 +121,12 @@ export default function ManagementLandingPage() {
               
               {/* Quick Action Buttons */}
               <div className="mt-10 grid grid-cols-2 sm:flex sm:flex-row items-center justify-center gap-4">
+                <Button size="lg" className="w-full sm:w-48 bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg" asChild>
+                  <Link href="/management/login?redirect=/management">
+                    <LayoutDashboard className="mr-2 h-5 w-5" />
+                    Dashboard
+                  </Link>
+                </Button>
                 <Button size="lg" className="w-full sm:w-48 bg-blue-600 hover:bg-blue-700 text-white shadow-lg" asChild>
                   <Link href="/management/login?redirect=/management/monitoring">
                     <BarChart3 className="mr-2 h-5 w-5" />
@@ -137,12 +143,6 @@ export default function ManagementLandingPage() {
                   <Link href="/management/login?redirect=/management/status">
                     <CheckCircle className="mr-2 h-5 w-5" />
                     Status
-                  </Link>
-                </Button>
-                <Button size="lg" className="w-full sm:w-48 bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg" asChild>
-                  <Link href="/management/login?redirect=/management">
-                    <LayoutDashboard className="mr-2 h-5 w-5" />
-                    Dashboard
                   </Link>
                 </Button>
               </div>
