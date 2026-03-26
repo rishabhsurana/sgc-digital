@@ -216,9 +216,18 @@ function SidebarContent({ pathname, adminSession, onSignOut }: { pathname: strin
       {/* Footer */}
       <div className="border-t border-primary/10 p-4 space-y-2">
         <Button variant="ghost" size="sm" className="w-full justify-start" asChild>
-          <Link href="/">
+          <Link href="/management/landing">
             <Home className="mr-2 h-4 w-4" />
-            Back to Main Site
+            Management Home
+          </Link>
+        </Button>
+        <Button variant="ghost" size="sm" className="w-full justify-start text-blue-600 hover:text-blue-700" asChild>
+          <Link href="/">
+            <svg className="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="10" strokeWidth="2"/>
+              <path strokeWidth="2" d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+            </svg>
+            SGC Public Portal
           </Link>
         </Button>
         <Button 
