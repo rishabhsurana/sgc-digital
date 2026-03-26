@@ -99,14 +99,22 @@ export default function LoginPage() {
                     className="h-11"
                   />
                 </div>
-                <Button type="submit" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground shadow-md" size="lg" disabled={isLoading}>
+                <Button 
+                  type="submit" 
+                  className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-medium shadow-lg" 
+                  size="lg" 
+                  disabled={isLoading}
+                >
                   {isLoading ? (
-                    "Signing in..."
+                    <span className="flex items-center gap-2">
+                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                      Signing in...
+                    </span>
                   ) : (
-                    <>
-                      <LogIn className="mr-2 h-4 w-4" />
+                    <span className="flex items-center gap-2">
+                      <LogIn className="h-4 w-4" />
                       Sign In
-                    </>
+                    </span>
                   )}
                 </Button>
               </form>
