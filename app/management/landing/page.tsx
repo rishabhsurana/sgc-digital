@@ -61,21 +61,6 @@ export default function ManagementLandingPage() {
                   </Link>
                 </Button>
               </div>
-              
-              {/* Sign In / Request Access */}
-              <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
-                <Button size="lg" variant="secondary" asChild className="min-w-[180px]">
-                  <Link href="/management/login">
-                    Sign In
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Link>
-                </Button>
-                <Button size="lg" variant="outline" asChild className="min-w-[180px] bg-transparent border-white/30 text-white hover:bg-white/10">
-                  <Link href="/management/register">
-                    Request Access
-                  </Link>
-                </Button>
-              </div>
             </div>
           </div>
         </section>
