@@ -65,7 +65,7 @@ export default function ManagementLandingPage() {
               </Link>
             </Button>
             
-            <Button variant="ghost" size="sm" className="hidden sm:flex hover:bg-primary/10 hover:text-primary" asChild>
+            <Button size="sm" className="hidden sm:flex bg-slate-700 hover:bg-slate-800 text-white" asChild>
               <Link href="/management/login">
                 <LogIn className="mr-2 h-4 w-4" />
                 Sign In
