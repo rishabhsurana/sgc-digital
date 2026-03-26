@@ -6,9 +6,9 @@ import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { 
   Menu, User, LogIn, FileText, FileSignature, 
-  LayoutDashboard, BarChart3, Home, ChevronDown, Settings 
+  LayoutDashboard, BarChart3, Home, ChevronDown, Settings, Shield 
 } from "lucide-react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,6 +18,13 @@ import {
 
 export function Header() {
   const [isOpen, setIsOpen] = useState(false)
+  const [isManagementUser, setIsManagementUser] = useState(false)
+
+  useEffect(() => {
+    // Check if user is logged in as management
+    const adminSession = sessionStorage.getItem("sgc_admin")
+    setIsManagementUser(!!adminSession)
+  }, [])
 
   return (
     <header className="sticky top-0 z-50 w-full">
@@ -103,6 +110,14 @@ export function Header() {
           </nav>
 
           <div className="flex items-center gap-2">
+            {isManagementUser && (
+              <Button size="sm" className="hidden sm:flex bg-indigo-600 hover:bg-indigo-700 text-white shadow-md" asChild>
+                <Link href="/management/landing">
+                  <Shield className="mr-2 h-4 w-4" />
+                  Management Portal
+                </Link>
+              </Button>
+            )}
             <Button variant="ghost" size="sm" className="hidden sm:flex hover:bg-primary/10 hover:text-primary" asChild>
               <Link href="/login">
                 <LogIn className="mr-2 h-4 w-4" />
@@ -189,6 +204,16 @@ export function Header() {
                   
                   <hr className="my-4 border-primary/20" />
                   
+                  {isManagementUser && (
+                    <Link 
+                      href="/management/landing" 
+                      onClick={() => setIsOpen(false)}
+                      className="flex items-center gap-3 px-4 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium mb-2"
+                    >
+                      <Shield className="h-5 w-5" />
+                      Management Portal
+                    </Link>
+                  )}
                   <Link 
                     href="/login" 
                     onClick={() => setIsOpen(false)}
