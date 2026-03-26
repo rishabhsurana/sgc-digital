@@ -1,9 +1,9 @@
 # SGC Digital - Complete Database Table List
 
-**Version:** 1.2.0  
+**Version:** 1.3.0  
 **Last Updated:** 2024  
-**Total Tables:** 90+  
-**Total Views:** 20+
+**Total Tables:** 100+  
+**Total Views:** 25+
 
 ---
 
@@ -14,17 +14,19 @@
 | Lookup Tables (Core) | 8 |
 | Lookup Tables (Contracts) | 9 |
 | Lookup Tables (Correspondence) | 5 |
+| **Lookup Tables (Submissions)** | **1** |
 | User & Entity Tables | 8 |
 | Correspondence Tables | 4 |
 | Contract Tables | 13 |
 | Contract Renewals Tables | 3 |
 | Document Requirements Tables | 2 |
+| **Draft & Failed Submissions Tables** | **6** |
 | Tracking & Notifications Tables | 5 |
 | Audit & Activity Tables | 3 |
 | Reporting & Analytics Tables | 8 |
 | Ask Rex AI Tables | 9 |
 | System Configuration Tables | 4 |
-| **TOTAL TABLES** | **~90** |
+| **TOTAL TABLES** | **~100** |
 
 ---
 
@@ -68,6 +70,26 @@
 | 3 | `LookupUrgencyLevels` | Urgency levels | UrgencyId, UrgencyCode, SLAMultiplier |
 | 4 | `LookupConfidentialityLevels` | Confidentiality | ConfidentialityId, AccessRestrictions |
 | 5 | `LookupCorrespondenceDocumentTypes` | Document types | DocumentTypeId, DocumentTypeName |
+
+---
+
+## MODULE 3B: LOOKUP TABLES - Submission Status (1 Table)
+
+| # | Table Name | Purpose | Key Columns |
+|---|------------|---------|-------------|
+| 1 | `LookupSubmissionStatus` | Draft/submission statuses | SubmissionStatusId, StatusCode, AllowsRetry, ShowInDashboard |
+
+**Submission Status Values:**
+| Status | Description | Allows Retry |
+|--------|-------------|--------------|
+| `DRAFT` | Saved as draft - user can continue | Yes |
+| `IN_PROGRESS` | User actively working | Yes |
+| `VALIDATION_FAILED` | Form validation failed | Yes |
+| `SUBMISSION_FAILED` | Technical error - can retry | Yes |
+| `PENDING_DOCUMENTS` | Awaiting document upload | Yes |
+| `SUBMITTED` | Successfully submitted | No |
+| `EXPIRED` | Draft expired | No |
+| `ABANDONED` | User abandoned | No |
 
 ---
 
@@ -138,6 +160,44 @@
 |---|------------|---------|-------------|
 | 1 | `ContractDocumentRequirements` | Documents by nature/category | RequirementId, DocumentTypeId, ContractNatureId, IsRequired |
 | 2 | `CorrespondenceDocumentRequirements` | Documents by type/submitter | RequirementId, DocumentTypeId, CorrespondenceTypeId |
+
+---
+
+## MODULE 8B: DRAFT & FAILED SUBMISSIONS (6 Tables)
+
+This module handles **saving drafts**, **failed submissions**, and **retry functionality**.
+
+### Draft Tables
+
+| # | Table Name | Purpose | Key Columns |
+|---|------------|---------|-------------|
+| 1 | `ContractDrafts` | **Saved contract drafts** | DraftId, UserId, FormData (JSON), SubmissionStatusId, CurrentStep, ProgressPercentage, SubmissionAttempts, LastSubmissionError, ExpiresAt |
+| 2 | `CorrespondenceDrafts` | **Saved correspondence drafts** | DraftId, UserId, FormData (JSON), SubmissionStatusId, CurrentStep, ProgressPercentage, SubmissionAttempts, LastSubmissionError, ExpiresAt |
+| 3 | `DraftDocuments` | **Documents uploaded to drafts** | DocumentId, ContractDraftId, CorrespondenceDraftId, FileName, FilePath |
+
+### Submission Tracking Tables
+
+| # | Table Name | Purpose | Key Columns |
+|---|------------|---------|-------------|
+| 4 | `SubmissionAttempts` | **History of all submission attempts** | AttemptId, ContractDraftId, CorrespondenceDraftId, AttemptNumber, WasSuccessful, ErrorType, ErrorMessage |
+| 5 | `FailedSubmissionNotifications` | **Notifications for failed submissions** | NotificationId, UserId, ContractDraftId, Title, Message, RetryUrl, IsRead |
+
+### Key Features
+
+**Draft Auto-Save:**
+- Forms auto-save to `ContractDrafts` or `CorrespondenceDrafts` as JSON
+- Tracks current step and progress percentage
+- Expires after 30 days
+
+**Failed Submission Handling:**
+- Each attempt logged in `SubmissionAttempts`
+- Error type categorized (VALIDATION, NETWORK, SERVER, TIMEOUT)
+- User receives notification with direct retry link
+- Dashboard shows failed submissions with "Resume" button
+
+**Retry URL Format:**
+- `/contracts?draft={DraftId}` - Resume contract submission
+- `/correspondence?draft={DraftId}` - Resume correspondence submission
 
 ---
 
@@ -429,7 +489,14 @@ For contracts with multiple parties (joint ventures, subcontractors):
 | 2 | `002-correspondence.sql` | Correspondence tables |
 | 3 | `003-contracts.sql` | Base contract tables |
 | 4 | `004-audit-activity.sql` | Audit logging |
-| 5 | `005-views-reports.sql` | Views and reports |
+| 5 | `005-views-reports.sql` | Views |
+| 6 | `006-renewals-and-tracking.sql` | Renewals and SLA tracking |
+| 7 | `007-entities-reports-comprehensive.sql` | Entities and reporting |
+| 8 | `008-ask-rex-ai-assistant.sql` | Ask Rex AI tables |
+| 9 | `009-missing-fields-comprehensive.sql` | Categories, instruments, funding |
+| 10 | `010-document-requirements-junction.sql` | Document requirements by category |
+| 11 | `011-contracts-complete-fields.sql` | All contract fields (70+ columns) |
+| 12 | `012-drafts-failed-submissions.sql` | **Draft & failed submission handling** and reports |
 | 6 | `006-renewals-and-tracking.sql` | Renewals and SLA |
 | 7 | `007-entities-reports-comprehensive.sql` | Entities and reporting |
 | 8 | `008-ask-rex-ai-assistant.sql` | Ask Rex AI tables |
