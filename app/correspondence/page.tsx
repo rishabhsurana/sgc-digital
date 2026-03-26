@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import { Header } from "@/components/header"
-import { FooterMinimal } from "@/components/footer-minimal"
+import { Footer } from "@/components/footer"
 import { FormStepper } from "@/components/form-stepper"
 import { FileUpload, type UploadedFile } from "@/components/file-upload"
 import { Button } from "@/components/ui/button"
@@ -283,7 +283,7 @@ function CorrespondencePageContent() {
             </Card>
           </div>
         </main>
-        <FooterMinimal />
+        <Footer />
       </div>
     )
   }
@@ -368,7 +368,7 @@ function CorrespondencePageContent() {
             </Card>
           </div>
         </main>
-        <FooterMinimal />
+        <Footer />
       </div>
     )
   }
@@ -865,7 +865,7 @@ function CorrespondencePageContent() {
         </div>
       </main>
 
-      <FooterMinimal />
+      <Footer />
     </div>
   )
 }
@@ -885,7 +885,7 @@ function CorrespondenceLoading() {
           </Card>
         </div>
       </main>
-      <FooterMinimal />
+      <Footer />
     </div>
   )
 }
