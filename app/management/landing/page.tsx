@@ -45,13 +45,16 @@ export default function ManagementLandingPage() {
         {/* Main Navigation */}
         <div className="border-b border-primary/20 bg-gradient-to-r from-card via-card to-primary/5 backdrop-blur supports-[backdrop-filter]:bg-card/95">
           <div className="flex h-16 items-center justify-between px-4 lg:px-6">
-            {/* SGC Digital Branding */}
+            {/* SGC Digital Branding - Same as public portal header */}
             <Link href="/management/landing" className="flex items-center group">
               <div>
                 <p className="text-base font-bold text-primary group-hover:text-primary/80 transition-colors">SGC Digital</p>
                 <p className="text-xs text-muted-foreground font-medium">Management Portal</p>
               </div>
             </Link>
+
+            {/* Spacer for nav alignment - same structure as public header */}
+            <nav className="hidden items-center gap-1 lg:flex" />
 
             <div className="flex items-center gap-2">
               {/* SGC Public Portal Button */}
