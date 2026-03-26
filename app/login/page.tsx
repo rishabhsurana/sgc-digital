@@ -51,10 +51,10 @@ export default function LoginPage() {
           <Card className="bg-card border-border overflow-hidden">
             {/* Header Banner */}
             <div className="bg-gradient-to-r from-primary to-primary/80 px-6 py-8 text-center">
-              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-white/20 backdrop-blur shadow-lg">
-                <span className="font-serif text-xl font-bold text-white">SGC</span>
+              <div className="mx-auto mb-4 flex h-14 w-auto px-3 items-center justify-center rounded-xl bg-white/20 backdrop-blur shadow-lg">
+                <span className="font-serif text-base font-semibold text-white">SGC Digital</span>
               </div>
-              <h1 className="text-2xl font-bold text-white">Welcome Back</h1>
+              <h1 className="text-2xl font-medium text-white">Welcome Back</h1>
               <p className="text-primary-foreground/80 mt-1">
                 Sign in to SGC Digital
               </p>

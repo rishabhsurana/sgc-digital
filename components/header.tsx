@@ -8,7 +8,7 @@ import {
   Menu, User, LogIn, FileText, FileSignature, 
   LayoutDashboard, BarChart3, Home, ChevronDown, Settings, Shield 
 } from "lucide-react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,8 +20,33 @@ interface HeaderProps {
   isStaff?: boolean
 }
 
-export function Header({ isStaff = false }: HeaderProps) {
+export function Header({ isStaff: isStaffProp = false }: HeaderProps) {
   const [isOpen, setIsOpen] = useState(false)
+  const [isStaff, setIsStaff] = useState(isStaffProp)
+
+  useEffect(() => {
+    // Check for staff session via client-readable cookie
+    const checkStaffStatus = () => {
+      // Check the simple staff flag cookie
+      const cookies = document.cookie.split(';')
+      const staffCookie = cookies.find(c => c.trim().startsWith('sgc_is_staff='))
+      if (staffCookie) {
+        const value = staffCookie.split('=')[1]?.trim()
+        if (value === '1') {
+          setIsStaff(true)
+          return
+        }
+      }
+      
+      // Fallback to sessionStorage for backwards compatibility
+      const adminSession = sessionStorage.getItem("sgc_admin")
+      if (adminSession) {
+        setIsStaff(true)
+      }
+    }
+    
+    checkStaffStatus()
+  }, [isStaffProp])
 
   return (
     <header className="sticky top-0 z-50 w-full">

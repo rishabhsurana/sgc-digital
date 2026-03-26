@@ -64,6 +64,17 @@ async function createSession(user: UserProfile): Promise<string> {
     path: '/'
   })
   
+  // Set a client-readable cookie for UI state (staff check)
+  // Staff roles: Staff (5), Supervisor (6), Admin (7), Super Admin (8)
+  const isStaff = [5, 6, 7, 8].includes(user.roleId)
+  cookieStore.set('sgc_is_staff', isStaff ? '1' : '0', {
+    httpOnly: false, // Client can read this
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    maxAge: SESSION_DURATION / 1000,
+    path: '/'
+  })
+  
   return sessionToken
 }
 
@@ -95,6 +106,7 @@ export async function getSession(): Promise<SessionData | null> {
 export async function clearSession(): Promise<void> {
   const cookieStore = await cookies()
   cookieStore.delete(SESSION_COOKIE_NAME)
+  cookieStore.delete('sgc_is_staff')
 }
 
 // =============================================
