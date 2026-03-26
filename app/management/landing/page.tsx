@@ -2,6 +2,7 @@ import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
 import { AskRex } from "@/components/ask-rex"
 import Link from "next/link"
+import Image from "next/image"
 import { 
   CheckCircle,
   BarChart3,
@@ -15,9 +16,35 @@ import {
 export default function ManagementLandingPage() {
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      {/* Management Portal Header - Same structure as public portal */}
-      <header className="sticky top-0 z-50 w-full border-b border-primary/20 bg-gradient-to-r from-card via-card to-primary/5 backdrop-blur supports-[backdrop-filter]:bg-card/95">
-        <div className="flex h-16 items-center justify-between px-4 lg:px-6">
+      {/* Management Portal Header */}
+      <header className="sticky top-0 z-50 w-full">
+        {/* Top Bar with Government Branding */}
+        <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white">
+          <div className="flex h-10 items-center justify-between px-4 lg:px-6 text-xs">
+            <div className="flex items-center gap-3">
+              <Image
+                src="/images/barbados-coat-of-arms.png"
+                alt="Government of Barbados"
+                width={28}
+                height={28}
+              />
+              <div className="hidden sm:flex items-center">
+                <span className="font-semibold">Government of Barbados</span>
+                <span className="mx-2 opacity-50">|</span>
+                <span className="opacity-90">Solicitor General{"'"}s Chambers</span>
+              </div>
+              <span className="sm:hidden font-medium">Gov. of Barbados</span>
+            </div>
+            <div className="hidden sm:flex items-center gap-4">
+              <Link href="/help" className="hover:underline">Help</Link>
+              <Link href="/contact" className="hover:underline">Contact</Link>
+            </div>
+          </div>
+        </div>
+        
+        {/* Main Navigation */}
+        <div className="border-b border-primary/20 bg-gradient-to-r from-card via-card to-primary/5 backdrop-blur supports-[backdrop-filter]:bg-card/95">
+          <div className="flex h-16 items-center justify-between px-4 lg:px-6">
           {/* SGC Digital Branding */}
           <Link href="/management/landing" className="flex items-center group">
             <div>
@@ -63,6 +90,7 @@ export default function ManagementLandingPage() {
               </Link>
             </Button>
           </div>
+        </div>
         </div>
       </header>
       <AskRex position="content" />
