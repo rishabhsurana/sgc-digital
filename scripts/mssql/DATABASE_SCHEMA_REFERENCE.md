@@ -51,6 +51,7 @@ This document provides a comprehensive overview of all database tables, their re
 | `006-renewals-and-tracking.sql` | Contract renewals, SLA tracking, notifications, email queue |
 | `007-entities-reports-comprehensive.sql` | Entity master table, comprehensive reporting |
 | `008-ask-rex-ai-assistant.sql` | Ask Rex AI assistant tables (sessions, messages, search queries, feedback) |
+| `009-missing-fields-comprehensive.sql` | **NEW** - All missing fields from application forms (categories, instruments, funding, etc.) |
 | **`CONSOLIDATED_SCHEMA.sql`** | **Single file with ALL tables in correct order - USE THIS FOR DEPLOYMENT**
 
 ---
@@ -105,19 +106,39 @@ This document provides a comprehensive overview of all database tables, their re
 
 ### 1. LOOKUP TABLES (Reference Data)
 
+#### Core Lookups
 | Table | Purpose | Key Fields |
 |-------|---------|------------|
 | `LookupUserRoles` | User roles (Public, Attorney, Staff, Admin, etc.) | RoleId, RoleCode, RoleName |
 | `LookupEntityTypes` | Entity types (Ministry, Court, Public, Attorney, Company) | EntityTypeId, EntityTypeCode |
 | `LookupDepartments` | Government departments/MDAs | DepartmentId, DepartmentCode, Ministry |
 | `LookupRequestStatus` | Registration/request statuses | StatusId, StatusCode (PENDING, APPROVED, etc.) |
-| `LookupCorrespondenceTypes` | Correspondence categories | CorrespondenceTypeId, TypeCode |
-| `LookupContractTypes` | Contract types (Goods, Services, Works, etc.) | ContractTypeId, TypeCode |
-| `LookupContractNature` | Contract nature (Domestic, International, etc.) | ContractNatureId, NatureCode |
 | `LookupPriorityLevels` | Priority levels with SLA days | PriorityId, SLADays |
 | `LookupCaseStatus` | Case/application status | CaseStatusId, StatusCategory |
 | `LookupCurrencies` | Supported currencies | CurrencyId, CurrencyCode, Symbol |
+| `LookupCountries` | Countries for contractor addresses | CountryId, CountryCode, IsCaribbean |
+
+#### Contract-Specific Lookups
+| Table | Purpose | Key Fields |
+|-------|---------|------------|
+| `LookupContractTypes` | Contract types (New, Renewal, Supplemental) | ContractTypeId, TypeCode |
+| `LookupContractNature` | Contract nature (Goods, Consultancy, Works) | ContractNatureId, NatureCode |
+| `LookupContractCategories` | Categories by nature (Procurement, Lease, MOU, etc.) | CategoryId, ApplicableNatures |
+| `LookupContractInstruments` | Instruments by nature (Goods, Uniforms, Consultancy-Company, etc.) | InstrumentId, ApplicableNatures |
+| `LookupContractorTypes` | Contractor types (Company, Individual, Joint Venture, etc.) | ContractorTypeId, TypeCode |
+| `LookupFundingSources` | Funding sources (Budget Recurrent/Capital, Grant, Loan, etc.) | FundingSourceId, SourceCode |
+| `LookupProcurementMethods` | Procurement methods (Open Tender, Single Source, etc.) | ProcurementMethodId, RequiresSingleSourceApproval |
+| `LookupContractDocumentTypes` | Required/optional document types per nature | DocumentTypeId, ApplicableNatures, IsRequired |
 | `LookupRenewalStatus` | Renewal-specific statuses | RenewalStatusId, StatusCode |
+
+#### Correspondence-Specific Lookups
+| Table | Purpose | Key Fields |
+|-------|---------|------------|
+| `LookupCorrespondenceTypes` | Types (General, Litigation, Advisory, Cabinet, etc.) | CorrespondenceTypeId, TypeCode |
+| `LookupSubmitterTypes` | Submitter types (Ministry, Court, Public, Attorney, etc.) | SubmitterTypeId, RequiresOrganization |
+| `LookupUrgencyLevels` | Urgency levels (Standard, Urgent) | UrgencyId, RequiresJustification, SLAMultiplier |
+| `LookupConfidentialityLevels` | Confidentiality (Standard, Confidential, Cabinet) | ConfidentialityId, AccessRestrictions |
+| `LookupCorrespondenceDocumentTypes` | Document types for correspondence | DocumentTypeId, DocumentTypeName |
 
 ### 2. USER MANAGEMENT TABLES
 
@@ -374,7 +395,76 @@ To download the database schema:
 
 | Object Type | Count |
 |-------------|-------|
-| Tables | 60+ |
-| Views | 10+ |
-| Indexes | 80+ |
+| Tables | 75+ |
+| Lookup Tables | 25+ |
+| Views | 15+ |
+| Indexes | 100+ |
 | Stored Procedures | 0 (use ORM) |
+
+---
+
+## New Tables in 009-missing-fields-comprehensive.sql
+
+This script adds all the missing fields that were captured in the application forms but not in the original database schema:
+
+### New Lookup Tables Added
+
+| Table | Purpose | Seed Data |
+|-------|---------|-----------|
+| `LookupContractCategories` | Categories like Procurement, Lease, MOU, Construction | 7 categories |
+| `LookupContractInstruments` | Instruments like Goods, Uniforms, Consultancy-Company, Works | 10 instruments |
+| `LookupContractorTypes` | Company, Individual, Joint Venture, Government, NGO | 5 types |
+| `LookupFundingSources` | Budget (Recurrent/Capital), Grant, Loan, Mixed | 6 sources |
+| `LookupProcurementMethods` | Open Tender, Selective, Single Source, Framework, Direct, Emergency | 6 methods |
+| `LookupCountries` | Caribbean and international countries | 14 countries |
+| `LookupContractDocumentTypes` | All required/optional documents by contract nature | 22 document types |
+| `LookupSubmitterTypes` | Ministry, Court, Statutory, Public, Attorney, Other | 6 types |
+| `LookupUrgencyLevels` | Standard, Urgent (with SLA multiplier) | 2 levels |
+| `LookupConfidentialityLevels` | Standard, Confidential, Cabinet-Level | 3 levels |
+| `LookupCorrespondenceDocumentTypes` | Correspondence, Supporting, Court Doc, Cabinet Paper, etc. | 7 types |
+
+### New Columns Added to ContractsRegister
+
+| Column | Type | Purpose |
+|--------|------|---------|
+| `ContractCategoryId` | INT FK | Links to LookupContractCategories |
+| `ContractInstrumentId` | INT FK | Links to LookupContractInstruments |
+| `ContractInstrumentOther` | NVARCHAR(200) | Custom instrument if "Other" selected |
+| `CategoryOtherJustification` | NVARCHAR(MAX) | Required justification for "Other" category |
+| `IsRenewal` | BIT | Flag for renewal contracts |
+| `IsSupplemental` | BIT | Flag for supplemental contracts |
+| `ParentContractId` | UNIQUEIDENTIFIER FK | Links to original contract for renewals |
+| `ParentContractNumber` | NVARCHAR(100) | Original contract reference number |
+| `MinistryFileReference` | NVARCHAR(100) | Ministry's internal file reference |
+| `ContractorTypeId` | INT FK | Links to LookupContractorTypes |
+| `ContractorCity` | NVARCHAR(100) | Contractor city |
+| `ContractorCountryId` | INT FK | Links to LookupCountries |
+| `CompanyRegistrationNumber` | NVARCHAR(100) | Company registration number |
+| `TaxIdentificationNumber` | NVARCHAR(100) | Tax ID / TIN |
+| `ScopeOfWork` | NVARCHAR(MAX) | Detailed scope of work |
+| `KeyDeliverables` | NVARCHAR(MAX) | List of key deliverables |
+| `FundingSourceId` | INT FK | Links to LookupFundingSources |
+| `ProcurementMethodId` | INT FK | Links to LookupProcurementMethods |
+| `IsSingleSource` | BIT | Flag for single source procurement |
+| `SingleSourceJustification` | NVARCHAR(MAX) | Required justification for single source |
+| `AwardDate` | DATE | Date of contract award |
+| `RenewalTermMonths` | INT | Renewal term in months |
+| `MissingDocumentReason` | NVARCHAR(MAX) | Explanation for missing required documents |
+
+### New Columns Added to CorrespondenceRegister
+
+| Column | Type | Purpose |
+|--------|------|---------|
+| `SubmitterTypeId` | INT FK | Links to LookupSubmitterTypes |
+| `UrgencyId` | INT FK | Links to LookupUrgencyLevels |
+| `UrgentReason` | NVARCHAR(MAX) | Required justification for urgent requests |
+| `ConfidentialityId` | INT FK | Links to LookupConfidentialityLevels |
+| `RegistryFileNumber` | NVARCHAR(100) | SGC Registry file number if known |
+| `CourtFileNumber` | NVARCHAR(100) | Court file number for litigation matters |
+| `MinistryFileReference` | NVARCHAR(100) | Ministry's internal file reference |
+| `ContactUnit` | NVARCHAR(200) | Contact unit/section within organization |
+| `RequestingDepartmentId` | INT FK | Links to LookupDepartments for MDA submitters |
+
+### Document Tables Updates
+
+Both `ContractDocuments` and `CorrespondenceDocuments` tables now have a `DocumentTypeId` foreign key linking to their respective document type lookup tables.

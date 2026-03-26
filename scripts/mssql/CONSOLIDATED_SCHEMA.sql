@@ -1,7 +1,7 @@
 -- =============================================
 -- SGC DIGITAL - CONSOLIDATED DATABASE SCHEMA
 -- =============================================
--- Version: 1.0.1
+-- Version: 1.1.0
 -- Date: 2024
 -- Database: Microsoft SQL Server
 -- 
@@ -10,8 +10,20 @@
 -- 2. Run this script against that database
 -- 3. Scripts are in dependency order - run sequentially
 --
--- TOTAL TABLES: 60+
+-- TOTAL TABLES: 75+
+-- TOTAL LOOKUP TABLES: 25+
 -- TOTAL VIEWS: 15+
+--
+-- SCHEMA FILES INCLUDED:
+-- 001-user-management.sql
+-- 002-correspondence.sql  
+-- 003-contracts.sql
+-- 004-audit-activity.sql
+-- 005-views-reports.sql
+-- 006-renewals-and-tracking.sql
+-- 007-entities-reports-comprehensive.sql
+-- 008-ask-rex-ai-assistant.sql
+-- 009-missing-fields-comprehensive.sql (NEW)
 --
 -- UNIFIED USER MODEL:
 -- -------------------
