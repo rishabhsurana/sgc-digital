@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
@@ -117,7 +117,7 @@ const DOCUMENT_TYPES = [
   { value: "other", label: "Other" }
 ]
 
-export default function CorrespondencePage() {
+function CorrespondencePageContent() {
   const [currentStep, setCurrentStep] = useState(0)
   const [formData, setFormData] = useState({
     correspondenceType: "",
@@ -865,5 +865,34 @@ export default function CorrespondencePage() {
 
       <Footer />
     </div>
+  )
+}
+
+// Loading component for Suspense fallback
+function CorrespondenceLoading() {
+  return (
+    <div className="flex min-h-screen flex-col bg-background">
+      <Header />
+      <main className="flex-1 py-8 lg:py-12">
+        <div className="container mx-auto px-4 lg:px-8 max-w-4xl">
+          <Card className="bg-card border-border">
+            <CardContent className="py-12 text-center">
+              <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto mb-4" />
+              <p className="text-muted-foreground">Loading correspondence form...</p>
+            </CardContent>
+          </Card>
+        </div>
+      </main>
+      <Footer />
+    </div>
+  )
+}
+
+// Export with Suspense boundary for useSearchParams
+export default function CorrespondencePage() {
+  return (
+    <Suspense fallback={<CorrespondenceLoading />}>
+      <CorrespondencePageContent />
+    </Suspense>
   )
 }
