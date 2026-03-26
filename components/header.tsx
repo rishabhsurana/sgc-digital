@@ -111,12 +111,13 @@ export function Header() {
 
           <div className="flex items-center gap-2">
             {isManagementUser && (
-              <Button size="sm" className="hidden sm:flex bg-indigo-600 hover:bg-indigo-700 text-white shadow-md" asChild>
-                <Link href="/management/landing">
-                  <Shield className="mr-2 h-4 w-4" />
-                  Management Portal
-                </Link>
-              </Button>
+              <Link 
+                href="/management/landing"
+                className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-600 hover:text-primary border border-slate-300 rounded-md hover:border-primary/50 transition-colors"
+              >
+                <Shield className="h-3.5 w-3.5" />
+                Staff Portal
+              </Link>
             )}
             <Button variant="ghost" size="sm" className="hidden sm:flex hover:bg-primary/10 hover:text-primary" asChild>
               <Link href="/login">
@@ -208,10 +209,10 @@ export function Header() {
                     <Link 
                       href="/management/landing" 
                       onClick={() => setIsOpen(false)}
-                      className="flex items-center gap-3 px-4 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium mb-2"
+                      className="flex items-center gap-3 px-4 py-2 text-slate-600 border border-slate-300 rounded-lg hover:border-primary/50 hover:text-primary transition-colors text-sm mb-2"
                     >
-                      <Shield className="h-5 w-5" />
-                      Management Portal
+                      <Shield className="h-4 w-4" />
+                      Staff Portal
                     </Link>
                   )}
                   <Link 

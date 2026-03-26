@@ -68,7 +68,7 @@ export default function ManagementLandingPage() {
           <Link href="/management/landing" className="flex items-center group">
             <div>
               <p className="text-base font-bold text-primary group-hover:text-primary/80 transition-colors">SGC Digital</p>
-              <p className="text-xs text-muted-foreground font-medium">Management Portal</p>
+              <p className="text-xs text-muted-foreground font-medium">Correspondence & Contract Management Portal</p>
             </div>
           </Link>
 
