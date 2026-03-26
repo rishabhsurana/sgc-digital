@@ -398,3 +398,227 @@ export interface DashboardSummary {
   activeUsers: number
   pendingStaffRequests: number
 }
+
+// =============================================
+// RENEWAL TYPES
+// =============================================
+
+export interface RenewalStatus {
+  renewalStatusId: number
+  statusCode: string
+  statusName: string
+  description: string | null
+  displayOrder: number
+  isActive: boolean
+}
+
+export interface ContractRenewal {
+  renewalId: string
+  renewalReferenceNumber: string
+  originalContractId: string
+  previousRenewalId: string | null
+  renewalSequence: number
+  isValidRenewal: boolean
+  validationNotes: string | null
+  validatedBy: string | null
+  validatedAt: Date | null
+  renewalReason: string
+  renewalJustification: string | null
+  // Original Contract Summary
+  originalContractNumber: string
+  originalContractTitle: string
+  originalStartDate: Date
+  originalEndDate: Date
+  originalValue: number
+  // Proposed Terms
+  proposedStartDate: Date
+  proposedEndDate: Date
+  proposedValue: number
+  currencyId: number
+  proposedDurationMonths: number | null
+  valueChange: number | null
+  valueChangePercent: number | null
+  termsChanged: boolean
+  termsChangeDescription: string | null
+  // Counterparty
+  counterpartyName: string
+  counterpartyChanged: boolean
+  // Requesting Entity
+  requestingUserId: string
+  requestingDepartmentId: number
+  requestingOfficerName: string
+  requestingOfficerEmail: string
+  // Status
+  renewalStatusId: number
+  priorityId: number
+  // Assignment
+  assignedToUserId: string | null
+  assignedAt: Date | null
+  // Review
+  legalReviewNotes: string | null
+  approvalNotes: string | null
+  approvedBy: string | null
+  approvedAt: Date | null
+  rejectedBy: string | null
+  rejectedAt: Date | null
+  rejectionReason: string | null
+  // Dates
+  submittedAt: Date
+  dueDate: Date | null
+  completedAt: Date | null
+  // New Contract
+  newContractId: string | null
+  newContractNumber: string | null
+  executedDate: Date | null
+  // Audit
+  createdAt: Date
+  updatedAt: Date
+  createdBy: string
+  updatedBy: string | null
+  // Joined fields
+  renewalStatusName?: string
+  priorityName?: string
+  requestingDepartmentName?: string
+  assignedToName?: string
+  currencyCode?: string
+  currencySymbol?: string
+}
+
+export interface ContractRenewalStatusHistory {
+  historyId: string
+  renewalId: string
+  fromStatusId: number | null
+  toStatusId: number
+  comments: string | null
+  changedBy: string
+  changedAt: Date
+  // Joined fields
+  fromStatusName?: string
+  toStatusName?: string
+  changedByName?: string
+}
+
+// =============================================
+// ENTITY REGISTRATION TYPES
+// =============================================
+
+export interface EntityRegistrationHistory {
+  historyId: string
+  entityNumber: string
+  entityTypeId: number
+  organizationName: string
+  registrationNumber: string | null
+  taxId: string | null
+  contactFirstName: string
+  contactLastName: string
+  contactEmail: string
+  contactPhone: string | null
+  contactPosition: string | null
+  addressLine1: string | null
+  addressLine2: string | null
+  city: string | null
+  parish: string | null
+  country: string
+  postalCode: string | null
+  departmentId: number | null
+  ministry: string | null
+  barNumber: string | null
+  lawFirm: string | null
+  companyType: string | null
+  incorporationDate: Date | null
+  registrationStatusId: number
+  emailVerified: boolean
+  emailVerifiedAt: Date | null
+  documentsVerified: boolean
+  documentsVerifiedAt: Date | null
+  documentsVerifiedBy: string | null
+  actionType: 'REGISTRATION' | 'UPDATE' | 'RENEWAL' | 'DEACTIVATION'
+  changeDescription: string | null
+  userId: string | null
+  createdAt: Date
+  createdBy: string | null
+  ipAddress: string | null
+  userAgent: string | null
+  // Joined fields
+  entityTypeName?: string
+  departmentName?: string
+  statusName?: string
+}
+
+// =============================================
+// EMAIL AND VERIFICATION TYPES
+// =============================================
+
+export interface EmailVerificationToken {
+  tokenId: string
+  userId: string | null
+  email: string
+  token: string
+  tokenType: 'EMAIL_VERIFICATION' | 'PASSWORD_RESET' | 'INVITATION'
+  expiresAt: Date
+  usedAt: Date | null
+  createdAt: Date
+}
+
+export interface EmailQueueItem {
+  emailId: string
+  toEmail: string
+  toName: string | null
+  ccEmails: string | null
+  bccEmails: string | null
+  subject: string
+  bodyHtml: string
+  bodyText: string | null
+  templateName: string | null
+  templateData: string | null
+  relatedItemType: string | null
+  relatedItemId: string | null
+  status: 'PENDING' | 'SENDING' | 'SENT' | 'FAILED'
+  sentAt: Date | null
+  failedAt: Date | null
+  failureReason: string | null
+  retryCount: number
+  maxRetries: number
+  nextRetryAt: Date | null
+  createdAt: Date
+  updatedAt: Date
+}
+
+// =============================================
+// SLA TRACKING TYPES
+// =============================================
+
+export interface SLATracking {
+  slaId: string
+  itemType: 'CORRESPONDENCE' | 'CONTRACT' | 'RENEWAL' | 'STAFF_REQUEST'
+  itemId: string
+  referenceNumber: string
+  slaDays: number
+  startDate: Date
+  dueDate: Date
+  isOverdue: boolean
+  daysOverdue: number | null
+  isCompleted: boolean
+  completedAt: Date | null
+  escalationLevel: number
+  lastEscalatedAt: Date | null
+  escalatedTo: string | null
+  createdAt: Date
+  updatedAt: Date
+}
+
+// Contracts expiring soon view
+export interface ContractExpiringForRenewal {
+  contractId: string
+  referenceNumber: string
+  contractTitle: string
+  counterpartyName: string
+  contractValue: number
+  currencyCode: string
+  expiryDate: Date
+  daysUntilExpiry: number
+  expiryStatus: 'CRITICAL' | 'WARNING' | 'UPCOMING' | 'OK'
+  requestingDepartment: string
+  contractStatus: string
+  hasPendingRenewal: boolean
+}

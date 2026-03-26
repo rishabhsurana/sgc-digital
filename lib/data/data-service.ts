@@ -577,3 +577,249 @@ export async function authenticateStaff(
   
   return result
 }
+
+// =============================================
+// CONTRACT RENEWAL FUNCTIONS
+// =============================================
+
+import { 
+  MOCK_CONTRACT_RENEWALS, 
+  MOCK_CONTRACTS_EXPIRING, 
+  MOCK_ENTITY_REGISTRATIONS,
+  RENEWAL_STATUSES,
+  validateRenewal 
+} from './mock-data'
+import type { 
+  ContractRenewal, 
+  ContractExpiringForRenewal, 
+  EntityRegistrationHistory,
+  RenewalStatus
+} from './types'
+
+export async function getRenewalStatuses(): Promise<RenewalStatus[]> {
+  if (USE_MOCK_DATA) {
+    return RENEWAL_STATUSES
+  }
+  // TODO: Fetch from database
+  return []
+}
+
+export async function getContractRenewals(filters?: {
+  status?: string
+  departmentId?: number
+  assignedToUserId?: string
+}): Promise<ContractRenewal[]> {
+  if (USE_MOCK_DATA) {
+    let renewals = [...MOCK_CONTRACT_RENEWALS]
+    
+    if (filters?.status) {
+      const status = RENEWAL_STATUSES.find(s => s.statusCode === filters.status)
+      if (status) {
+        renewals = renewals.filter(r => r.renewalStatusId === status.renewalStatusId)
+      }
+    }
+    
+    if (filters?.departmentId) {
+      renewals = renewals.filter(r => r.requestingDepartmentId === filters.departmentId)
+    }
+    
+    if (filters?.assignedToUserId) {
+      renewals = renewals.filter(r => r.assignedToUserId === filters.assignedToUserId)
+    }
+    
+    return renewals
+  }
+  // TODO: Fetch from database
+  return []
+}
+
+export async function getContractRenewalById(renewalId: string): Promise<ContractRenewal | null> {
+  if (USE_MOCK_DATA) {
+    return MOCK_CONTRACT_RENEWALS.find(r => r.renewalId === renewalId) || null
+  }
+  // TODO: Fetch from database
+  return null
+}
+
+export async function createContractRenewal(
+  renewalData: Partial<ContractRenewal>,
+  createdBy: string
+): Promise<{ success: boolean; renewal?: ContractRenewal; error?: string }> {
+  if (USE_MOCK_DATA) {
+    // Validate the renewal
+    const validation = validateRenewal(renewalData.originalContractId!, renewalData)
+    if (!validation.isValid) {
+      return { success: false, error: validation.errors.join('. ') }
+    }
+    
+    const newRenewal: ContractRenewal = {
+      renewalId: crypto.randomUUID(),
+      renewalReferenceNumber: `REN-${new Date().getFullYear()}-${String(MOCK_CONTRACT_RENEWALS.length + 1).padStart(4, '0')}`,
+      renewalSequence: 1,
+      isValidRenewal: false,
+      validationNotes: null,
+      validatedBy: null,
+      validatedAt: null,
+      renewalStatusId: 2, // Pending Validation
+      renewalStatusName: 'Pending Validation',
+      submittedAt: new Date(),
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      createdBy,
+      updatedBy: null,
+      ...renewalData
+    } as ContractRenewal
+    
+    MOCK_CONTRACT_RENEWALS.push(newRenewal)
+    return { success: true, renewal: newRenewal }
+  }
+  // TODO: Insert into database
+  return { success: false, error: 'Database not implemented' }
+}
+
+export async function validateContractRenewal(
+  renewalId: string,
+  validatedBy: string,
+  isValid: boolean,
+  notes?: string
+): Promise<{ success: boolean; error?: string }> {
+  if (USE_MOCK_DATA) {
+    const renewal = MOCK_CONTRACT_RENEWALS.find(r => r.renewalId === renewalId)
+    if (!renewal) {
+      return { success: false, error: 'Renewal not found' }
+    }
+    
+    renewal.isValidRenewal = isValid
+    renewal.validationNotes = notes || null
+    renewal.validatedBy = validatedBy
+    renewal.validatedAt = new Date()
+    renewal.renewalStatusId = isValid ? 3 : 8 // Validated or Rejected
+    renewal.renewalStatusName = isValid ? 'Validated' : 'Rejected'
+    renewal.updatedAt = new Date()
+    renewal.updatedBy = validatedBy
+    
+    if (!isValid) {
+      renewal.rejectedBy = validatedBy
+      renewal.rejectedAt = new Date()
+      renewal.rejectionReason = notes || 'Failed validation'
+    }
+    
+    return { success: true }
+  }
+  // TODO: Update in database
+  return { success: false, error: 'Database not implemented' }
+}
+
+export async function approveContractRenewal(
+  renewalId: string,
+  approvedBy: string,
+  notes?: string
+): Promise<{ success: boolean; error?: string }> {
+  if (USE_MOCK_DATA) {
+    const renewal = MOCK_CONTRACT_RENEWALS.find(r => r.renewalId === renewalId)
+    if (!renewal) {
+      return { success: false, error: 'Renewal not found' }
+    }
+    
+    renewal.renewalStatusId = 7 // Approved
+    renewal.renewalStatusName = 'Approved'
+    renewal.approvalNotes = notes || null
+    renewal.approvedBy = approvedBy
+    renewal.approvedAt = new Date()
+    renewal.updatedAt = new Date()
+    renewal.updatedBy = approvedBy
+    
+    return { success: true }
+  }
+  // TODO: Update in database
+  return { success: false, error: 'Database not implemented' }
+}
+
+export async function rejectContractRenewal(
+  renewalId: string,
+  rejectedBy: string,
+  reason: string
+): Promise<{ success: boolean; error?: string }> {
+  if (USE_MOCK_DATA) {
+    const renewal = MOCK_CONTRACT_RENEWALS.find(r => r.renewalId === renewalId)
+    if (!renewal) {
+      return { success: false, error: 'Renewal not found' }
+    }
+    
+    renewal.renewalStatusId = 8 // Rejected
+    renewal.renewalStatusName = 'Rejected'
+    renewal.rejectedBy = rejectedBy
+    renewal.rejectedAt = new Date()
+    renewal.rejectionReason = reason
+    renewal.updatedAt = new Date()
+    renewal.updatedBy = rejectedBy
+    
+    return { success: true }
+  }
+  // TODO: Update in database
+  return { success: false, error: 'Database not implemented' }
+}
+
+export async function getContractsExpiringForRenewal(): Promise<ContractExpiringForRenewal[]> {
+  if (USE_MOCK_DATA) {
+    return MOCK_CONTRACTS_EXPIRING
+  }
+  // TODO: Fetch from database view
+  return []
+}
+
+// =============================================
+// ENTITY REGISTRATION FUNCTIONS
+// =============================================
+
+export async function getEntityRegistrationHistory(
+  entityNumber?: string,
+  userId?: string
+): Promise<EntityRegistrationHistory[]> {
+  if (USE_MOCK_DATA) {
+    let registrations = [...MOCK_ENTITY_REGISTRATIONS]
+    
+    if (entityNumber) {
+      registrations = registrations.filter(r => r.entityNumber === entityNumber)
+    }
+    
+    if (userId) {
+      registrations = registrations.filter(r => r.userId === userId)
+    }
+    
+    return registrations
+  }
+  // TODO: Fetch from database
+  return []
+}
+
+export async function createEntityRegistration(
+  registrationData: Partial<EntityRegistrationHistory>,
+  ipAddress?: string,
+  userAgent?: string
+): Promise<{ success: boolean; registration?: EntityRegistrationHistory; error?: string }> {
+  if (USE_MOCK_DATA) {
+    const newRegistration: EntityRegistrationHistory = {
+      historyId: crypto.randomUUID(),
+      actionType: 'REGISTRATION',
+      registrationStatusId: 1, // Pending
+      emailVerified: false,
+      emailVerifiedAt: null,
+      documentsVerified: false,
+      documentsVerifiedAt: null,
+      documentsVerifiedBy: null,
+      country: 'Barbados',
+      createdAt: new Date(),
+      createdBy: null,
+      ipAddress: ipAddress || null,
+      userAgent: userAgent || null,
+      statusName: 'Pending',
+      ...registrationData
+    } as EntityRegistrationHistory
+    
+    MOCK_ENTITY_REGISTRATIONS.push(newRegistration)
+    return { success: true, registration: newRegistration }
+  }
+  // TODO: Insert into database
+  return { success: false, error: 'Database not implemented' }
+}

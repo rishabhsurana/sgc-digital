@@ -21,7 +21,11 @@ import type {
   Contract,
   ActivityLog,
   TransactionHistoryItem,
-  DashboardSummary
+  DashboardSummary,
+  RenewalStatus,
+  ContractRenewal,
+  ContractExpiringForRenewal,
+  EntityRegistrationHistory
 } from './types'
 
 // =============================================
@@ -635,4 +639,338 @@ export function getTransactionHistory(): TransactionHistoryItem[] {
   return [...correspondenceItems, ...contractItems].sort(
     (a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime()
   )
+}
+
+// =============================================
+// Renewal Status Lookup
+// =============================================
+
+export const RENEWAL_STATUSES: RenewalStatus[] = [
+  { renewalStatusId: 1, statusCode: 'DRAFT', statusName: 'Draft', description: 'Renewal request saved as draft', displayOrder: 1, isActive: true },
+  { renewalStatusId: 2, statusCode: 'PENDING_VALIDATION', statusName: 'Pending Validation', description: 'Awaiting validation that this is a legitimate renewal', displayOrder: 2, isActive: true },
+  { renewalStatusId: 3, statusCode: 'VALIDATED', statusName: 'Validated', description: 'Confirmed as valid renewal request', displayOrder: 3, isActive: true },
+  { renewalStatusId: 4, statusCode: 'UNDER_REVIEW', statusName: 'Under Review', description: 'Renewal under legal review', displayOrder: 4, isActive: true },
+  { renewalStatusId: 5, statusCode: 'PENDING_INFO', statusName: 'Pending Information', description: 'Awaiting additional information', displayOrder: 5, isActive: true },
+  { renewalStatusId: 6, statusCode: 'PENDING_APPROVAL', statusName: 'Pending Approval', description: 'Awaiting approval', displayOrder: 6, isActive: true },
+  { renewalStatusId: 7, statusCode: 'APPROVED', statusName: 'Approved', description: 'Renewal approved', displayOrder: 7, isActive: true },
+  { renewalStatusId: 8, statusCode: 'REJECTED', statusName: 'Rejected', description: 'Renewal rejected', displayOrder: 8, isActive: true },
+  { renewalStatusId: 9, statusCode: 'EXECUTED', statusName: 'Executed', description: 'Renewal executed and new contract created', displayOrder: 9, isActive: true },
+  { renewalStatusId: 10, statusCode: 'CANCELLED', statusName: 'Cancelled', description: 'Renewal request cancelled', displayOrder: 10, isActive: true },
+]
+
+// =============================================
+// Sample Contract Renewals
+// =============================================
+
+export const MOCK_CONTRACT_RENEWALS: ContractRenewal[] = [
+  {
+    renewalId: '850e8400-e29b-41d4-a716-446655440001',
+    renewalReferenceNumber: 'REN-2024-0001',
+    originalContractId: '800e8400-e29b-41d4-a716-446655440001',
+    previousRenewalId: null,
+    renewalSequence: 1,
+    isValidRenewal: true,
+    validationNotes: 'Verified against original contract CON-2024-0001',
+    validatedBy: '550e8400-e29b-41d4-a716-446655440002',
+    validatedAt: new Date('2024-03-12'),
+    renewalReason: 'Contract expiring, services still required for ongoing operations',
+    renewalJustification: 'The maintenance services provided have been satisfactory and are essential for continued operations.',
+    originalContractNumber: 'CON-2024-0001',
+    originalContractTitle: 'IT Infrastructure Maintenance Agreement',
+    originalStartDate: new Date('2023-04-01'),
+    originalEndDate: new Date('2024-03-31'),
+    originalValue: 150000,
+    proposedStartDate: new Date('2024-04-01'),
+    proposedEndDate: new Date('2025-03-31'),
+    proposedValue: 165000,
+    currencyId: 1,
+    proposedDurationMonths: 12,
+    valueChange: 15000,
+    valueChangePercent: 10,
+    termsChanged: true,
+    termsChangeDescription: 'Updated SLA terms and added new service categories',
+    counterpartyName: 'TechCorp Solutions Ltd.',
+    counterpartyChanged: false,
+    requestingUserId: '550e8400-e29b-41d4-a716-446655440004',
+    requestingDepartmentId: 3,
+    requestingOfficerName: 'Sarah Finance',
+    requestingOfficerEmail: 'mda.user@mof.gov.bb',
+    renewalStatusId: 4,
+    priorityId: 3,
+    assignedToUserId: '550e8400-e29b-41d4-a716-446655440003',
+    assignedAt: new Date('2024-03-12'),
+    legalReviewNotes: 'Reviewing updated SLA terms',
+    approvalNotes: null,
+    approvedBy: null,
+    approvedAt: null,
+    rejectedBy: null,
+    rejectedAt: null,
+    rejectionReason: null,
+    submittedAt: new Date('2024-03-10'),
+    dueDate: new Date('2024-03-25'),
+    completedAt: null,
+    newContractId: null,
+    newContractNumber: null,
+    executedDate: null,
+    createdAt: new Date('2024-03-10'),
+    updatedAt: new Date('2024-03-12'),
+    createdBy: '550e8400-e29b-41d4-a716-446655440004',
+    updatedBy: '550e8400-e29b-41d4-a716-446655440002',
+    renewalStatusName: 'Under Review',
+    priorityName: 'High',
+    requestingDepartmentName: 'Ministry of Finance',
+    assignedToName: 'Michael Staff',
+    currencyCode: 'BBD',
+    currencySymbol: '$'
+  },
+  {
+    renewalId: '850e8400-e29b-41d4-a716-446655440002',
+    renewalReferenceNumber: 'REN-2024-0002',
+    originalContractId: '800e8400-e29b-41d4-a716-446655440002',
+    previousRenewalId: null,
+    renewalSequence: 1,
+    isValidRenewal: false,
+    validationNotes: null,
+    validatedBy: null,
+    validatedAt: null,
+    renewalReason: 'Annual renewal of cleaning services contract',
+    renewalJustification: 'Satisfactory service delivery throughout the current contract period.',
+    originalContractNumber: 'CON-2023-0045',
+    originalContractTitle: 'Building Cleaning Services',
+    originalStartDate: new Date('2023-06-01'),
+    originalEndDate: new Date('2024-05-31'),
+    originalValue: 85000,
+    proposedStartDate: new Date('2024-06-01'),
+    proposedEndDate: new Date('2025-05-31'),
+    proposedValue: 88000,
+    currencyId: 1,
+    proposedDurationMonths: 12,
+    valueChange: 3000,
+    valueChangePercent: 3.5,
+    termsChanged: false,
+    termsChangeDescription: null,
+    counterpartyName: 'CleanPro Services Inc.',
+    counterpartyChanged: false,
+    requestingUserId: '550e8400-e29b-41d4-a716-446655440004',
+    requestingDepartmentId: 3,
+    requestingOfficerName: 'Sarah Finance',
+    requestingOfficerEmail: 'mda.user@mof.gov.bb',
+    renewalStatusId: 2,
+    priorityId: 2,
+    assignedToUserId: null,
+    assignedAt: null,
+    legalReviewNotes: null,
+    approvalNotes: null,
+    approvedBy: null,
+    approvedAt: null,
+    rejectedBy: null,
+    rejectedAt: null,
+    rejectionReason: null,
+    submittedAt: new Date('2024-03-18'),
+    dueDate: new Date('2024-04-15'),
+    completedAt: null,
+    newContractId: null,
+    newContractNumber: null,
+    executedDate: null,
+    createdAt: new Date('2024-03-18'),
+    updatedAt: new Date('2024-03-18'),
+    createdBy: '550e8400-e29b-41d4-a716-446655440004',
+    updatedBy: null,
+    renewalStatusName: 'Pending Validation',
+    priorityName: 'Medium',
+    requestingDepartmentName: 'Ministry of Finance',
+    assignedToName: null,
+    currencyCode: 'BBD',
+    currencySymbol: '$'
+  }
+]
+
+// =============================================
+// Contracts Expiring Soon (for renewal candidates)
+// =============================================
+
+export const MOCK_CONTRACTS_EXPIRING: ContractExpiringForRenewal[] = [
+  {
+    contractId: '800e8400-e29b-41d4-a716-446655440003',
+    referenceNumber: 'CON-2024-0003',
+    contractTitle: 'Security Services Agreement',
+    counterpartyName: 'SecureGuard Ltd.',
+    contractValue: 120000,
+    currencyCode: 'BBD',
+    expiryDate: new Date(Date.now() + 25 * 24 * 60 * 60 * 1000), // 25 days from now
+    daysUntilExpiry: 25,
+    expiryStatus: 'CRITICAL',
+    requestingDepartment: 'Ministry of Finance',
+    contractStatus: 'Completed',
+    hasPendingRenewal: false
+  },
+  {
+    contractId: '800e8400-e29b-41d4-a716-446655440004',
+    referenceNumber: 'CON-2024-0004',
+    contractTitle: 'Office Supplies Framework Agreement',
+    counterpartyName: 'OfficeMax Barbados',
+    contractValue: 45000,
+    currencyCode: 'BBD',
+    expiryDate: new Date(Date.now() + 55 * 24 * 60 * 60 * 1000), // 55 days from now
+    daysUntilExpiry: 55,
+    expiryStatus: 'WARNING',
+    requestingDepartment: 'Ministry of Education',
+    contractStatus: 'Completed',
+    hasPendingRenewal: false
+  },
+  {
+    contractId: '800e8400-e29b-41d4-a716-446655440005',
+    referenceNumber: 'CON-2024-0005',
+    contractTitle: 'Software Licensing Agreement',
+    counterpartyName: 'Microsoft Caribbean',
+    contractValue: 250000,
+    currencyCode: 'USD',
+    expiryDate: new Date(Date.now() + 75 * 24 * 60 * 60 * 1000), // 75 days from now
+    daysUntilExpiry: 75,
+    expiryStatus: 'UPCOMING',
+    requestingDepartment: "Solicitor General's Chambers",
+    contractStatus: 'Completed',
+    hasPendingRenewal: true
+  }
+]
+
+// =============================================
+// Entity Registration History
+// =============================================
+
+export const MOCK_ENTITY_REGISTRATIONS: EntityRegistrationHistory[] = [
+  {
+    historyId: '950e8400-e29b-41d4-a716-446655440001',
+    entityNumber: 'MDA-MOF-001',
+    entityTypeId: 1,
+    organizationName: 'Ministry of Finance',
+    registrationNumber: null,
+    taxId: null,
+    contactFirstName: 'Sarah',
+    contactLastName: 'Finance',
+    contactEmail: 'mda.user@mof.gov.bb',
+    contactPhone: '246-555-0004',
+    contactPosition: 'Finance Officer',
+    addressLine1: 'Government Headquarters',
+    addressLine2: 'Bay Street',
+    city: 'Bridgetown',
+    parish: 'St. Michael',
+    country: 'Barbados',
+    postalCode: 'BB11000',
+    departmentId: 3,
+    ministry: 'Ministry of Finance',
+    barNumber: null,
+    lawFirm: null,
+    companyType: null,
+    incorporationDate: null,
+    registrationStatusId: 5,
+    emailVerified: true,
+    emailVerifiedAt: new Date('2024-02-15'),
+    documentsVerified: true,
+    documentsVerifiedAt: new Date('2024-02-16'),
+    documentsVerifiedBy: '550e8400-e29b-41d4-a716-446655440001',
+    actionType: 'REGISTRATION',
+    changeDescription: 'Initial registration for Ministry of Finance',
+    userId: '550e8400-e29b-41d4-a716-446655440004',
+    createdAt: new Date('2024-02-15'),
+    createdBy: null,
+    ipAddress: '192.168.1.100',
+    userAgent: 'Mozilla/5.0',
+    entityTypeName: 'Ministry',
+    departmentName: 'Ministry of Finance',
+    statusName: 'Active'
+  },
+  {
+    historyId: '950e8400-e29b-41d4-a716-446655440002',
+    entityNumber: 'PUB-2024-001',
+    entityTypeId: 4,
+    organizationName: 'N/A',
+    registrationNumber: null,
+    taxId: null,
+    contactFirstName: 'Robert',
+    contactLastName: 'Public',
+    contactEmail: 'public.user@email.com',
+    contactPhone: '246-555-0005',
+    contactPosition: null,
+    addressLine1: '123 Main Street',
+    addressLine2: null,
+    city: 'Bridgetown',
+    parish: 'St. Michael',
+    country: 'Barbados',
+    postalCode: 'BB11001',
+    departmentId: null,
+    ministry: null,
+    barNumber: null,
+    lawFirm: null,
+    companyType: null,
+    incorporationDate: null,
+    registrationStatusId: 5,
+    emailVerified: true,
+    emailVerifiedAt: new Date('2024-03-01'),
+    documentsVerified: false,
+    documentsVerifiedAt: null,
+    documentsVerifiedBy: null,
+    actionType: 'REGISTRATION',
+    changeDescription: 'Public user self-registration',
+    userId: '550e8400-e29b-41d4-a716-446655440005',
+    createdAt: new Date('2024-03-01'),
+    createdBy: null,
+    ipAddress: '192.168.1.105',
+    userAgent: 'Mozilla/5.0',
+    entityTypeName: 'Public',
+    departmentName: undefined,
+    statusName: 'Active'
+  }
+]
+
+// =============================================
+// Helper function to validate renewals
+// =============================================
+
+export function validateRenewal(originalContractId: string, renewalData: Partial<ContractRenewal>): { 
+  isValid: boolean 
+  errors: string[] 
+} {
+  const errors: string[] = []
+  
+  // Find original contract
+  const originalContract = MOCK_CONTRACTS.find(c => c.contractId === originalContractId)
+  if (!originalContract) {
+    errors.push('Original contract not found')
+    return { isValid: false, errors }
+  }
+  
+  // Check if contract is eligible for renewal (must be completed or about to expire)
+  if (originalContract.statusCategory !== 'closed' && originalContract.caseStatusId !== 9) {
+    errors.push('Original contract must be completed before renewal')
+  }
+  
+  // Check if there's already a pending renewal
+  const existingRenewal = MOCK_CONTRACT_RENEWALS.find(
+    r => r.originalContractId === originalContractId && 
+    ![8, 10].includes(r.renewalStatusId) // Not rejected or cancelled
+  )
+  if (existingRenewal) {
+    errors.push('A renewal request already exists for this contract')
+  }
+  
+  // Validate proposed dates
+  if (renewalData.proposedStartDate && originalContract.expiryDate) {
+    const proposedStart = new Date(renewalData.proposedStartDate)
+    const originalExpiry = new Date(originalContract.expiryDate)
+    
+    if (proposedStart < originalExpiry) {
+      errors.push('Proposed start date cannot be before original contract expiry')
+    }
+  }
+  
+  // Validate value change (flag significant increases)
+  if (renewalData.proposedValue && originalContract.contractValue) {
+    const changePercent = ((renewalData.proposedValue - originalContract.contractValue) / originalContract.contractValue) * 100
+    if (changePercent > 25) {
+      errors.push('Value increase exceeds 25% - requires additional justification')
+    }
+  }
+  
+  return { isValid: errors.length === 0, errors }
 }
