@@ -116,7 +116,7 @@ export default function ManagementLandingPage() {
               </p>
               <p className="mt-6 text-lg text-slate-300 leading-relaxed max-w-2xl mx-auto text-pretty">
                 SGC-Digital Management Portal for tracking, managing and monitoring 
-                Contracts and Correspondence Applications.
+                Government Contracts and Correspondence Applications.
               </p>
               
               {/* Quick Action Buttons */}
