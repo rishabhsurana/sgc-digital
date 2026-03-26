@@ -69,7 +69,7 @@ export default function ManagementLandingPage() {
       
       <main className="flex-1">
         {/* Hero Section */}
-        <section className="relative overflow-hidden bg-slate-900 py-20 lg:py-32">
+        <section className="relative overflow-hidden bg-slate-900 py-16 lg:py-20">
           {/* Background Pattern */}
           <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:32px_32px]" />
           <div className="absolute top-0 right-0 w-1/3 h-full bg-gradient-to-l from-emerald-500/10 to-transparent" />
