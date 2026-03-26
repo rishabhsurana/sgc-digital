@@ -51,7 +51,8 @@ This document provides a comprehensive overview of all database tables, their re
 | `006-renewals-and-tracking.sql` | Contract renewals, SLA tracking, notifications, email queue |
 | `007-entities-reports-comprehensive.sql` | Entity master table, comprehensive reporting |
 | `008-ask-rex-ai-assistant.sql` | Ask Rex AI assistant tables (sessions, messages, search queries, feedback) |
-| `009-missing-fields-comprehensive.sql` | **NEW** - All missing fields from application forms (categories, instruments, funding, etc.) |
+| `009-missing-fields-comprehensive.sql` | All missing fields from application forms (categories, instruments, funding, etc.) |
+| `010-document-requirements-junction.sql` | **NEW** - Document requirements mapping by nature/category/instrument |
 | **`CONSOLIDATED_SCHEMA.sql`** | **Single file with ALL tables in correct order - USE THIS FOR DEPLOYMENT**
 
 ---
@@ -321,6 +322,53 @@ LookupEntityTypes ─────┬──────────────�
 | **AI Search Analytics** | AskRexSearchQueries, AskRexFeedback | COMPLETE |
 | **AI Generated Reports** | AskRexGeneratedReports | COMPLETE |
 | **AI Knowledge Base** | AskRexKnowledgeBase, AskRexSavedPrompts | COMPLETE |
+| **Document Requirements by Category** | ContractDocumentRequirements, CorrespondenceDocumentRequirements | COMPLETE |
+
+---
+
+## Document Requirements by Contract Nature/Category
+
+The `010-document-requirements-junction.sql` script creates junction tables that define which documents are required or optional based on contract configuration.
+
+### Contract Document Requirements Table
+
+```
+ContractDocumentRequirements
+├── DocumentTypeId → LookupContractDocumentTypes
+├── ContractNatureId → LookupContractNature (Goods/Consultancy/Works)
+├── ContractCategoryId → LookupContractCategories
+├── ContractInstrumentId → LookupContractInstruments  
+├── ProcurementMethodId → LookupProcurementMethods
+├── IsRequired (BIT)
+├── IsConditional (BIT) - e.g., "Required if value > threshold"
+├── RequiredForSingleSource (BIT)
+├── AppliesTo ('ALL', 'NEW', 'RENEWAL', 'SUPPLEMENTAL')
+└── HelpText
+```
+
+### Document Requirements by Nature
+
+| Nature | Always Required | Optional | Single Source Required |
+|--------|----------------|----------|------------------------|
+| **Goods** | Acceptance of Award, Letter of Award, Payment Schedule, Specifications, Tender Documents | Draft Contract | Single Source Request, Single Source Approval |
+| **Consultancy** | Acceptance of Award, Letter of Award, Payment Schedule, Schedule of Deliverables, Proposal, Tender Documents, Terms of Reference | Business Registration, Certificate of Good Standing, Incorporation Docs, Performance Bond, Surety, Draft Contract, Letter of Engagement, Cabinet Paper*, Cabinet Approval* | Single Source Request, Single Source Approval |
+| **Works** | Acceptance of Award, Letter of Award, Payment Schedule, Bill of Quantities, Drawings/Plans, Tender Documents | Performance Bond, Surety, Draft Contract, Cabinet Paper*, Cabinet Approval* | Single Source Request, Single Source Approval |
+
+*Cabinet documents are conditional - required when contract value exceeds Cabinet threshold.
+
+### Stored Procedure for Document Requirements
+
+```sql
+EXEC sp_GetContractDocumentRequirements 
+    @NatureCode = 'CONSULTANCY',
+    @CategoryCode = 'CAT_CONS',
+    @InstrumentCode = 'CONS_CO',
+    @ProcurementMethodCode = 'SINGLE_SOURCE',
+    @ContractType = 'NEW',
+    @IsSingleSource = 1;
+```
+
+Returns all required/optional documents for the specified contract configuration.
 
 ---
 
@@ -378,6 +426,8 @@ Or execute individual scripts in numeric order:
 6. `006-renewals-and-tracking.sql` - Creates renewal and tracking tables
 7. `007-entities-reports-comprehensive.sql` - Creates entity master and report tables
 8. `008-ask-rex-ai-assistant.sql` - Creates Ask Rex AI assistant tables
+9. `009-missing-fields-comprehensive.sql` - Adds missing form fields (categories, instruments, funding)
+10. `010-document-requirements-junction.sql` - Document requirements by nature/category
 
 ---
 
@@ -395,11 +445,12 @@ To download the database schema:
 
 | Object Type | Count |
 |-------------|-------|
-| Tables | 75+ |
+| Tables | 80+ |
 | Lookup Tables | 25+ |
-| Views | 15+ |
-| Indexes | 100+ |
-| Stored Procedures | 0 (use ORM) |
+| Junction Tables | 2 |
+| Views | 17+ |
+| Indexes | 110+ |
+| Stored Procedures | 1 (sp_GetContractDocumentRequirements) |
 
 ---
 
