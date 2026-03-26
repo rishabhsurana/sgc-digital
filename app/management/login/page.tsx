@@ -1,64 +1,38 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
-import { useSearchParams } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Shield, Lock, AlertCircle, ArrowLeft } from "lucide-react"
-import { isApprovedAdmin } from "@/lib/admin-users"
+import { loginStaff } from "@/lib/actions/auth-actions"
 
 export default function ManagementLoginPage() {
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
+  const router = useRouter()
   const searchParams = useSearchParams()
   const redirectTo = searchParams.get("redirect") || "/management"
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setError("")
     setIsLoading(true)
 
-    // Check if user is an approved admin
-    const adminUser = isApprovedAdmin(email)
+    const formData = new FormData(e.currentTarget)
+    const result = await loginStaff(formData)
     
-    if (!adminUser) {
-      setError("Access denied. You are not authorized to access the Management portal. Please contact your administrator if you believe this is an error.")
+    if (result.success) {
+      router.push(redirectTo)
+    } else {
+      setError(result.error || "Login failed. Please try again.")
       setIsLoading(false)
-      return
     }
-
-    // Simulate authentication delay
-    await new Promise(resolve => setTimeout(resolve, 1500))
-
-    // Store admin session
-    const adminSession = {
-      email: adminUser.email,
-      name: adminUser.name,
-      role: adminUser.role,
-      department: adminUser.department,
-      loginTime: new Date().toISOString()
-    }
-    sessionStorage.setItem("sgc_admin", JSON.stringify(adminSession))
-
-    // Also store user session for seamless navigation to user portal
-    const userSession = {
-      email: adminUser.email,
-      name: adminUser.name,
-      organization: adminUser.department || "Solicitor General's Chambers",
-      entityNumber: `SGC-${Date.now().toString(36).toUpperCase()}`,
-      isStaff: true
-    }
-    sessionStorage.setItem("sgc_user", JSON.stringify(userSession))
-
-    // Redirect to the requested page or management dashboard
-    window.location.href = redirectTo
   }
 
   return (
@@ -112,11 +86,10 @@ export default function ManagementLoginPage() {
                 <Label htmlFor="email">Email Address</Label>
                 <Input
                   id="email"
+                  name="email"
                   type="email"
                   placeholder="your.email@sgc.gov.bb"
                   required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
                   className="h-11"
                 />
               </div>
@@ -125,11 +98,10 @@ export default function ManagementLoginPage() {
                 <Label htmlFor="password">Password</Label>
                 <Input
                   id="password"
+                  name="password"
                   type="password"
                   placeholder="Enter your password"
                   required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
                   className="h-11"
                 />
               </div>

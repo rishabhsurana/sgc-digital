@@ -53,6 +53,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { AskRex } from "@/components/ask-rex"
 import Link from "next/link"
+import { logout } from "@/lib/actions/auth-actions"
 
 // User info interface
 interface UserInfo {
@@ -654,17 +655,16 @@ export default function DashboardPage() {
                         Settings
                       </Link>
                     </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      onClick={() => {
-                        sessionStorage.removeItem("sgc_user")
-                        window.location.href = "/"
-                      }}
-                    >
-                      <LogOut className="h-4 w-4 mr-1" />
-                      Sign Out
-                    </Button>
+                    <form action={logout}>
+                      <Button 
+                        type="submit"
+                        variant="ghost" 
+                        size="sm"
+                      >
+                        <LogOut className="h-4 w-4 mr-1" />
+                        Sign Out
+                      </Button>
+                    </form>
                   </div>
                 </div>
               </CardContent>

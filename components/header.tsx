@@ -8,7 +8,7 @@ import {
   Menu, User, LogIn, FileText, FileSignature, 
   LayoutDashboard, BarChart3, Home, ChevronDown, Settings, Shield 
 } from "lucide-react"
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,15 +16,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
-export function Header() {
-  const [isOpen, setIsOpen] = useState(false)
-  const [isManagementUser, setIsManagementUser] = useState(false)
+interface HeaderProps {
+  isStaff?: boolean
+}
 
-  useEffect(() => {
-    // Check if user is logged in as management
-    const adminSession = sessionStorage.getItem("sgc_admin")
-    setIsManagementUser(!!adminSession)
-  }, [])
+export function Header({ isStaff = false }: HeaderProps) {
+  const [isOpen, setIsOpen] = useState(false)
 
   return (
     <header className="sticky top-0 z-50 w-full">
@@ -110,7 +107,7 @@ export function Header() {
           </nav>
 
           <div className="flex items-center gap-2">
-            {isManagementUser && (
+            {isStaff && (
               <Link 
                 href="/management/landing"
                 className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-600 hover:text-primary border border-slate-300 rounded-md hover:border-primary/50 transition-colors"
@@ -205,7 +202,7 @@ export function Header() {
                   
                   <hr className="my-4 border-primary/20" />
                   
-                  {isManagementUser && (
+                  {isStaff && (
                     <Link 
                       href="/management/landing" 
                       onClick={() => setIsOpen(false)}

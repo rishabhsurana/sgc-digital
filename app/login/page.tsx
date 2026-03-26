@@ -2,39 +2,36 @@
 
 import { useState } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { ArrowLeft, LogIn } from "lucide-react"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { ArrowLeft, LogIn, AlertCircle } from "lucide-react"
+import { loginUser } from "@/lib/actions/auth-actions"
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
-  const [email, setEmail] = useState("")
+  const [error, setError] = useState("")
+  const router = useRouter()
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setIsLoading(true)
-    // Simulate login
-    await new Promise(resolve => setTimeout(resolve, 1500))
+    setError("")
     
-    // Check if user data exists, if not create demo data based on email
-    const existingUser = sessionStorage.getItem("sgc_user")
-    if (!existingUser) {
-      // Create demo user data based on email input
-      const userData = {
-        fullName: email.split("@")[0].replace(/[._]/g, " ").replace(/\b\w/g, l => l.toUpperCase()),
-        email: email,
-        submitterType: "ministry",
-        organization: "Ministry of Finance",
-        entityNumber: `ENT-${Date.now().toString(36).toUpperCase()}`
-      }
-      sessionStorage.setItem("sgc_user", JSON.stringify(userData))
+    const formData = new FormData(e.currentTarget)
+    const result = await loginUser(formData)
+    
+    if (result.success && result.redirectTo) {
+      router.push(result.redirectTo)
+    } else {
+      setError(result.error || "Login failed. Please try again.")
+      setIsLoading(false)
     }
-    
-    window.location.href = "/dashboard"
   }
 
   return (
@@ -64,17 +61,23 @@ export default function LoginPage() {
             </div>
             
             <CardContent className="pt-6">
+              {error && (
+                <Alert variant="destructive" className="mb-4">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
+              
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="email">Email Address</Label>
                   <Input
                     id="email"
+                    name="email"
                     type="email"
                     placeholder="email@example.com"
                     required
                     className="h-11"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
                   />
                 </div>
                 <div className="space-y-2">
@@ -89,6 +92,7 @@ export default function LoginPage() {
                   </div>
                   <Input
                     id="password"
+                    name="password"
                     type="password"
                     placeholder="Enter your password"
                     required
