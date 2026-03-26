@@ -149,7 +149,7 @@ export function Header({ isStaff: isStaffProp = false }: HeaderProps) {
                 Management Portal
               </Link>
             )}
-            <Button variant="ghost" size="sm" className="hidden sm:flex hover:bg-primary/10 hover:text-primary" asChild>
+            <Button size="sm" className="hidden sm:flex bg-blue-600 hover:bg-blue-700 text-white shadow-md" asChild>
               <Link href="/login">
                 <LogIn className="mr-2 h-4 w-4" />
                 Sign In
@@ -248,7 +248,7 @@ export function Header({ isStaff: isStaffProp = false }: HeaderProps) {
                   <Link 
                     href="/login" 
                     onClick={() => setIsOpen(false)}
-                    className="flex items-center gap-3 px-4 py-3 text-foreground rounded-lg hover:bg-primary/10 hover:text-primary transition-colors"
+                    className="flex items-center gap-3 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
                   >
                     <LogIn className="h-5 w-5" />
                     Sign In
