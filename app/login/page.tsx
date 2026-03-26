@@ -27,6 +27,10 @@ export default function LoginPage() {
     const result = await loginUser(formData)
     
     if (result.success && result.redirectTo) {
+      // Refresh to ensure cookies are propagated before navigation
+      router.refresh()
+      // Small delay to allow cookie propagation
+      await new Promise(resolve => setTimeout(resolve, 100))
       router.push(result.redirectTo)
     } else {
       setError(result.error || "Login failed. Please try again.")

@@ -27,12 +27,19 @@ export function Header({ isStaff: isStaffProp = false }: HeaderProps) {
   useEffect(() => {
     // Check for staff session via client-readable cookie
     const checkStaffStatus = () => {
+      console.log('[v0] Header checking staff status...')
+      console.log('[v0] All cookies:', document.cookie)
+      
       // Check the simple staff flag cookie
       const cookies = document.cookie.split(';')
       const staffCookie = cookies.find(c => c.trim().startsWith('sgc_is_staff='))
+      console.log('[v0] Staff cookie found:', staffCookie)
+      
       if (staffCookie) {
         const value = staffCookie.split('=')[1]?.trim()
+        console.log('[v0] Staff cookie value:', value)
         if (value === '1') {
+          console.log('[v0] Setting isStaff to TRUE')
           setIsStaff(true)
           return
         }
@@ -41,6 +48,7 @@ export function Header({ isStaff: isStaffProp = false }: HeaderProps) {
       // Fallback to sessionStorage for backwards compatibility
       const adminSession = sessionStorage.getItem("sgc_admin")
       if (adminSession) {
+        console.log('[v0] Found sgc_admin in sessionStorage, setting isStaff to TRUE')
         setIsStaff(true)
       }
     }
