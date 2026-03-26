@@ -608,7 +608,8 @@ For contracts with multiple parties (joint ventures, subcontractors):
 | 11 | `011-contracts-complete-fields.sql` | Complete contract fields (70+ columns) |
 | 12 | `012-drafts-failed-submissions.sql` | Draft & failed submission handling |
 | 13 | `013-workflow-corrections-stages.sql` | Workflow, corrections & stage duration tracking |
-| 14 | `014-renewal-supplemental-validation.sql` | **Renewal/supplemental validation & entity ownership** |
+| 14 | `014-renewal-supplemental-validation.sql` | Renewal/supplemental validation & entity ownership |
+| 15 | `015-missing-columns-audit-fix.sql` | **Audit fix: missing form fields, SLA, sessions, audit log** |
 
 **OR use `CONSOLIDATED_SCHEMA.sql` for single-file deployment.**
 
@@ -623,4 +624,5 @@ For contracts with multiple parties (joint ventures, subcontractors):
 | 1.2 | 2024 | Added complete contract fields: ContractValue, ContractStartDate, ContractEndDate, ContractCounterparties, ContractMilestones |
 | 1.3 | 2024 | Added draft/failed submission handling with retry functionality |
 | 1.4 | 2024 | Added workflow, corrections & stage duration tracking |
-| 1.5 | 2024 | **Added renewal/supplemental validation: LookupContractRenewalLimits, LookupValidationErrorCodes, ContractValidationLog, sp_ValidateContractForRenewalSupplemental, entity ownership fields, prepopulation support** |
+| 1.5 | 2024 | Added renewal/supplemental validation |
+| 1.6 | 2024 | **Comprehensive audit fix: Missing form columns (CorrespondenceRegister: ContactUnit, MinistryFileReference, UrgentReason; Entities: CourtName, LawFirmName, BarNumber), Contract financial/legal fields, LookupDisputeResolutionMethods, LookupAuthorizedSignatories, PasswordResetTokens, UserSessions, AuditLog, SLA tracking columns, notification tracking, sp_CalculateSLADates, sp_UpdateOverdueStatus, sp_LogAuditEntry** |
