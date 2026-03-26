@@ -1,6 +1,3 @@
-"use client"
-
-import { useEffect, useState } from "react"
 import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
 import { AskRex } from "@/components/ask-rex"
@@ -16,17 +13,11 @@ import {
   Globe,
   LayoutDashboard
 } from "lucide-react"
+import { getSession } from "@/lib/actions/auth-actions"
 
-export default function ManagementLandingPage() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false)
-
-  useEffect(() => {
-    // Check if user is already logged in
-    const adminSession = sessionStorage.getItem("sgc_admin")
-    if (adminSession) {
-      setIsLoggedIn(true)
-    }
-  }, [])
+export default async function ManagementLandingPage() {
+  const session = await getSession()
+  const isLoggedIn = session?.isStaff ?? false
 
   // Helper function to get the correct link based on login status
   const getLink = (destination: string) => {
