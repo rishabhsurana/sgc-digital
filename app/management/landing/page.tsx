@@ -58,7 +58,7 @@ export default function ManagementLandingPage() {
 
           <div className="flex items-center gap-2">
             {/* SGC Public Portal Button */}
-            <Button variant="outline" size="sm" className="hidden sm:flex" asChild>
+            <Button size="sm" className="hidden sm:flex bg-blue-600 hover:bg-blue-700 text-white" asChild>
               <Link href="/">
                 <Globe className="mr-2 h-4 w-4" />
                 SGC Public Portal
