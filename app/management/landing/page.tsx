@@ -120,26 +120,26 @@ export default function ManagementLandingPage() {
               </p>
               
               {/* Quick Action Buttons */}
-              <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
-                <Button size="lg" className="w-full sm:w-52 bg-blue-600 hover:bg-blue-700 text-white shadow-lg" asChild>
+              <div className="mt-10 grid grid-cols-2 sm:flex sm:flex-row items-center justify-center gap-4">
+                <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-white shadow-lg" asChild>
                   <Link href="/management/login?redirect=/management/monitoring">
                     <BarChart3 className="mr-2 h-5 w-5" />
                     Monitoring
                   </Link>
                 </Button>
-                <Button size="lg" className="w-full sm:w-52 bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg" asChild>
+                <Button size="lg" className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg" asChild>
                   <Link href="/management/login?redirect=/management/transactions">
                     <History className="mr-2 h-5 w-5" />
                     Transaction History
                   </Link>
                 </Button>
-                <Button size="lg" className="w-full sm:w-52 bg-slate-600 hover:bg-slate-700 text-white shadow-lg" asChild>
+                <Button size="lg" className="bg-slate-600 hover:bg-slate-700 text-white shadow-lg" asChild>
                   <Link href="/management/login?redirect=/management/status">
                     <CheckCircle className="mr-2 h-5 w-5" />
                     Status
                   </Link>
                 </Button>
-                <Button size="lg" className="w-full sm:w-52 bg-amber-600 hover:bg-amber-700 text-white shadow-lg" asChild>
+                <Button size="lg" className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg" asChild>
                   <Link href="/management/login?redirect=/management">
                     <LayoutDashboard className="mr-2 h-5 w-5" />
                     Management Dashboard
