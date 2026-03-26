@@ -1,3 +1,6 @@
+"use client"
+
+import { useEffect, useState } from "react"
 import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
 import { AskRex } from "@/components/ask-rex"
@@ -15,6 +18,21 @@ import {
 } from "lucide-react"
 
 export default function ManagementLandingPage() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
+
+  useEffect(() => {
+    // Check if user is already logged in
+    const adminSession = sessionStorage.getItem("sgc_admin")
+    if (adminSession) {
+      setIsLoggedIn(true)
+    }
+  }, [])
+
+  // Helper function to get the correct link based on login status
+  const getLink = (destination: string) => {
+    return isLoggedIn ? destination : `/management/login?redirect=${destination}`
+  }
+
   return (
     <div className="flex min-h-screen flex-col bg-background">
       {/* Management Portal Header */}
@@ -66,18 +84,29 @@ export default function ManagementLandingPage() {
               </Link>
             </Button>
             
-            <Button size="sm" className="hidden sm:flex bg-slate-700 hover:bg-slate-800 text-white" asChild>
-              <Link href="/management/login">
-                <LogIn className="mr-2 h-4 w-4" />
-                Sign In
-              </Link>
-            </Button>
-            <Button size="sm" className="hidden sm:flex bg-emerald-600 hover:bg-emerald-700 text-white shadow-md" asChild>
-              <Link href="/management/register">
-                <UserPlus className="mr-2 h-4 w-4" />
-                Request Access
-              </Link>
-            </Button>
+            {!isLoggedIn ? (
+              <>
+                <Button size="sm" className="hidden sm:flex bg-slate-700 hover:bg-slate-800 text-white" asChild>
+                  <Link href="/management/login">
+                    <LogIn className="mr-2 h-4 w-4" />
+                    Sign In
+                  </Link>
+                </Button>
+                <Button size="sm" className="hidden sm:flex bg-emerald-600 hover:bg-emerald-700 text-white shadow-md" asChild>
+                  <Link href="/management/register">
+                    <UserPlus className="mr-2 h-4 w-4" />
+                    Request Access
+                  </Link>
+                </Button>
+              </>
+            ) : (
+              <Button size="sm" className="hidden sm:flex bg-emerald-600 hover:bg-emerald-700 text-white shadow-md" asChild>
+                <Link href="/management">
+                  <LayoutDashboard className="mr-2 h-4 w-4" />
+                  Go to Dashboard
+                </Link>
+              </Button>
+            )}
             
             {/* Mobile buttons */}
             <Button variant="outline" size="sm" className="sm:hidden" asChild>
@@ -85,11 +114,13 @@ export default function ManagementLandingPage() {
                 <Globe className="h-4 w-4" />
               </Link>
             </Button>
-            <Button variant="ghost" size="sm" className="sm:hidden" asChild>
-              <Link href="/management/login">
-                <LogIn className="h-4 w-4" />
-              </Link>
-            </Button>
+            {!isLoggedIn && (
+              <Button variant="ghost" size="sm" className="sm:hidden" asChild>
+                <Link href="/management/login">
+                  <LogIn className="h-4 w-4" />
+                </Link>
+              </Button>
+            )}
           </div>
         </div>
         </div>
@@ -122,25 +153,25 @@ export default function ManagementLandingPage() {
               {/* Quick Action Buttons */}
               <div className="mt-10 grid grid-cols-2 sm:flex sm:flex-row items-center justify-center gap-4">
                 <Button size="lg" className="w-full sm:w-48 bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg" asChild>
-                  <Link href="/management/login?redirect=/management">
+                  <Link href={getLink("/management")}>
                     <LayoutDashboard className="mr-2 h-5 w-5" />
                     Dashboard
                   </Link>
                 </Button>
                 <Button size="lg" className="w-full sm:w-48 bg-blue-600 hover:bg-blue-700 text-white shadow-lg" asChild>
-                  <Link href="/management/login?redirect=/management/monitoring">
+                  <Link href={getLink("/management/monitoring")}>
                     <BarChart3 className="mr-2 h-5 w-5" />
                     Monitoring
                   </Link>
                 </Button>
                 <Button size="lg" className="w-full sm:w-48 bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg" asChild>
-                  <Link href="/management/login?redirect=/management/transactions">
+                  <Link href={getLink("/management/transactions")}>
                     <History className="mr-2 h-5 w-5" />
                     Transaction History
                   </Link>
                 </Button>
                 <Button size="lg" className="w-full sm:w-48 bg-slate-600 hover:bg-slate-700 text-white shadow-lg" asChild>
-                  <Link href="/management/login?redirect=/management/status">
+                  <Link href={getLink("/management/status")}>
                     <CheckCircle className="mr-2 h-5 w-5" />
                     Status
                   </Link>
