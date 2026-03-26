@@ -343,7 +343,7 @@ export default function ManagementLayout({
             <Breadcrumb>
               <BreadcrumbList>
                 <BreadcrumbItem>
-                  <BreadcrumbLink href="/management" className="flex items-center gap-1 text-muted-foreground hover:text-primary">
+                  <BreadcrumbLink href="/management/landing" className="flex items-center gap-1 text-muted-foreground hover:text-primary">
                     <Home className="h-3.5 w-3.5" />
                     Home
                   </BreadcrumbLink>
