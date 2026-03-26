@@ -173,7 +173,7 @@ export default function ManagementLandingPage() {
                 <Button size="lg" className="w-full sm:w-48 bg-slate-600 hover:bg-slate-700 text-white shadow-lg" asChild>
                   <Link href={getLink("/management/status")}>
                     <CheckCircle className="mr-2 h-5 w-5" />
-                    Status
+                    Status Overview
                   </Link>
                 </Button>
               </div>
