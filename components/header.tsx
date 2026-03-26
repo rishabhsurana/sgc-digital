@@ -116,7 +116,7 @@ export function Header() {
                 className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-600 hover:text-primary border border-slate-300 rounded-md hover:border-primary/50 transition-colors"
               >
                 <Shield className="h-3.5 w-3.5" />
-                Staff Portal
+                Management Portal
               </Link>
             )}
             <Button variant="ghost" size="sm" className="hidden sm:flex hover:bg-primary/10 hover:text-primary" asChild>
@@ -212,7 +212,7 @@ export function Header() {
                       className="flex items-center gap-3 px-4 py-2 text-slate-600 border border-slate-300 rounded-lg hover:border-primary/50 hover:text-primary transition-colors text-sm mb-2"
                     >
                       <Shield className="h-4 w-4" />
-                      Staff Portal
+                      Management Portal
                     </Link>
                   )}
                   <Link 
