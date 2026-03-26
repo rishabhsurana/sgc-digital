@@ -101,18 +101,18 @@ export default function LoginPage() {
                 </div>
                 <Button 
                   type="submit" 
-                  className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-medium shadow-lg" 
+                  className="w-full h-12 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-lg transition-all hover:shadow-xl hover:scale-[1.02]" 
                   size="lg" 
                   disabled={isLoading}
                 >
                   {isLoading ? (
                     <span className="flex items-center gap-2">
-                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                      <span className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
                       Signing in...
                     </span>
                   ) : (
                     <span className="flex items-center gap-2">
-                      <LogIn className="h-4 w-4" />
+                      <LogIn className="h-5 w-5" />
                       Sign In
                     </span>
                   )}
