@@ -131,21 +131,21 @@ export default function ManagementLandingPage() {
               {/* Quick Action Buttons */}
               <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
                 <Button size="lg" asChild className="bg-blue-600 hover:bg-blue-700 text-white min-w-[180px]">
-                  <Link href="/management/login?redirect=/case-management/correspondence">
-                    <FileText className="mr-2 h-5 w-5" />
-                    Correspondence
+                  <Link href="/management/login?redirect=/management/monitoring">
+                    <BarChart3 className="mr-2 h-5 w-5" />
+                    Monitoring
                   </Link>
                 </Button>
                 <Button size="lg" asChild className="bg-emerald-600 hover:bg-emerald-700 text-white min-w-[180px]">
-                  <Link href="/management/login?redirect=/case-management/contracts">
+                  <Link href="/management/login?redirect=/management/transactions">
                     <ClipboardList className="mr-2 h-5 w-5" />
-                    Contract Request
+                    Transaction History
                   </Link>
                 </Button>
                 <Button size="lg" asChild className="bg-slate-800 hover:bg-slate-900 text-white min-w-[180px]">
-                  <Link href="/management/login?redirect=/management/dashboard">
-                    <BarChart3 className="mr-2 h-5 w-5" />
-                    My Dashboard
+                  <Link href="/management/login?redirect=/management/status">
+                    <CheckCircle className="mr-2 h-5 w-5" />
+                    Status
                   </Link>
                 </Button>
               </div>
