@@ -279,10 +279,53 @@ export interface Contract {
   updatedAt: Date
   createdBy: string
   updatedBy: string | null
+  
+  // Entity Ownership (for validation)
+  requestingEntityId?: string
+  entityNumber?: string
+  
+  // Renewal/Supplemental tracking
+  isRenewal?: boolean
+  isSupplemental?: boolean
+  parentContractId?: string | null
+  parentContractNumber?: string | null
+  renewalCount?: number
+  supplementalCount?: number
+  maxRenewals?: number
+  lastRenewalDate?: string | null
+  hasPendingRenewal?: boolean
+  hasPendingSupplemental?: boolean
+  
+  // Additional contract details for prepopulation
+  ministry?: string
+  department?: string
+  contractNature?: string
+  contractCategory?: string
+  contractInstrument?: string
+  currency?: string
+  fundingSource?: string
+  procurementMethod?: string
+  contractStartDate?: string
+  contractEndDate?: string
+  duration?: string
+  scopeOfWork?: string
+  description?: string
+  
+  // Contractor details for prepopulation
+  contractorType?: string
+  counterpartyCity?: string
+  counterpartyCountry?: string
+  companyRegistrationNumber?: string
+  taxIdentificationNumber?: string
+  
+  // Status for validation
+  status?: string
+  
   // Joined fields
   contractTypeName?: string
   contractNatureName?: string
   requestingDepartmentName?: string
+  requestingDepartment?: string
   priorityName?: string
   statusName?: string
   statusCategory?: string

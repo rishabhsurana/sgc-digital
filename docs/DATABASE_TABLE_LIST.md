@@ -1,10 +1,10 @@
 # SGC Digital - Complete Database Table List
 
-**Version:** 1.4.0  
+**Version:** 1.5.0  
 **Last Updated:** 2024  
-**Total Tables:** 115+  
-**Total Views:** 30+  
-**SQL Scripts:** 13
+**Total Tables:** 120+  
+**Total Views:** 35+  
+**SQL Scripts:** 14
 
 ---
 
@@ -16,20 +16,22 @@
 | Lookup Tables (Contracts) | 9 |
 | Lookup Tables (Correspondence) | 5 |
 | Lookup Tables (Submissions) | 1 |
-| **Lookup Tables (Workflow & Corrections)** | **2** |
+| Lookup Tables (Workflow & Corrections) | 2 |
+| **Lookup Tables (Validation)** | **2** |
 | User & Entity Tables | 8 |
 | Correspondence Tables | 4 |
 | Contract Tables | 13 |
 | Contract Renewals Tables | 3 |
 | Document Requirements Tables | 2 |
 | Draft & Failed Submissions Tables | 6 |
-| **Workflow, Corrections & Stage Duration Tables** | **7** |
+| Workflow, Corrections & Stage Duration Tables | 7 |
+| **Renewal/Supplemental Validation Tables** | **2** |
 | Tracking & Notifications Tables | 5 |
 | Audit & Activity Tables | 3 |
 | Reporting & Analytics Tables | 8 |
 | Ask Rex AI Tables | 9 |
 | System Configuration Tables | 4 |
-| **TOTAL TABLES** | **~115** |
+| **TOTAL TABLES** | **~120** |
 
 ---
 
@@ -605,7 +607,8 @@ For contracts with multiple parties (joint ventures, subcontractors):
 | 10 | `010-document-requirements-junction.sql` | Document requirements by category |
 | 11 | `011-contracts-complete-fields.sql` | Complete contract fields (70+ columns) |
 | 12 | `012-drafts-failed-submissions.sql` | Draft & failed submission handling |
-| 13 | `013-workflow-corrections-stages.sql` | **Workflow, corrections & stage duration tracking** |
+| 13 | `013-workflow-corrections-stages.sql` | Workflow, corrections & stage duration tracking |
+| 14 | `014-renewal-supplemental-validation.sql` | **Renewal/supplemental validation & entity ownership** |
 
 **OR use `CONSOLIDATED_SCHEMA.sql` for single-file deployment.**
 
@@ -619,4 +622,5 @@ For contracts with multiple parties (joint ventures, subcontractors):
 | 1.1 | 2024 | Added Entity master, Ask Rex, Reports |
 | 1.2 | 2024 | Added complete contract fields: ContractValue, ContractStartDate, ContractEndDate, ContractCounterparties, ContractMilestones |
 | 1.3 | 2024 | Added draft/failed submission handling with retry functionality |
-| 1.4 | 2024 | **Added workflow, corrections & stage duration tracking: LookupCorrectionReasons, LookupWorkflowStages, ContractCorrectionRequests, CorrespondenceCorrectionRequests, CorrectionDocuments, ContractStageDurations, CorrespondenceStageDurations** |
+| 1.4 | 2024 | Added workflow, corrections & stage duration tracking |
+| 1.5 | 2024 | **Added renewal/supplemental validation: LookupContractRenewalLimits, LookupValidationErrorCodes, ContractValidationLog, sp_ValidateContractForRenewalSupplemental, entity ownership fields, prepopulation support** |

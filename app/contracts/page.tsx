@@ -28,6 +28,7 @@ import { AskRex } from "@/components/ask-rex"
 import Link from "next/link"
 import { MINISTRIES_DEPARTMENTS_AGENCIES } from "@/lib/constants"
 import { saveDraft, getDraft, recordSubmissionAttempt, type Draft } from "@/lib/actions/draft-actions"
+import { validateOriginalContract, type OriginalContractData, type ValidationResult } from "@/lib/actions/contract-validation-actions"
 
 const STEPS = [
   { id: "nature", title: "Contract Nature", description: "Select contract type" },
@@ -281,6 +282,11 @@ export default function ContractsPage() {
   const [submissionError, setSubmissionError] = useState<string | null>(null)
   const [isLoadingDraft, setIsLoadingDraft] = useState(false)
   
+  // Contract validation state for renewals/supplementals
+  const [isValidatingContract, setIsValidatingContract] = useState(false)
+  const [validationResult, setValidationResult] = useState<ValidationResult | null>(null)
+  const [originalContractData, setOriginalContractData] = useState<OriginalContractData | null>(null)
+  
   const searchParams = useSearchParams()
   
   // Load draft if URL has draft parameter
@@ -328,6 +334,75 @@ export default function ContractsPage() {
     }
     setIsSavingDraft(false)
   }, [formData, currentStep, draftId])
+  
+  // Validate parent contract for renewals/supplementals
+  const handleValidateParentContract = useCallback(async () => {
+    if (!formData.parentContractNumber) return
+    
+    setIsValidatingContract(true)
+    setValidationResult(null)
+    setOriginalContractData(null)
+    
+    try {
+      // TODO: Get actual entity ID from user session
+      const entityId = 'ENT-MOF-001' // Demo entity ID
+      const contractType = formData.contractType as 'renewal' | 'supplemental'
+      
+      const result = await validateOriginalContract(
+        formData.parentContractNumber,
+        entityId,
+        contractType
+      )
+      
+      setValidationResult(result)
+      
+      if (result.isValid && result.contractData) {
+        setOriginalContractData(result.contractData)
+        
+        // Prepopulate form with original contract data
+        setFormData(prev => ({
+          ...prev,
+          // Ministry/MDA Information
+          ministry: result.contractData!.ministry || prev.ministry,
+          department: result.contractData!.department || prev.department,
+          
+          // Contractor Information
+          contractorType: result.contractData!.contractorType || prev.contractorType,
+          contractorName: result.contractData!.contractorName || prev.contractorName,
+          contractorAddress: result.contractData!.contractorAddress || prev.contractorAddress,
+          contractorCity: result.contractData!.contractorCity || prev.contractorCity,
+          contractorCountry: result.contractData!.contractorCountry || prev.contractorCountry,
+          contractorEmail: result.contractData!.contractorEmail || prev.contractorEmail,
+          contractorPhone: result.contractData!.contractorPhone || prev.contractorPhone,
+          companyRegistrationNumber: result.contractData!.companyRegistrationNumber || prev.companyRegistrationNumber,
+          taxIdentificationNumber: result.contractData!.taxIdentificationNumber || prev.taxIdentificationNumber,
+          
+          // Contract Details
+          contractTitle: contractType === 'renewal' 
+            ? `Renewal: ${result.contractData!.contractTitle}`
+            : `Supplemental: ${result.contractData!.contractTitle}`,
+          contractDescription: result.contractData!.contractDescription || prev.contractDescription,
+          scopeOfWork: result.contractData!.scopeOfWork || prev.scopeOfWork,
+          contractNature: result.contractData!.contractNature || prev.contractNature,
+          contractCategory: result.contractData!.contractCategory || prev.contractCategory,
+          contractInstrument: result.contractData!.contractInstrument || prev.contractInstrument,
+          contractCurrency: result.contractData!.contractCurrency || prev.contractCurrency,
+          fundingSource: result.contractData!.fundingSource || prev.fundingSource,
+          procurementMethod: result.contractData!.procurementMethod || prev.procurementMethod,
+        }))
+      }
+    } catch (error) {
+      console.error('[v0] Contract validation error:', error)
+      setValidationResult({
+        isValid: false,
+        contractData: null,
+        errors: ['An error occurred while validating the contract. Please try again.'],
+        warnings: []
+      })
+    } finally {
+      setIsValidatingContract(false)
+    }
+  }, [formData.parentContractNumber, formData.contractType])
 
   const updateFormData = (field: string, value: string | boolean) => {
     setFormData(prev => {
@@ -825,16 +900,126 @@ export default function ContractsPage() {
 
                   {/* Parent Contract Reference */}
                   {(formData.contractType === "renewal" || formData.contractType === "supplemental") && (
-                    <div className="space-y-2">
-                      <Label htmlFor="parentContractNumber">
-                        Parent Contract Transaction Number <span className="text-destructive">*</span>
-                      </Label>
-                      <Input
-                        id="parentContractNumber"
-                        value={formData.parentContractNumber}
-                        onChange={(e) => updateFormData("parentContractNumber", e.target.value)}
-                        placeholder="CON-XXXXXX or prior contract reference"
-                      />
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="parentContractNumber">
+                          Original Contract/Transaction Number <span className="text-destructive">*</span>
+                        </Label>
+                        <div className="flex gap-2">
+                          <Input
+                            id="parentContractNumber"
+                            value={formData.parentContractNumber}
+                            onChange={(e) => {
+                              updateFormData("parentContractNumber", e.target.value)
+                              // Reset validation when input changes
+                              setValidationResult(null)
+                              setOriginalContractData(null)
+                            }}
+                            placeholder="e.g., CON-2024-0001"
+                            className="flex-1"
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={handleValidateParentContract}
+                            disabled={!formData.parentContractNumber || isValidatingContract}
+                          >
+                            {isValidatingContract ? (
+                              <>
+                                <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent mr-2" />
+                                Validating...
+                              </>
+                            ) : (
+                              <>
+                                <FileCheck className="h-4 w-4 mr-2" />
+                                Validate & Load
+                              </>
+                            )}
+                          </Button>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          Enter the original contract number to validate ownership and auto-fill contract details
+                        </p>
+                      </div>
+                      
+                      {/* Validation Results */}
+                      {validationResult && (
+                        <div className="space-y-3">
+                          {/* Errors */}
+                          {validationResult.errors.length > 0 && (
+                            <Alert variant="destructive">
+                              <AlertCircle className="h-4 w-4" />
+                              <AlertDescription>
+                                <ul className="list-disc list-inside space-y-1">
+                                  {validationResult.errors.map((error, idx) => (
+                                    <li key={idx}>{error}</li>
+                                  ))}
+                                </ul>
+                              </AlertDescription>
+                            </Alert>
+                          )}
+                          
+                          {/* Warnings */}
+                          {validationResult.warnings.length > 0 && (
+                            <Alert className="bg-amber-50 border-amber-200">
+                              <AlertTriangle className="h-4 w-4 text-amber-600" />
+                              <AlertDescription className="text-amber-800">
+                                <ul className="list-disc list-inside space-y-1">
+                                  {validationResult.warnings.map((warning, idx) => (
+                                    <li key={idx}>{warning}</li>
+                                  ))}
+                                </ul>
+                              </AlertDescription>
+                            </Alert>
+                          )}
+                          
+                          {/* Success - Show original contract summary */}
+                          {validationResult.isValid && originalContractData && (
+                            <Alert className="bg-emerald-50 border-emerald-200">
+                              <CheckCircle className="h-4 w-4 text-emerald-600" />
+                              <AlertDescription className="text-emerald-800">
+                                <p className="font-medium mb-2">Contract validated successfully! Details have been loaded.</p>
+                                <div className="grid grid-cols-2 gap-2 text-sm">
+                                  <div>
+                                    <span className="text-emerald-600">Original Contract:</span>{' '}
+                                    {originalContractData.referenceNumber}
+                                  </div>
+                                  <div>
+                                    <span className="text-emerald-600">Title:</span>{' '}
+                                    {originalContractData.contractTitle}
+                                  </div>
+                                  <div>
+                                    <span className="text-emerald-600">Contractor:</span>{' '}
+                                    {originalContractData.contractorName}
+                                  </div>
+                                  <div>
+                                    <span className="text-emerald-600">Value:</span>{' '}
+                                    {originalContractData.contractCurrency} {Number(originalContractData.contractValue).toLocaleString()}
+                                  </div>
+                                  <div>
+                                    <span className="text-emerald-600">Start Date:</span>{' '}
+                                    {originalContractData.contractStartDate}
+                                  </div>
+                                  <div>
+                                    <span className="text-emerald-600">End Date:</span>{' '}
+                                    {originalContractData.contractEndDate}
+                                  </div>
+                                  <div>
+                                    <span className="text-emerald-600">Renewals:</span>{' '}
+                                    {originalContractData.renewalCount} of {3} used
+                                  </div>
+                                  <div>
+                                    <span className="text-emerald-600">Days to Expiry:</span>{' '}
+                                    <Badge variant={originalContractData.daysUntilExpiry <= 30 ? 'destructive' : originalContractData.daysUntilExpiry <= 60 ? 'secondary' : 'outline'}>
+                                      {originalContractData.daysUntilExpiry} days
+                                    </Badge>
+                                  </div>
+                                </div>
+                              </AlertDescription>
+                            </Alert>
+                          )}
+                        </div>
+                      )}
                     </div>
                   )}
                 </CardContent>
