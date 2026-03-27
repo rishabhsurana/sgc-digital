@@ -127,7 +127,7 @@ export function Header({ isStaff: isStaffProp = false }: HeaderProps) {
             </div>
           </Link>
 
-          {/* Navigation - SGC Digital brand colors: Teal, Blue, Gray */}
+          {/* Navigation - Consistent pill buttons with matching saturation */}
           <nav className="hidden items-center gap-2 lg:flex">
             <Link 
               href="/" 
@@ -135,7 +135,7 @@ export function Header({ isStaff: isStaffProp = false }: HeaderProps) {
                 "relative flex items-center justify-center gap-2 min-w-[120px] px-5 py-2.5 text-sm font-semibold rounded-full transition-all duration-200",
                 isActive('/') 
                   ? "text-white bg-gradient-to-r from-teal-500 to-teal-600 shadow-lg shadow-teal-200" 
-                  : "text-teal-700 bg-gradient-to-r from-teal-50 to-teal-100 hover:from-teal-100 hover:to-teal-200 border border-teal-200"
+                  : "text-teal-700 bg-gradient-to-r from-slate-100 to-slate-200 hover:from-teal-50 hover:to-teal-100 border border-slate-300"
               )}
             >
               <Home className={cn("h-4 w-4", isActive('/') ? "text-white" : "text-teal-600")} />
@@ -148,7 +148,7 @@ export function Header({ isStaff: isStaffProp = false }: HeaderProps) {
                   "relative flex items-center justify-center gap-2 min-w-[120px] px-5 py-2.5 text-sm font-semibold rounded-full transition-all duration-200 outline-none",
                   isServicesActive 
                     ? "text-white bg-gradient-to-r from-primary to-blue-600 shadow-lg shadow-blue-200" 
-                    : "text-primary bg-gradient-to-r from-blue-50 to-primary/10 hover:from-blue-100 hover:to-primary/20 border border-primary/30"
+                    : "text-primary bg-gradient-to-r from-slate-100 to-slate-200 hover:from-blue-50 hover:to-blue-100 border border-slate-300"
                 )}
               >
                 <FileText className={cn("h-4 w-4", isServicesActive ? "text-white" : "text-primary")} />
