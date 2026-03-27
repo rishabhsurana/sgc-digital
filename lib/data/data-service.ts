@@ -52,6 +52,35 @@ import {
 const USE_MOCK_DATA = true
 
 // =============================================
+// Persistent In-Memory Storage (survives serverless hot starts)
+// =============================================
+
+// Use globalThis to persist across hot reloads in development and between requests
+declare global {
+  // eslint-disable-next-line no-var
+  var __sgc_registered_users: Map<string, UserProfile> | undefined
+  // eslint-disable-next-line no-var
+  var __sgc_users_initialized: boolean | undefined
+}
+
+// Initialize the persistent user storage
+function getRegisteredUsersStore(): Map<string, UserProfile> {
+  if (!globalThis.__sgc_registered_users) {
+    globalThis.__sgc_registered_users = new Map<string, UserProfile>()
+  }
+  return globalThis.__sgc_registered_users
+}
+
+// Combine mock users with registered users
+function getAllUsers(): UserProfile[] {
+  const registeredUsers = Array.from(getRegisteredUsersStore().values())
+  // Combine MOCK_USERS with registered users, avoiding duplicates by email
+  const mockEmails = new Set(MOCK_USERS.map(u => u.email.toLowerCase()))
+  const uniqueRegistered = registeredUsers.filter(u => !mockEmails.has(u.email.toLowerCase()))
+  return [...MOCK_USERS, ...uniqueRegistered]
+}
+
+// =============================================
 // Lookup Data Services
 // =============================================
 
@@ -134,13 +163,17 @@ export async function getCurrencies(): Promise<Currency[]> {
 
 export async function getUsers(): Promise<UserProfile[]> {
   if (USE_MOCK_DATA) {
-    return MOCK_USERS
+    return getAllUsers()
   }
-  return MOCK_USERS
+  return getAllUsers()
 }
 
 export async function getUserById(userId: string): Promise<UserProfile | null> {
   if (USE_MOCK_DATA) {
+    // Check registered users first
+    const registeredUser = getRegisteredUsersStore().get(userId)
+    if (registeredUser) return registeredUser
+    // Then check mock users
     return MOCK_USERS.find(u => u.userId === userId) || null
   }
   return MOCK_USERS.find(u => u.userId === userId) || null
@@ -148,19 +181,21 @@ export async function getUserById(userId: string): Promise<UserProfile | null> {
 
 export async function getUserByEmail(email: string): Promise<UserProfile | null> {
   if (USE_MOCK_DATA) {
+    const allUsers = getAllUsers()
     console.log('[v0] getUserByEmail searching for:', email.toLowerCase())
-    console.log('[v0] Available emails:', MOCK_USERS.map(u => u.email.toLowerCase()))
-    const found = MOCK_USERS.find(u => u.email.toLowerCase() === email.toLowerCase()) || null
+    console.log('[v0] Available emails:', allUsers.map(u => u.email.toLowerCase()))
+    const found = allUsers.find(u => u.email.toLowerCase() === email.toLowerCase()) || null
     console.log('[v0] Found user:', found ? found.email : 'null')
     return found
   }
-  return MOCK_USERS.find(u => u.email.toLowerCase() === email.toLowerCase()) || null
+  return getAllUsers().find(u => u.email.toLowerCase() === email.toLowerCase()) || null
 }
 
 export async function createUser(userData: Partial<UserProfile>): Promise<UserProfile> {
   if (USE_MOCK_DATA) {
+    const userId = crypto.randomUUID()
     const newUser: UserProfile = {
-      userId: crypto.randomUUID(),
+      userId,
       email: userData.email || '',
       firstName: userData.firstName || '',
       lastName: userData.lastName || '',
@@ -175,9 +210,15 @@ export async function createUser(userData: Partial<UserProfile>): Promise<UserPr
       emailVerified: false,
       lastLoginAt: null,
       createdAt: new Date(),
-      updatedAt: new Date()
+      updatedAt: new Date(),
+      // Add role and entity type names for display
+      roleName: USER_ROLES.find(r => r.roleId === (userData.roleId || 1))?.roleName || 'Public User',
+      entityTypeName: ENTITY_TYPES.find(e => e.entityTypeId === (userData.entityTypeId || 4))?.entityTypeName || 'Public',
+      departmentName: userData.departmentId ? DEPARTMENTS.find(d => d.departmentId === userData.departmentId)?.departmentName : undefined
     }
-    MOCK_USERS.push(newUser)
+    // Store in persistent storage
+    getRegisteredUsersStore().set(userId, newUser)
+    console.log('[v0] User created and stored:', newUser.email, 'Total registered:', getRegisteredUsersStore().size)
     return newUser
   }
   // TODO: Implement database insert
@@ -186,6 +227,14 @@ export async function createUser(userData: Partial<UserProfile>): Promise<UserPr
 
 export async function updateUser(userId: string, userData: Partial<UserProfile>): Promise<UserProfile | null> {
   if (USE_MOCK_DATA) {
+    // Check registered users first
+    const registeredUser = getRegisteredUsersStore().get(userId)
+    if (registeredUser) {
+      const updatedUser = { ...registeredUser, ...userData, updatedAt: new Date() }
+      getRegisteredUsersStore().set(userId, updatedUser)
+      return updatedUser
+    }
+    // Then check mock users
     const index = MOCK_USERS.findIndex(u => u.userId === userId)
     if (index === -1) return null
     MOCK_USERS[index] = { ...MOCK_USERS[index], ...userData, updatedAt: new Date() }
@@ -196,6 +245,12 @@ export async function updateUser(userId: string, userData: Partial<UserProfile>)
 
 export async function deleteUser(userId: string): Promise<boolean> {
   if (USE_MOCK_DATA) {
+    // Check registered users first
+    if (getRegisteredUsersStore().has(userId)) {
+      getRegisteredUsersStore().delete(userId)
+      return true
+    }
+    // Then check mock users
     const index = MOCK_USERS.findIndex(u => u.userId === userId)
     if (index === -1) return false
     MOCK_USERS.splice(index, 1)
@@ -540,7 +595,7 @@ export async function authenticateUser(
     
     console.log('[v0] authenticateUser called with email:', email)
     console.log('[v0] User found:', user ? `${user.firstName} ${user.lastName} (roleId: ${user.roleId}, statusId: ${user.statusId})` : 'null')
-    console.log('[v0] Total users in MOCK_USERS:', MOCK_USERS.length)
+    console.log('[v0] Total users (mock + registered):', getAllUsers().length, '| Registered users:', getRegisteredUsersStore().size)
     
     if (!user) {
       return { success: false, error: 'Invalid email or password' }
@@ -557,8 +612,11 @@ export async function authenticateUser(
       return { success: false, error: 'Account is not active. Please contact support.' }
     }
     
-    // Update last login
+    // Update last login - check if it's a registered user
     user.lastLoginAt = new Date()
+    if (getRegisteredUsersStore().has(user.userId)) {
+      getRegisteredUsersStore().set(user.userId, user)
+    }
     
     return { success: true, user }
   }
