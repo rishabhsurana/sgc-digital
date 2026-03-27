@@ -680,43 +680,22 @@ export default function DashboardPage() {
       
       <main className="flex-1 py-8 lg:py-12">
         <div className="container mx-auto px-4 lg:px-8">
-          {/* User Welcome Banner - Compact */}
+          {/* User Welcome Strip - Minimal */}
           {userInfo && (
-            <Card className="mb-6 bg-gradient-to-r from-primary/5 via-primary/10 to-accent/5 border-primary/20">
-              <CardContent className="px-4 py-3">
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground">
-                      <User className="h-4 w-4" />
-                    </div>
-                    <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5">
-                      <span className="text-base font-semibold text-foreground">Welcome back, {userInfo.fullName}</span>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <span>{userInfo.email}</span>
-                        <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 text-xs py-0">
-                          {SUBMITTER_TYPE_LABELS[userInfo.submitterType] || userInfo.submitterType}
-                        </Badge>
-                        {userInfo.organization && (
-                          <>
-                            <span className="text-muted-foreground/50">|</span>
-                            <span className="flex items-center gap-1">
-                              <Building2 className="h-3 w-3" />
-                              {userInfo.organization}
-                            </span>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                  <form action={logout}>
-                    <Button type="submit" variant="ghost" size="sm" className="h-8">
-                      <LogOut className="h-3.5 w-3.5 mr-1" />
-                      Sign Out
-                    </Button>
-                  </form>
-                </div>
-              </CardContent>
-            </Card>
+            <div className="mb-4 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-between text-sm">
+              <div className="flex items-center gap-2">
+                <span className="text-slate-600">Welcome back,</span>
+                <span className="font-medium text-slate-900">{userInfo.fullName}</span>
+                <span className="text-slate-300">|</span>
+                <span className="text-slate-500">{userInfo.organization || userInfo.email}</span>
+              </div>
+              <form action={logout}>
+                <Button type="submit" variant="ghost" size="sm" className="h-6 px-2 text-xs text-slate-500 hover:text-slate-700">
+                  <LogOut className="h-3 w-3 mr-1" />
+                  Sign Out
+                </Button>
+              </form>
+            </div>
           )}
 
           {/* Hero Banner */}
