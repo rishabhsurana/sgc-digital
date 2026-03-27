@@ -127,18 +127,18 @@ export function Header({ isStaff: isStaffProp = false }: HeaderProps) {
             </div>
           </Link>
 
-          {/* Redesigned Navigation - Clean, minimal with active states */}
-          <nav className="hidden items-center gap-1 lg:flex">
+          {/* Navigation - Pill buttons with colored accents */}
+          <nav className="hidden items-center gap-2 lg:flex bg-slate-50 p-1.5 rounded-full">
             <Link 
               href="/" 
               className={cn(
                 "relative flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-full transition-all duration-200",
                 isActive('/') 
-                  ? "text-slate-900 bg-slate-100" 
-                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                  ? "text-white bg-gradient-to-r from-teal-500 to-teal-600 shadow-md" 
+                  : "text-slate-600 hover:text-slate-900 hover:bg-white hover:shadow-sm"
               )}
             >
-              <Home className={cn("h-4 w-4", isActive('/') ? "text-primary" : "text-slate-400")} />
+              <Home className={cn("h-4 w-4", isActive('/') ? "text-white" : "text-teal-500")} />
               Home
             </Link>
             
@@ -147,13 +147,13 @@ export function Header({ isStaff: isStaffProp = false }: HeaderProps) {
                 className={cn(
                   "relative flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-full transition-all duration-200 outline-none",
                   isServicesActive 
-                    ? "text-slate-900 bg-slate-100" 
-                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                    ? "text-white bg-gradient-to-r from-blue-500 to-blue-600 shadow-md" 
+                    : "text-slate-600 hover:text-slate-900 hover:bg-white hover:shadow-sm"
                 )}
               >
-                <FileText className={cn("h-4 w-4", isServicesActive ? "text-blue-600" : "text-slate-400")} />
+                <FileText className={cn("h-4 w-4", isServicesActive ? "text-white" : "text-blue-500")} />
                 Services
-                <ChevronDown className="h-3.5 w-3.5 opacity-60" />
+                <ChevronDown className={cn("h-3.5 w-3.5", isServicesActive ? "text-white/80" : "opacity-60")} />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="center" className="w-64 p-2">
                 <DropdownMenuItem asChild className="rounded-lg p-3 cursor-pointer">
@@ -186,11 +186,11 @@ export function Header({ isStaff: isStaffProp = false }: HeaderProps) {
               className={cn(
                 "relative flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-full transition-all duration-200",
                 isActive('/dashboard') 
-                  ? "text-slate-900 bg-slate-100" 
-                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                  ? "text-white bg-gradient-to-r from-amber-500 to-orange-500 shadow-md" 
+                  : "text-slate-600 hover:text-slate-900 hover:bg-white hover:shadow-sm"
               )}
             >
-              <LayoutDashboard className={cn("h-4 w-4", isActive('/dashboard') ? "text-amber-600" : "text-slate-400")} />
+              <LayoutDashboard className={cn("h-4 w-4", isActive('/dashboard') ? "text-white" : "text-amber-500")} />
               Dashboard
             </Link>
           </nav>
@@ -309,10 +309,10 @@ export function Header({ isStaff: isStaffProp = false }: HeaderProps) {
                     onClick={() => setIsOpen(false)}
                     className={cn(
                       "flex items-center gap-3 px-4 py-3 rounded-xl transition-all",
-                      isActive('/') ? "bg-slate-100 text-slate-900" : "text-slate-600 hover:bg-slate-50"
+                      isActive('/') ? "bg-gradient-to-r from-teal-500 to-teal-600 text-white shadow-sm" : "text-slate-600 hover:bg-slate-50"
                     )}
                   >
-                    <Home className={cn("h-5 w-5", isActive('/') ? "text-primary" : "text-slate-400")} />
+                    <Home className={cn("h-5 w-5", isActive('/') ? "text-white" : "text-teal-500")} />
                     <span className="font-medium">Home</span>
                   </Link>
                   
@@ -325,11 +325,11 @@ export function Header({ isStaff: isStaffProp = false }: HeaderProps) {
                     onClick={() => setIsOpen(false)}
                     className={cn(
                       "flex items-center gap-3 px-4 py-3 rounded-xl transition-all ml-1",
-                      isActive('/correspondence') ? "bg-blue-50 text-blue-700" : "text-slate-600 hover:bg-slate-50"
+                      isActive('/correspondence') ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-sm" : "text-slate-600 hover:bg-slate-50"
                     )}
                   >
-                    <div className={cn("p-1.5 rounded-lg", isActive('/correspondence') ? "bg-blue-100" : "bg-slate-100")}>
-                      <FileText className={cn("h-4 w-4", isActive('/correspondence') ? "text-blue-600" : "text-slate-400")} />
+                    <div className={cn("p-1.5 rounded-lg", isActive('/correspondence') ? "bg-white/20" : "bg-slate-100")}>
+                      <FileText className={cn("h-4 w-4", isActive('/correspondence') ? "text-white" : "text-blue-500")} />
                     </div>
                     <span className="font-medium">Correspondence</span>
                   </Link>
@@ -338,11 +338,11 @@ export function Header({ isStaff: isStaffProp = false }: HeaderProps) {
                     onClick={() => setIsOpen(false)}
                     className={cn(
                       "flex items-center gap-3 px-4 py-3 rounded-xl transition-all ml-1",
-                      isActive('/contracts') ? "bg-emerald-50 text-emerald-700" : "text-slate-600 hover:bg-slate-50"
+                      isActive('/contracts') ? "bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-sm" : "text-slate-600 hover:bg-slate-50"
                     )}
                   >
-                    <div className={cn("p-1.5 rounded-lg", isActive('/contracts') ? "bg-emerald-100" : "bg-slate-100")}>
-                      <FileSignature className={cn("h-4 w-4", isActive('/contracts') ? "text-emerald-600" : "text-slate-400")} />
+                    <div className={cn("p-1.5 rounded-lg", isActive('/contracts') ? "bg-white/20" : "bg-slate-100")}>
+                      <FileSignature className={cn("h-4 w-4", isActive('/contracts') ? "text-white" : "text-emerald-500")} />
                     </div>
                     <span className="font-medium">Contracts</span>
                   </Link>
@@ -356,11 +356,11 @@ export function Header({ isStaff: isStaffProp = false }: HeaderProps) {
                     onClick={() => setIsOpen(false)}
                     className={cn(
                       "flex items-center gap-3 px-4 py-3 rounded-xl transition-all ml-1",
-                      isActive('/dashboard') ? "bg-amber-50 text-amber-700" : "text-slate-600 hover:bg-slate-50"
+                      isActive('/dashboard') ? "bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-sm" : "text-slate-600 hover:bg-slate-50"
                     )}
                   >
-                    <div className={cn("p-1.5 rounded-lg", isActive('/dashboard') ? "bg-amber-100" : "bg-slate-100")}>
-                      <LayoutDashboard className={cn("h-4 w-4", isActive('/dashboard') ? "text-amber-600" : "text-slate-400")} />
+                    <div className={cn("p-1.5 rounded-lg", isActive('/dashboard') ? "bg-white/20" : "bg-slate-100")}>
+                      <LayoutDashboard className={cn("h-4 w-4", isActive('/dashboard') ? "text-white" : "text-amber-500")} />
                     </div>
                     <span className="font-medium">Dashboard</span>
                   </Link>

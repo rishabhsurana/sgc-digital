@@ -132,6 +132,7 @@ export interface LoginResult {
     email: string
     organization?: string
     submitterType?: string
+    entityNumber?: string
   }
 }
 
@@ -181,6 +182,9 @@ export async function loginUser(
     redirectTo = '/company/dashboard'
   }
   
+  // Generate entity number from user ID (format: ENT-XXXXX)
+  const entityNumber = `ENT-${String(result.user.userId).padStart(5, '0')}`
+  
   return { 
     success: true, 
     redirectTo,
@@ -188,7 +192,8 @@ export async function loginUser(
       fullName: `${result.user.firstName} ${result.user.lastName}`,
       email: result.user.email,
       organization: result.user.organizationName || result.user.departmentName,
-      submitterType: result.user.entityTypeName
+      submitterType: result.user.entityTypeName,
+      entityNumber
     }
   }
 }
