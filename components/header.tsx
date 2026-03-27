@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { 
   Menu, User, LogIn, FileText, FileSignature, 
-  LayoutDashboard, BarChart3, Home, ChevronDown, Settings, Shield, LogOut, Building2 
+  LayoutDashboard, Home, ChevronDown, Shield, LogOut, Building2 
 } from "lucide-react"
 import { useState, useEffect } from "react"
 import {
@@ -16,7 +16,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { useRouter } from "next/navigation"
+import { useRouter, usePathname } from "next/navigation"
+import { cn } from "@/lib/utils"
 
 interface HeaderProps {
   isStaff?: boolean
@@ -34,6 +35,7 @@ export function Header({ isStaff: isStaffProp = false }: HeaderProps) {
   const [isStaff, setIsStaff] = useState(isStaffProp)
   const [userSession, setUserSession] = useState<UserSession | null>(null)
   const router = useRouter()
+  const pathname = usePathname()
 
   useEffect(() => {
     // Check for user session in sessionStorage
@@ -83,6 +85,10 @@ export function Header({ isStaff: isStaffProp = false }: HeaderProps) {
     setIsStaff(false)
     router.push("/")
   }
+  
+  // Check if a nav item is active
+  const isActive = (path: string) => pathname === path
+  const isServicesActive = pathname === '/correspondence' || pathname === '/contracts'
 
   return (
     <header className="sticky top-0 z-50 w-full">
@@ -111,47 +117,64 @@ export function Header({ isStaff: isStaffProp = false }: HeaderProps) {
       </div>
       
       {/* Main Navigation */}
-      <div className="border-b border-primary/20 bg-gradient-to-r from-card via-card to-primary/5 backdrop-blur supports-[backdrop-filter]:bg-card/95">
+      <div className="border-b border-slate-200 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80">
         <div className="flex h-16 items-center justify-between px-4 lg:px-6">
           {/* SGC Digital Branding */}
           <Link href="/" className="flex items-center group">
             <div>
               <p className="text-base font-bold text-primary group-hover:text-primary/80 transition-colors">SGC Digital</p>
-              <p className="text-xs text-muted-foreground font-medium">Correspondence & Contract Management Portal</p>
+              <p className="text-xs text-muted-foreground">Correspondence & Contract Management Portal</p>
             </div>
           </Link>
 
+          {/* Redesigned Navigation - Clean, minimal with active states */}
           <nav className="hidden items-center gap-1 lg:flex">
             <Link 
               href="/" 
-              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-foreground/80 rounded-lg transition-all hover:text-primary hover:bg-primary/5"
+              className={cn(
+                "relative flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-full transition-all duration-200",
+                isActive('/') 
+                  ? "text-slate-900 bg-slate-100" 
+                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+              )}
             >
-              <Home className="h-4 w-4 text-teal-600" />
+              <Home className={cn("h-4 w-4", isActive('/') ? "text-primary" : "text-slate-400")} />
               Home
             </Link>
             
             <DropdownMenu>
-              <DropdownMenuTrigger className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-foreground/80 rounded-lg transition-all hover:text-primary hover:bg-primary/5">
-                <FileText className="h-4 w-4 text-blue-600" />
+              <DropdownMenuTrigger 
+                className={cn(
+                  "relative flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-full transition-all duration-200 outline-none",
+                  isServicesActive 
+                    ? "text-slate-900 bg-slate-100" 
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                )}
+              >
+                <FileText className={cn("h-4 w-4", isServicesActive ? "text-blue-600" : "text-slate-400")} />
                 Services
-                <ChevronDown className="h-3 w-3" />
+                <ChevronDown className="h-3.5 w-3.5 opacity-60" />
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-56">
-                <DropdownMenuItem asChild>
-                  <Link href="/correspondence" className="flex items-center gap-2">
-                    <FileText className="h-4 w-4 text-blue-600" />
+              <DropdownMenuContent align="center" className="w-64 p-2">
+                <DropdownMenuItem asChild className="rounded-lg p-3 cursor-pointer">
+                  <Link href="/correspondence" className="flex items-start gap-3">
+                    <div className="p-2 rounded-lg bg-blue-50">
+                      <FileText className="h-4 w-4 text-blue-600" />
+                    </div>
                     <div>
-                      <p className="font-medium">Correspondence</p>
-                      <p className="text-xs text-muted-foreground">Submit registry correspondence</p>
+                      <p className="font-semibold text-slate-900">Correspondence</p>
+                      <p className="text-xs text-slate-500 mt-0.5">Submit registry correspondence</p>
                     </div>
                   </Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/contracts" className="flex items-center gap-2">
-                    <FileSignature className="h-4 w-4 text-emerald-600" />
+                <DropdownMenuItem asChild className="rounded-lg p-3 cursor-pointer">
+                  <Link href="/contracts" className="flex items-start gap-3">
+                    <div className="p-2 rounded-lg bg-emerald-50">
+                      <FileSignature className="h-4 w-4 text-emerald-600" />
+                    </div>
                     <div>
-                      <p className="font-medium">Contracts</p>
-                      <p className="text-xs text-muted-foreground">Government contract requests</p>
+                      <p className="font-semibold text-slate-900">Contracts</p>
+                      <p className="text-xs text-slate-500 mt-0.5">Government contract requests</p>
                     </div>
                   </Link>
                 </DropdownMenuItem>
@@ -160,21 +183,26 @@ export function Header({ isStaff: isStaffProp = false }: HeaderProps) {
             
             <Link 
               href="/dashboard" 
-              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-foreground/80 rounded-lg transition-all hover:text-primary hover:bg-primary/5"
+              className={cn(
+                "relative flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-full transition-all duration-200",
+                isActive('/dashboard') 
+                  ? "text-slate-900 bg-slate-100" 
+                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+              )}
             >
-              <LayoutDashboard className="h-4 w-4 text-amber-600" />
+              <LayoutDashboard className={cn("h-4 w-4", isActive('/dashboard') ? "text-amber-600" : "text-slate-400")} />
               Dashboard
             </Link>
           </nav>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             {isStaff && (
               <Link 
                 href="/management/landing"
-                className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-600 hover:text-primary border border-slate-300 rounded-md hover:border-primary/50 transition-colors"
+                className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-500 hover:text-primary border border-slate-200 rounded-full hover:border-primary/50 hover:bg-primary/5 transition-all"
               >
                 <Shield className="h-3.5 w-3.5" />
-                Management Portal
+                Management
               </Link>
             )}
             
@@ -182,37 +210,48 @@ export function Header({ isStaff: isStaffProp = false }: HeaderProps) {
               /* Logged In State - Show Organization/User Dropdown */
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button size="sm" variant="outline" className="hidden sm:flex items-center gap-2 border-primary/30 hover:border-primary/50 hover:bg-primary/5">
-                    <Building2 className="h-4 w-4 text-primary" />
-                    <span className="max-w-[180px] truncate font-medium">
+                  <Button size="sm" variant="outline" className="hidden sm:flex items-center gap-2 rounded-full border-slate-200 hover:border-primary/50 hover:bg-primary/5 px-4">
+                    <div className="w-7 h-7 rounded-full bg-gradient-to-br from-primary to-blue-600 flex items-center justify-center text-white text-xs font-semibold">
+                      {(userSession.organization || userSession.fullName).charAt(0).toUpperCase()}
+                    </div>
+                    <span className="max-w-[160px] truncate font-medium text-slate-700">
                       {userSession.organization || userSession.fullName}
                     </span>
-                    <ChevronDown className="h-3 w-3 opacity-50" />
+                    <ChevronDown className="h-3.5 w-3.5 text-slate-400" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  <div className="px-2 py-1.5">
-                    <p className="text-sm font-medium">{userSession.fullName}</p>
-                    <p className="text-xs text-muted-foreground">{userSession.email}</p>
+                <DropdownMenuContent align="end" className="w-64 p-2">
+                  <div className="px-3 py-2 mb-1">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-blue-600 flex items-center justify-center text-white font-semibold">
+                        {(userSession.organization || userSession.fullName).charAt(0).toUpperCase()}
+                      </div>
+                      <div>
+                        <p className="font-semibold text-slate-900">{userSession.fullName}</p>
+                        <p className="text-xs text-slate-500">{userSession.email}</p>
+                      </div>
+                    </div>
                     {userSession.organization && (
-                      <p className="text-xs text-primary mt-1">{userSession.organization}</p>
+                      <div className="mt-2 px-2 py-1 bg-primary/5 rounded-md">
+                        <p className="text-xs font-medium text-primary">{userSession.organization}</p>
+                      </div>
                     )}
                   </div>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <Link href="/dashboard" className="flex items-center gap-2">
-                      <LayoutDashboard className="h-4 w-4" />
+                  <DropdownMenuItem asChild className="rounded-lg cursor-pointer">
+                    <Link href="/dashboard" className="flex items-center gap-2 py-2">
+                      <LayoutDashboard className="h-4 w-4 text-slate-400" />
                       My Dashboard
                     </Link>
                   </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="/profile" className="flex items-center gap-2">
-                      <User className="h-4 w-4" />
+                  <DropdownMenuItem asChild className="rounded-lg cursor-pointer">
+                    <Link href="/profile" className="flex items-center gap-2 py-2">
+                      <User className="h-4 w-4 text-slate-400" />
                       My Profile
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleLogout} className="text-red-600 focus:text-red-600">
+                  <DropdownMenuItem onClick={handleLogout} className="text-red-600 focus:text-red-600 rounded-lg cursor-pointer py-2">
                     <LogOut className="h-4 w-4 mr-2" />
                     Sign Out
                   </DropdownMenuItem>
@@ -220,144 +259,170 @@ export function Header({ isStaff: isStaffProp = false }: HeaderProps) {
               </DropdownMenu>
             ) : (
               /* Logged Out State - Show Sign In / Register Buttons */
-              <>
-                <Button size="sm" className="hidden sm:flex bg-blue-600 hover:bg-blue-700 text-white shadow-md" asChild>
+              <div className="hidden sm:flex items-center gap-2">
+                <Button size="sm" className="rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-sm px-5" asChild>
                   <Link href="/login">
                     <LogIn className="mr-2 h-4 w-4" />
                     Sign In
                   </Link>
                 </Button>
-                <Button size="sm" className="hidden sm:flex bg-emerald-600 hover:bg-emerald-700 text-white shadow-md" asChild>
+                <Button size="sm" className="rounded-full bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm px-5" asChild>
                   <Link href="/register">
                     <User className="mr-2 h-4 w-4" />
                     Register
                   </Link>
                 </Button>
-              </>
+              </div>
             )}
 
             <Sheet open={isOpen} onOpenChange={setIsOpen}>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="lg:hidden hover:bg-primary/10">
-                  <Menu className="h-5 w-5" />
+                <Button variant="ghost" size="icon" className="lg:hidden hover:bg-slate-100 rounded-full">
+                  <Menu className="h-5 w-5 text-slate-600" />
                   <span className="sr-only">Toggle menu</span>
                 </Button>
               </SheetTrigger>
-              <SheetContent side="right" className="w-[300px] sm:w-[350px] bg-gradient-to-b from-card to-primary/5">
-                <div className="mb-8 mt-4">
-                  <div className="flex items-center gap-2 mb-3 pb-3 border-b border-primary/10">
+              <SheetContent side="right" className="w-[300px] sm:w-[350px] bg-white p-0">
+                {/* Mobile Header */}
+                <div className="p-6 border-b border-slate-100">
+                  <div className="flex items-center gap-3 mb-4">
                     <Image
                       src="/images/barbados-coat-of-arms.png"
                       alt="Government of Barbados"
-                      width={32}
-                      height={32}
+                      width={36}
+                      height={36}
                     />
                     <div>
-                      <p className="text-xs font-semibold text-primary">Government of Barbados</p>
-                      <p className="text-[10px] text-muted-foreground">Solicitor General{"'"}s Chambers</p>
+                      <p className="text-sm font-semibold text-slate-900">Government of Barbados</p>
+                      <p className="text-xs text-slate-500">Solicitor General{"'"}s Chambers</p>
                     </div>
                   </div>
                   <div>
-                    <p className="font-bold text-primary">SGC Digital</p>
-                    <p className="text-xs text-muted-foreground">Correspondence & Contract Management Portal</p>
+                    <p className="font-bold text-primary text-lg">SGC Digital</p>
+                    <p className="text-xs text-slate-500">Correspondence & Contract Management</p>
                   </div>
                 </div>
                 
-                <nav className="flex flex-col gap-1">
+                <nav className="flex flex-col p-4 gap-1">
                   <Link 
                     href="/" 
                     onClick={() => setIsOpen(false)}
-                    className="flex items-center gap-3 px-4 py-3 text-foreground rounded-lg hover:bg-primary/10 hover:text-primary transition-colors"
+                    className={cn(
+                      "flex items-center gap-3 px-4 py-3 rounded-xl transition-all",
+                      isActive('/') ? "bg-slate-100 text-slate-900" : "text-slate-600 hover:bg-slate-50"
+                    )}
                   >
-                    <Home className="h-5 w-5 text-teal-600" />
-                    Home
+                    <Home className={cn("h-5 w-5", isActive('/') ? "text-primary" : "text-slate-400")} />
+                    <span className="font-medium">Home</span>
                   </Link>
                   
-                  <div className="px-4 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  <p className="px-4 py-2 text-xs font-semibold text-slate-400 uppercase tracking-wider mt-2">
                     Services
-                  </div>
+                  </p>
                   
                   <Link 
                     href="/correspondence" 
                     onClick={() => setIsOpen(false)}
-                    className="flex items-center gap-3 px-4 py-3 text-foreground rounded-lg hover:bg-blue-50 hover:text-blue-700 transition-colors ml-2"
+                    className={cn(
+                      "flex items-center gap-3 px-4 py-3 rounded-xl transition-all ml-1",
+                      isActive('/correspondence') ? "bg-blue-50 text-blue-700" : "text-slate-600 hover:bg-slate-50"
+                    )}
                   >
-                    <FileText className="h-5 w-5 text-blue-600" />
-                    Correspondence
+                    <div className={cn("p-1.5 rounded-lg", isActive('/correspondence') ? "bg-blue-100" : "bg-slate-100")}>
+                      <FileText className={cn("h-4 w-4", isActive('/correspondence') ? "text-blue-600" : "text-slate-400")} />
+                    </div>
+                    <span className="font-medium">Correspondence</span>
                   </Link>
                   <Link 
                     href="/contracts" 
                     onClick={() => setIsOpen(false)}
-                    className="flex items-center gap-3 px-4 py-3 text-foreground rounded-lg hover:bg-emerald-50 hover:text-emerald-700 transition-colors ml-2"
+                    className={cn(
+                      "flex items-center gap-3 px-4 py-3 rounded-xl transition-all ml-1",
+                      isActive('/contracts') ? "bg-emerald-50 text-emerald-700" : "text-slate-600 hover:bg-slate-50"
+                    )}
                   >
-                    <FileSignature className="h-5 w-5 text-emerald-600" />
-                    Contracts
+                    <div className={cn("p-1.5 rounded-lg", isActive('/contracts') ? "bg-emerald-100" : "bg-slate-100")}>
+                      <FileSignature className={cn("h-4 w-4", isActive('/contracts') ? "text-emerald-600" : "text-slate-400")} />
+                    </div>
+                    <span className="font-medium">Contracts</span>
                   </Link>
                   
-                  <div className="px-4 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider mt-2">
+                  <p className="px-4 py-2 text-xs font-semibold text-slate-400 uppercase tracking-wider mt-2">
                     My Account
-                  </div>
+                  </p>
                   
                   <Link 
                     href="/dashboard" 
                     onClick={() => setIsOpen(false)}
-                    className="flex items-center gap-3 px-4 py-3 text-foreground rounded-lg hover:bg-primary/10 hover:text-primary transition-colors ml-2"
+                    className={cn(
+                      "flex items-center gap-3 px-4 py-3 rounded-xl transition-all ml-1",
+                      isActive('/dashboard') ? "bg-amber-50 text-amber-700" : "text-slate-600 hover:bg-slate-50"
+                    )}
                   >
-                    <LayoutDashboard className="h-5 w-5 text-amber-600" />
-                    Dashboard
+                    <div className={cn("p-1.5 rounded-lg", isActive('/dashboard') ? "bg-amber-100" : "bg-slate-100")}>
+                      <LayoutDashboard className={cn("h-4 w-4", isActive('/dashboard') ? "text-amber-600" : "text-slate-400")} />
+                    </div>
+                    <span className="font-medium">Dashboard</span>
                   </Link>
                   
-                  <hr className="my-4 border-primary/20" />
+                  <hr className="my-4 border-slate-100" />
                   
                   {isStaff && (
                     <Link 
                       href="/management/landing" 
                       onClick={() => setIsOpen(false)}
-                      className="flex items-center gap-3 px-4 py-2 text-slate-600 border border-slate-300 rounded-lg hover:border-primary/50 hover:text-primary transition-colors text-sm mb-2"
+                      className="flex items-center gap-3 px-4 py-2.5 text-slate-600 border border-slate-200 rounded-xl hover:border-primary/50 hover:bg-primary/5 transition-all text-sm mb-3"
                     >
-                      <Shield className="h-4 w-4" />
-                      Management Portal
+                      <Shield className="h-4 w-4 text-slate-400" />
+                      <span className="font-medium">Management Portal</span>
                     </Link>
                   )}
                   
                   {userSession ? (
                     /* Logged In State - Mobile */
                     <>
-                      <div className="px-4 py-3 mb-2 bg-primary/5 rounded-lg">
-                        <div className="flex items-center gap-2 mb-1">
-                          <Building2 className="h-4 w-4 text-primary" />
-                          <span className="font-medium text-sm">{userSession.organization || userSession.fullName}</span>
+                      <div className="px-4 py-4 mb-3 bg-gradient-to-r from-primary/5 to-blue-50 rounded-xl">
+                        <div className="flex items-center gap-3 mb-2">
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-blue-600 flex items-center justify-center text-white font-semibold">
+                            {(userSession.organization || userSession.fullName).charAt(0).toUpperCase()}
+                          </div>
+                          <div>
+                            <p className="font-semibold text-slate-900">{userSession.fullName}</p>
+                            <p className="text-xs text-slate-500">{userSession.email}</p>
+                          </div>
                         </div>
-                        <p className="text-xs text-muted-foreground">{userSession.email}</p>
+                        {userSession.organization && (
+                          <p className="text-xs font-medium text-primary bg-white/70 px-2 py-1 rounded-md inline-block">{userSession.organization}</p>
+                        )}
                       </div>
                       <button 
                         onClick={() => { handleLogout(); setIsOpen(false); }}
-                        className="flex items-center gap-3 px-4 py-3 text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition-colors font-medium w-full"
+                        className="flex items-center justify-center gap-2 px-4 py-3 text-red-600 border border-red-200 rounded-xl hover:bg-red-50 transition-all font-medium w-full"
                       >
-                        <LogOut className="h-5 w-5" />
+                        <LogOut className="h-4 w-4" />
                         Sign Out
                       </button>
                     </>
                   ) : (
                     /* Logged Out State - Mobile */
-                    <>
+                    <div className="flex flex-col gap-2">
                       <Link 
                         href="/login" 
                         onClick={() => setIsOpen(false)}
-                        className="flex items-center gap-3 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                        className="flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors font-medium"
                       >
-                        <LogIn className="h-5 w-5" />
+                        <LogIn className="h-4 w-4" />
                         Sign In
                       </Link>
                       <Link 
                         href="/register" 
                         onClick={() => setIsOpen(false)}
-                        className="flex items-center gap-3 px-4 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors font-medium"
+                        className="flex items-center justify-center gap-2 px-4 py-3 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-colors font-medium"
                       >
-                        <User className="h-5 w-5" />
+                        <User className="h-4 w-4" />
                         Register
                       </Link>
-                    </>
+                    </div>
                   )}
                 </nav>
               </SheetContent>
