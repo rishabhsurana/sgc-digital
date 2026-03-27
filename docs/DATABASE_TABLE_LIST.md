@@ -1,11 +1,11 @@
 # SGC Digital - Complete Database Table List
 
-**Version:** 2.3.0  
+**Version:** 2.4.0  
 **Last Updated:** March 2026  
-**Total Tables:** 160+  
-**Total Views:** 47+  
+**Total Tables:** 175+  
+**Total Views:** 49+  
 **Stored Procedures:** 24+  
-**SQL Scripts:** 20
+**SQL Scripts:** 21
 
 ---
 
@@ -35,6 +35,7 @@
 | Audit & Activity Tables | 3 |
 | Reporting & Analytics Tables | 8 |
 | **Report Parameters & Lookups** | **5** |
+| **Additional Lookup Tables** | **16** |
 | Ask Rex AI Tables | 9 |
 | System Configuration Tables | 4 |
 | **TOTAL TABLES** | **~130** |
@@ -876,9 +877,39 @@
 | 17 | `017-appendix-c-document-requirements.sql` | Appendix C: Complete document requirements matrix |
 | 18 | `018-email-notification-templates.sql` | Email notification types, templates & preferences |
 | 19 | `019-management-portal-tables.sql` | Management portal: MDAs, settings, reports, activity, statistics |
-| 20 | `020-report-parameters-schema.sql` | **Report parameters, date ranges, groupings, value ranges** |
+| 20 | `020-report-parameters-schema.sql` | Report parameters, date ranges, groupings, value ranges |
+| 21 | `021-missing-lookup-tables.sql` | **Additional lookups: Legal Officers, Courts, Statutory Bodies, Parishes, Return Reasons, etc.** |
 
 **OR use `CONSOLIDATED_SCHEMA.sql` for single-file deployment.**
+
+---
+
+## MODULE 17: ADDITIONAL LOOKUP TABLES (16 Tables)
+
+**Purpose:** Supporting dropdowns and filters across the application that were previously hardcoded
+
+| # | Table Name | Purpose | Sample Values |
+|---|------------|---------|---------------|
+| 1 | `LookupLegalOfficers` | Staff who can be assigned cases | Jennifer Adams, Michael Thompson, DSG, SG |
+| 2 | `LookupCourts` | Courts for litigation matters | Supreme Court, High Court, Magistrates Courts, Tribunals |
+| 3 | `LookupStatutoryBodies` | Statutory bodies/SOEs | BTA, BRA, BWA, CBC, FSC, NIS, QEH, UWI |
+| 4 | `LookupParishes` | Barbados parishes | St. Michael, Christ Church, St. James, etc. (11 parishes + Bridgetown) |
+| 5 | `LookupReturnReasons` | Reasons for returning to MDA | Missing Docs, Clarification, Policy Approval, Value Discrepancy |
+| 6 | `LookupIntakeValidationStatus` | Intake validation states | Pending, Validated, Missing Docs, Returned, Rejected |
+| 7 | `LookupDocumentChecklistStatus` | Document checklist states | Not Provided, Provided, Under Review, Approved, Waived |
+| 8 | `LookupRegistryFileStatus` | Legacy file linking status | Not Started, In Progress, Linked, No File, Completed |
+| 9 | `LookupSecurityLevels` | Document/case security | Public, Internal, Confidential, Legal Privileged, Cabinet |
+| 10 | `LookupSubmissionChannels` | How submissions are received | Portal, Email, Paper, Fax, Courier |
+| 11 | `LookupDispatchModes` | How outgoing items are sent | Digital, Physical, Both, Registered Mail, Hand Delivery |
+| 12 | `LookupDocumentStatus` | Document lifecycle states | Draft, For Review, Final, Signed, Adjudicated, Superseded |
+| 13 | `LookupApprovalDecisions` | SG/DSG decision options | Approved, Approved with Conditions, Returned, Escalated, Rejected |
+| 14 | `LookupContractingPartyScope` | Contract party geography | Local, Regional, International |
+| 15 | `LookupCompanyTypes` | Company registration types | Limited, PLC, Sole Trader, Partnership, JV, NGO |
+| 16 | `LookupTitles` | Name salutations | Mr., Mrs., Ms., Dr., Prof., Hon., QC |
+
+**Views:**
+- `vw_ActiveLegalOfficers` - Available officers with capacity for assignment
+- `vw_AllMDAs` - Combined view of Ministries, Departments, and Statutory Bodies
 
 ---
 
@@ -898,4 +929,5 @@
 | 2.0 | Mar 2026 | Complete consolidation and documentation update |
 | 2.1 | Mar 2026 | Email Notification Templates |
 | 2.2 | Mar 2026 | Management Portal Tables |
-| 2.3 | Mar 2026 | **Report Parameters Schema: ReportParameters, ReportParameterOptions, LookupDateRangeOptions (16 date ranges), LookupReportGroupings (13 groupings), LookupValueRanges (8 value bands); 25 pre-defined reports across 6 categories; sp_GetReportParameters, sp_GetParameterOptions; vw_AvailableReports** |
+| 2.3 | Mar 2026 | Report Parameters Schema |
+| 2.4 | Mar 2026 | **Additional Lookup Tables: LookupLegalOfficers, LookupCourts, LookupStatutoryBodies, LookupParishes, LookupReturnReasons, LookupIntakeValidationStatus, LookupDocumentChecklistStatus, LookupRegistryFileStatus, LookupSecurityLevels, LookupSubmissionChannels, LookupDispatchModes, LookupDocumentStatus, LookupApprovalDecisions, LookupContractingPartyScope, LookupCompanyTypes, LookupTitles; vw_ActiveLegalOfficers, vw_AllMDAs** |
