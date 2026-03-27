@@ -691,35 +691,61 @@
 
 ## MODULE 15: MANAGEMENT PORTAL TABLES (12 Tables)
 
+**Supporting Management Portal Pages:**
+- `/management/landing` - Landing page
+- `/management/login` - Staff login (uses UserProfiles, UserSessions)
+- `/management/register` - Staff registration requests
+- `/management/users` - User management
+- `/management/mda` - MDA management
+- `/management/contracts-register` - Contracts register view
+- `/management/contracts-history` - Contracts history view
+- `/management/correspondence-register` - Correspondence register view
+- `/management/correspondence-history` - Correspondence history view
+- `/management/reports` - Reports & analytics
+- `/management/activity` - Activity monitoring
+- `/management/settings` - System settings
+- `/management/status` - Status overview
+- `/management/registers` - Combined registers view
+
 | # | Table Name | Purpose | Key Columns |
 |---|------------|---------|-------------|
-| 1 | `StaffWorkloadAssignments` | Track case assignments per staff | StaffUserId, CaseType, CaseId, Status, DueDate |
-| 2 | `StaffCapacity` | Staff availability & workload limits | MaxConcurrentCases, CurrentCaseCount, IsAvailable |
-| 3 | `MDAConfiguration` | MDA-specific settings | CanSubmitContracts, RequiresSGApproval, DefaultPriority |
-| 4 | `SystemAnnouncements` | Portal announcements | Title, Message, AnnouncementType, TargetAudience |
-| 5 | `StaffPerformanceMetrics` | Daily staff performance tracking | CasesCompleted, SLAComplianceRate, AvgProcessingTime |
-| 6 | `CaseReassignmentHistory` | Track case reassignments | FromUserId, ToUserId, Reason, ReassignmentType |
-| 7 | `WorkflowStageConfiguration` | Configurable workflow stages | StageCode, StageName, DefaultSLADays, RequiresApproval |
-| 8 | `ApprovalQueue` | Items pending SG/DSG approval | CaseType, CaseId, ApprovalType, Status, Decision |
-| 9 | `DailyStatistics` | Pre-aggregated daily stats | ContractsSubmitted, SLAComplianceRate, EscalationsCount |
-| 10 | `LookupRejectionReasons` | Standard rejection reasons | ReasonCode, ReasonName, RequiresComment |
-| 11 | `UserFavorites` | Staff bookmarked cases | UserId, CaseType, CaseId, Notes |
-| 12 | `SavedFilters` | Saved search filters | FilterName, FilterCriteria, IsDefault |
+| 1 | `MDAs` | Ministries, Departments, Agencies master | MDACode, MDAName, MDAType, CanSubmitContracts, RequiresSGApproval |
+| 2 | `MDAContacts` | Authorized contacts per MDA | MDAId, UserId, ContactRole, CanSubmit, CanApprove |
+| 3 | `MDAStatistics` | Pre-aggregated MDA statistics | MDAId, StatDate, TotalCorrespondence, TotalContracts, TotalContractValue |
+| 4 | `SystemSettings` | Key-value system configuration | SettingCategory, SettingKey, SettingValue, SettingType |
+| 5 | `SystemAnnouncements` | Portal announcements | Title, Message, AnnouncementType, TargetAudience, IsPinned |
+| 6 | `UserNotificationPreferences` | User notification opt-in/out | UserId, NotificationTypeCode, EmailEnabled, SMSEnabled |
+| 7 | `SavedReports` | Saved report configurations | ReportName, ReportType, FilterCriteria, ColumnSelection |
+| 8 | `ReportExecutionLog` | Report execution history | ReportId, ExecutedBy, RecordsReturned, ExportFormat |
+| 9 | `DailyStatisticsSnapshot` | Pre-aggregated daily stats for dashboards | TotalCorrespondence, TotalContracts, SLAComplianceRate |
+| 10 | `PendingActionsQueue` | Items requiring attention | ActionType, CaseType, CaseId, PriorityLevel, DueDate, IsOverdue |
+| 11 | `LookupRejectionReasons` | Standard rejection reasons | ReasonCode, ReasonName, ReasonCategory, RequiresComment |
+| 12 | `StaffRequestStatusHistory` | Staff registration request audit | RequestId, PreviousStatus, NewStatus, ChangeReason |
+
+**System Settings Categories:**
+| Category | Settings |
+|----------|----------|
+| `general` | organization_name, organization_abbr, organization_address, organization_phone, organization_email, timezone |
+| `sla` | correspondence_default_sla_days, contracts_default_sla_days, correction_response_days, sla_warning_threshold_percent |
+| `security` | session_timeout_minutes, max_login_attempts, lockout_duration_minutes, password_min_length, require_2fa |
+| `notifications` | email_notifications_enabled, sms_notifications_enabled, send_submission_confirmation, send_status_updates, send_sla_warnings |
+| `system` | maintenance_mode, allow_public_registration, allow_staff_registration_requests, max_file_upload_size_mb, allowed_file_types |
 
 **Rejection Reason Values:**
-| Code | Name |
-|------|------|
-| INCOMPLETE_DOCS | Incomplete documentation |
-| INVALID_FORMAT | Invalid document format |
-| MISSING_APPROVAL | Missing required approval |
-| INCORRECT_CLASSIFICATION | Incorrect classification |
-| UNAUTHORIZED_SUBMITTER | Unauthorized submitter |
-| DUPLICATE_SUBMISSION | Duplicate submission |
-| OUTSIDE_SCOPE | Outside SGC scope |
-| INSUFFICIENT_DETAIL | Insufficient detail provided |
-| CONTRACT_VALUE_MISMATCH | Contract value does not match documents |
-| EXPIRED_DOCUMENTS | Expired supporting documents |
-| OTHER | Other (specify in comments) |
+| Code | Name | Category |
+|------|------|----------|
+| INCOMPLETE_DOCS | Incomplete documentation | documentation |
+| INVALID_FORMAT | Invalid document format | documentation |
+| MISSING_SIGNATURES | Missing required signatures | documentation |
+| EXPIRED_DOCUMENTS | Expired supporting documents | documentation |
+| MISSING_APPROVAL | Missing required approval | compliance |
+| UNAUTHORIZED_SUBMITTER | Unauthorized submitter | compliance |
+| INCORRECT_CLASSIFICATION | Incorrect classification | content |
+| INSUFFICIENT_DETAIL | Insufficient detail provided | content |
+| DUPLICATE_SUBMISSION | Duplicate submission | process |
+| CONTRACT_VALUE_MISMATCH | Contract value does not match documents | content |
+| OUTSIDE_SCOPE | Outside SGC scope | process |
+| OTHER | Other (specify in comments) | other |
 
 ---
 
@@ -737,9 +763,18 @@
 | `sp_LogAuditEntry` | Log audit entries |
 | `sp_GenerateReferenceNumber` | Generate next reference number |
 | `sp_QueueEmailNotification` | Queue email notification by code with template data |
-| `sp_AssignCaseToStaff` | Assign/reassign case to staff member |
-| `sp_AutoAssignCase` | Auto-assign case using round-robin |
-| `sp_UpdateDailyStatistics` | Update daily statistics aggregation |
+| `sp_UpdateDailyStatistics` | **Update daily statistics snapshot for dashboards** |
+| `sp_GetSystemSetting` | **Get system setting value with default** |
+| `sp_UpdateSystemSetting` | **Update system setting value** |
+| `sp_RefreshMDAStatistics` | **Refresh MDA statistics aggregation** |
+
+**Management Portal Views:**
+| View | Purpose |
+|------|---------|
+| `vw_MDASummary` | MDA list with statistics |
+| `vw_PendingActionsSummary` | Pending actions grouped by type/priority |
+| `vw_TodayStatistics` | Today's dashboard statistics |
+| `vw_RecentActivityFeed` | Recent activity for activity monitor |
 
 ---
 
@@ -765,7 +800,7 @@
 | 16 | `016-correction-response-tracking.sql` | Correction response: data changes, drafts, documents, field history |
 | 17 | `017-appendix-c-document-requirements.sql` | Appendix C: Complete document requirements matrix |
 | 18 | `018-email-notification-templates.sql` | Email notification types, templates & preferences |
-| 19 | `019-management-portal-gaps.sql` | **Management portal: workload, approvals, stats, config** |
+| 19 | `019-management-portal-tables.sql` | **Management portal: MDAs, settings, reports, activity, statistics** |
 
 **OR use `CONSOLIDATED_SCHEMA.sql` for single-file deployment.**
 
@@ -786,4 +821,4 @@
 | 1.8 | 2024 | Appendix C Document Requirements Matrix |
 | 2.0 | Mar 2026 | Complete consolidation and documentation update |
 | 2.1 | Mar 2026 | Email Notification Templates |
-| 2.2 | Mar 2026 | **Management Portal Tables: StaffWorkloadAssignments, StaffCapacity, MDAConfiguration, SystemAnnouncements, StaffPerformanceMetrics, CaseReassignmentHistory, WorkflowStageConfiguration, ApprovalQueue, DailyStatistics, LookupRejectionReasons, UserFavorites, SavedFilters; sp_AssignCaseToStaff, sp_AutoAssignCase, sp_UpdateDailyStatistics; vw_StaffDashboardSummary, vw_PendingApprovalsSummary, vw_TodayStatistics** |
+| 2.2 | Mar 2026 | **Management Portal Tables: MDAs, MDAContacts, MDAStatistics, SystemSettings, SystemAnnouncements, UserNotificationPreferences, SavedReports, ReportExecutionLog, DailyStatisticsSnapshot, PendingActionsQueue, LookupRejectionReasons, StaffRequestStatusHistory; sp_UpdateDailyStatistics, sp_GetSystemSetting, sp_UpdateSystemSetting, sp_RefreshMDAStatistics; vw_MDASummary, vw_PendingActionsSummary, vw_TodayStatistics, vw_RecentActivityFeed** |
