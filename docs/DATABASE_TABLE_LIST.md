@@ -610,7 +610,8 @@ For contracts with multiple parties (joint ventures, subcontractors):
 | 13 | `013-workflow-corrections-stages.sql` | Workflow, corrections & stage duration tracking |
 | 14 | `014-renewal-supplemental-validation.sql` | Renewal/supplemental validation & entity ownership |
 | 15 | `015-missing-columns-audit-fix.sql` | Audit fix: missing form fields, SLA, sessions, audit log |
-| 16 | `016-correction-response-tracking.sql` | **Correction response: data changes, drafts, documents, field history** |
+| 16 | `016-correction-response-tracking.sql` | Correction response: data changes, drafts, documents, field history |
+| 17 | `017-appendix-c-document-requirements.sql` | **Appendix C: Complete document requirements matrix by Nature->Category->Instrument** |
 
 **OR use `CONSOLIDATED_SCHEMA.sql` for single-file deployment.**
 
@@ -627,4 +628,5 @@ For contracts with multiple parties (joint ventures, subcontractors):
 | 1.4 | 2024 | Added workflow, corrections & stage duration tracking |
 | 1.5 | 2024 | Added renewal/supplemental validation |
 | 1.6 | 2024 | Comprehensive audit fix: missing form columns, SLA, sessions, audit log |
-| 1.7 | 2024 | **Correction response tracking: ContractCorrectionDataChanges, CorrespondenceCorrectionDataChanges, ContractCorrectionResponseDrafts, CorrespondenceCorrectionResponseDrafts, CorrectionDocuments, ContractFieldVersionHistory, sp_SubmitContractCorrections, vw_ApplicantPendingCorrections, vw_CorrectionChangeSummary** |
+| 1.7 | 2024 | Correction response tracking |
+| 1.8 | 2024 | **Appendix C Document Requirements Matrix: All 24 document types (FORM_ACCEPT, FORM_DRAFT, FORM_LOA, FORM_LOE, FORM_PAY_SCHED, FORM_SCHED_DELIV, FORM_SCHED_WORKS, PROC_SPECS, PROC_TENDER, PROC_TOR, PROC_PROP, PROC_SCOPE, PROC_BOQ, PROC_DRAWINGS, PROC_CAB_PAPER, PROC_CAB_APPR, PROC_SSP_REQ, PROC_SSP_APPR, DUE_BUS_REG, DUE_GS, DUE_INCORP, FIN_BOND, FIN_SURETY); All instruments (GDS, UNI, CLEAN, CONS_CO, CONS_IND, IC, IC_IDB, SVC, WKS); NatureCategoryValidation and CategoryInstrumentValidation tables; sp_ValidateContractClassification; vw_ContractDocumentChecklist; vw_DocumentRequirementsSummary** |
