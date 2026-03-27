@@ -103,6 +103,16 @@ export async function getSession(): Promise<SessionData | null> {
   }
 }
 
+// Client-safe version that can be called from client components
+export async function getSessionForClient(): Promise<Omit<SessionData, 'expiresAt'> | null> {
+  const session = await getSession()
+  if (!session) return null
+  
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { expiresAt, ...clientSafeData } = session
+  return clientSafeData
+}
+
 export async function clearSession(): Promise<void> {
   const cookieStore = await cookies()
   cookieStore.delete(SESSION_COOKIE_NAME)

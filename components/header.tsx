@@ -6,40 +6,58 @@ import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { 
   Menu, User, LogIn, FileText, FileSignature, 
-  LayoutDashboard, BarChart3, Home, ChevronDown, Settings, Shield 
+  LayoutDashboard, BarChart3, Home, ChevronDown, Settings, Shield, LogOut, Building2 
 } from "lucide-react"
 import { useState, useEffect } from "react"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { useRouter } from "next/navigation"
 
 interface HeaderProps {
   isStaff?: boolean
 }
 
+interface UserSession {
+  fullName: string
+  email: string
+  organization?: string
+  submitterType?: string
+}
+
 export function Header({ isStaff: isStaffProp = false }: HeaderProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [isStaff, setIsStaff] = useState(isStaffProp)
+  const [userSession, setUserSession] = useState<UserSession | null>(null)
+  const router = useRouter()
 
   useEffect(() => {
+    // Check for user session in sessionStorage
+    const checkUserSession = () => {
+      const storedUser = sessionStorage.getItem("sgc_user")
+      if (storedUser) {
+        try {
+          const userData = JSON.parse(storedUser)
+          setUserSession(userData)
+        } catch {
+          // Invalid JSON, ignore
+        }
+      }
+    }
+    
     // Check for staff session via client-readable cookie
     const checkStaffStatus = () => {
-      console.log('[v0] Header checking staff status...')
-      console.log('[v0] All cookies:', document.cookie)
-      
       // Check the simple staff flag cookie
       const cookies = document.cookie.split(';')
       const staffCookie = cookies.find(c => c.trim().startsWith('sgc_is_staff='))
-      console.log('[v0] Staff cookie found:', staffCookie)
       
       if (staffCookie) {
         const value = staffCookie.split('=')[1]?.trim()
-        console.log('[v0] Staff cookie value:', value)
         if (value === '1') {
-          console.log('[v0] Setting isStaff to TRUE')
           setIsStaff(true)
           return
         }
@@ -48,13 +66,23 @@ export function Header({ isStaff: isStaffProp = false }: HeaderProps) {
       // Fallback to sessionStorage for backwards compatibility
       const adminSession = sessionStorage.getItem("sgc_admin")
       if (adminSession) {
-        console.log('[v0] Found sgc_admin in sessionStorage, setting isStaff to TRUE')
         setIsStaff(true)
       }
     }
     
+    checkUserSession()
     checkStaffStatus()
   }, [isStaffProp])
+  
+  const handleLogout = () => {
+    sessionStorage.removeItem("sgc_user")
+    sessionStorage.removeItem("sgc_admin")
+    // Clear cookies
+    document.cookie = "sgc_is_staff=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT"
+    setUserSession(null)
+    setIsStaff(false)
+    router.push("/")
+  }
 
   return (
     <header className="sticky top-0 z-50 w-full">
@@ -149,18 +177,64 @@ export function Header({ isStaff: isStaffProp = false }: HeaderProps) {
                 Management Portal
               </Link>
             )}
-            <Button size="sm" className="hidden sm:flex bg-blue-600 hover:bg-blue-700 text-white shadow-md" asChild>
-              <Link href="/login">
-                <LogIn className="mr-2 h-4 w-4" />
-                Sign In
-              </Link>
-            </Button>
-            <Button size="sm" className="hidden sm:flex bg-emerald-600 hover:bg-emerald-700 text-white shadow-md" asChild>
-              <Link href="/register">
-                <User className="mr-2 h-4 w-4" />
-                Register
-              </Link>
-            </Button>
+            
+            {userSession ? (
+              /* Logged In State - Show Organization/User Dropdown */
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button size="sm" variant="outline" className="hidden sm:flex items-center gap-2 border-primary/30 hover:border-primary/50 hover:bg-primary/5">
+                    <Building2 className="h-4 w-4 text-primary" />
+                    <span className="max-w-[180px] truncate font-medium">
+                      {userSession.organization || userSession.fullName}
+                    </span>
+                    <ChevronDown className="h-3 w-3 opacity-50" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <div className="px-2 py-1.5">
+                    <p className="text-sm font-medium">{userSession.fullName}</p>
+                    <p className="text-xs text-muted-foreground">{userSession.email}</p>
+                    {userSession.organization && (
+                      <p className="text-xs text-primary mt-1">{userSession.organization}</p>
+                    )}
+                  </div>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link href="/dashboard" className="flex items-center gap-2">
+                      <LayoutDashboard className="h-4 w-4" />
+                      My Dashboard
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/profile" className="flex items-center gap-2">
+                      <User className="h-4 w-4" />
+                      My Profile
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleLogout} className="text-red-600 focus:text-red-600">
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Sign Out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              /* Logged Out State - Show Sign In / Register Buttons */
+              <>
+                <Button size="sm" className="hidden sm:flex bg-blue-600 hover:bg-blue-700 text-white shadow-md" asChild>
+                  <Link href="/login">
+                    <LogIn className="mr-2 h-4 w-4" />
+                    Sign In
+                  </Link>
+                </Button>
+                <Button size="sm" className="hidden sm:flex bg-emerald-600 hover:bg-emerald-700 text-white shadow-md" asChild>
+                  <Link href="/register">
+                    <User className="mr-2 h-4 w-4" />
+                    Register
+                  </Link>
+                </Button>
+              </>
+            )}
 
             <Sheet open={isOpen} onOpenChange={setIsOpen}>
               <SheetTrigger asChild>
@@ -245,22 +319,46 @@ export function Header({ isStaff: isStaffProp = false }: HeaderProps) {
                       Management Portal
                     </Link>
                   )}
-                  <Link 
-                    href="/login" 
-                    onClick={() => setIsOpen(false)}
-                    className="flex items-center gap-3 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-                  >
-                    <LogIn className="h-5 w-5" />
-                    Sign In
-                  </Link>
-                  <Link 
-                    href="/register" 
-                    onClick={() => setIsOpen(false)}
-                    className="flex items-center gap-3 px-4 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors font-medium"
-                  >
-                    <User className="h-5 w-5" />
-                    Register
-                  </Link>
+                  
+                  {userSession ? (
+                    /* Logged In State - Mobile */
+                    <>
+                      <div className="px-4 py-3 mb-2 bg-primary/5 rounded-lg">
+                        <div className="flex items-center gap-2 mb-1">
+                          <Building2 className="h-4 w-4 text-primary" />
+                          <span className="font-medium text-sm">{userSession.organization || userSession.fullName}</span>
+                        </div>
+                        <p className="text-xs text-muted-foreground">{userSession.email}</p>
+                      </div>
+                      <button 
+                        onClick={() => { handleLogout(); setIsOpen(false); }}
+                        className="flex items-center gap-3 px-4 py-3 text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition-colors font-medium w-full"
+                      >
+                        <LogOut className="h-5 w-5" />
+                        Sign Out
+                      </button>
+                    </>
+                  ) : (
+                    /* Logged Out State - Mobile */
+                    <>
+                      <Link 
+                        href="/login" 
+                        onClick={() => setIsOpen(false)}
+                        className="flex items-center gap-3 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                      >
+                        <LogIn className="h-5 w-5" />
+                        Sign In
+                      </Link>
+                      <Link 
+                        href="/register" 
+                        onClick={() => setIsOpen(false)}
+                        className="flex items-center gap-3 px-4 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors font-medium"
+                      >
+                        <User className="h-5 w-5" />
+                        Register
+                      </Link>
+                    </>
+                  )}
                 </nav>
               </SheetContent>
             </Sheet>

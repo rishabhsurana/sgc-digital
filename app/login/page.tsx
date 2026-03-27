@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { ArrowLeft, LogIn, AlertCircle } from "lucide-react"
-import { loginUser } from "@/lib/actions/auth-actions"
+import { loginUser, getSessionForClient } from "@/lib/actions/auth-actions"
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
@@ -27,6 +27,19 @@ export default function LoginPage() {
     const result = await loginUser(formData)
     
     if (result.success && result.redirectTo) {
+      // Get user data for client-side sessionStorage
+      const sessionData = await getSessionForClient()
+      if (sessionData) {
+        // Store in sessionStorage for client components (like Header)
+        sessionStorage.setItem("sgc_user", JSON.stringify({
+          fullName: `${sessionData.firstName} ${sessionData.lastName}`,
+          email: sessionData.email,
+          organization: sessionData.organizationName || sessionData.departmentName,
+          submitterType: sessionData.entityTypeName,
+          entityNumber: sessionData.userId
+        }))
+      }
+      
       // Refresh to ensure cookies are propagated before navigation
       router.refresh()
       // Small delay to allow cookie propagation
