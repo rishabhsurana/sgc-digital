@@ -1,10 +1,11 @@
 # SGC Digital - Complete Database Table List
 
-**Version:** 1.5.0  
-**Last Updated:** 2024  
-**Total Tables:** 120+  
-**Total Views:** 35+  
-**SQL Scripts:** 14
+**Version:** 2.0.0  
+**Last Updated:** March 2026  
+**Total Tables:** 130+  
+**Total Views:** 40+  
+**Stored Procedures:** 15+  
+**SQL Scripts:** 17
 
 ---
 
@@ -17,21 +18,23 @@
 | Lookup Tables (Correspondence) | 5 |
 | Lookup Tables (Submissions) | 1 |
 | Lookup Tables (Workflow & Corrections) | 2 |
-| **Lookup Tables (Validation)** | **2** |
+| Lookup Tables (Validation) | 2 |
+| **Lookup Tables (Document Types - Appendix C)** | **1** |
 | User & Entity Tables | 8 |
 | Correspondence Tables | 4 |
 | Contract Tables | 13 |
 | Contract Renewals Tables | 3 |
-| Document Requirements Tables | 2 |
+| Document Requirements Tables | 4 |
 | Draft & Failed Submissions Tables | 6 |
 | Workflow, Corrections & Stage Duration Tables | 7 |
-| **Renewal/Supplemental Validation Tables** | **2** |
+| Correction Response Tracking Tables | 5 |
+| Renewal/Supplemental Validation Tables | 2 |
 | Tracking & Notifications Tables | 5 |
 | Audit & Activity Tables | 3 |
 | Reporting & Analytics Tables | 8 |
 | Ask Rex AI Tables | 9 |
 | System Configuration Tables | 4 |
-| **TOTAL TABLES** | **~120** |
+| **TOTAL TABLES** | **~130** |
 
 ---
 
@@ -63,6 +66,20 @@
 | 7 | `LookupProcurementMethods` | Procurement methods | ProcurementMethodId, MethodCode, RequiresSingleSourceApproval |
 | 8 | `LookupContractDocumentTypes` | Document types | DocumentTypeId, DocumentTypeCode, IsRequired |
 | 9 | `LookupRenewalStatus` | Renewal statuses | RenewalStatusId, StatusCode |
+
+**Contract Type Values:**
+| Code | Name |
+|------|------|
+| NEW | New Contract |
+| RENEWAL | Contract Renewal |
+| SUPPLEMENTAL | Supplemental Agreement |
+
+**Contract Nature Values:**
+| Code | Name | Categories | Instruments |
+|------|------|------------|-------------|
+| GOODS | Goods | Procurement, Services, Emergency, Other | GDS, UNI |
+| CONSULTANCY | Consultancy | Consultancy, Emergency, Other | CLEAN, CONS_CO, CONS_IND, IC, IC_IDB, SVC |
+| WORKS | Works | Construction, Services, Emergency, Other | WKS |
 
 ---
 
@@ -98,119 +115,7 @@
 
 ---
 
-## MODULE 4: USER & ENTITY MANAGEMENT (8 Tables)
-
-| # | Table Name | Purpose | Key Columns |
-|---|------------|---------|-------------|
-| 1 | `Entities` | Master entity/organization | EntityId, EntityNumber, EntityName, EntityTypeId |
-| 2 | `UserProfiles` | All user accounts | UserId, Email, RoleId, EntityId, StatusId |
-| 3 | `EntityAuthorizedUsers` | Additional users per entity | AuthorizedUserId, EntityId, Permissions |
-| 4 | `UserSessions` | Active sessions | SessionId, UserId, Token, ExpiresAt |
-| 5 | `StaffRegistrationRequests` | Staff access requests | RequestId, UserId, ApprovalStatus |
-| 6 | `StaffApprovalHistory` | Approval audit trail | HistoryId, RequestId, Action, ActionBy |
-| 7 | `EntityDocuments` | Entity verification docs | DocumentId, EntityId, DocumentType |
-| 8 | `EmailVerificationTokens` | Email/password tokens | TokenId, UserId, Token, ExpiresAt |
-
----
-
-## MODULE 5: CORRESPONDENCE MANAGEMENT (4 Tables)
-
-| # | Table Name | Purpose | Key Columns |
-|---|------------|---------|-------------|
-| 1 | `CorrespondenceRegister` | Main submissions | CorrespondenceId, ReferenceNumber, Subject, SubmitterTypeId, UrgencyId, ConfidentialityId |
-| 2 | `CorrespondenceStatusHistory` | Status audit trail | HistoryId, CorrespondenceId, FromStatus, ToStatus |
-| 3 | `CorrespondenceDocuments` | Attached files | DocumentId, CorrespondenceId, FileName, DocumentTypeId |
-| 4 | `CorrespondenceComments` | Notes/comments | CommentId, CorrespondenceId, CommentText, IsInternal |
-
----
-
-## MODULE 6: CONTRACT MANAGEMENT (13 Tables)
-
-### Main Contract Tables
-
-| # | Table Name | Purpose | Key Columns |
-|---|------------|---------|-------------|
-| 1 | `ContractsRegister` | **Main contract register** | See full column list below |
-| 2 | `ContractStatusHistory` | Status audit trail | HistoryId, ContractId, FromStatus, ToStatus |
-| 3 | `ContractDocuments` | Attached files | DocumentId, ContractId, FileName, DocumentTypeId |
-| 4 | `ContractComments` | Notes/comments | CommentId, ContractId, CommentText, IsInternal |
-| 5 | `ContractAmendments` | Contract modifications | AmendmentId, ContractId, AmendmentNumber, NewValue |
-
-### Contract Parties & Related Tables
-
-| # | Table Name | Purpose | Key Columns |
-|---|------------|---------|-------------|
-| 6 | `ContractCounterparties` | **Multiple parties per contract** | CounterpartyId, ContractId, PartyRole, PartyName, CompanyRegistrationNumber, TaxIdentificationNumber |
-| 7 | `ContractMilestones` | **Payment/delivery milestones** | MilestoneId, ContractId, MilestoneName, PaymentAmount, PlannedEndDate |
-| 8 | `ContractValueBreakdown` | **Value line items** | BreakdownId, ContractId, ItemDescription, Amount |
-| 9 | `ContractGuarantees` | **Bonds/guarantees** | GuaranteeId, ContractId, GuaranteeType, GuaranteeAmount |
-| 10 | `ContractSignatories` | **Contract signers** | SignatoryId, ContractId, SignatoryName, SignedDate |
-| 11 | `ContractTerms` | **Terms & conditions** | TermId, ContractId, TermType, TermDescription |
-
----
-
-## MODULE 7: CONTRACT RENEWALS (3 Tables)
-
-| # | Table Name | Purpose | Key Columns |
-|---|------------|---------|-------------|
-| 1 | `ContractRenewals` | Renewal requests | RenewalId, OriginalContractId, RenewalNumber, NewValue |
-| 2 | `ContractRenewalStatusHistory` | Status audit trail | HistoryId, RenewalId, FromStatus, ToStatus |
-| 3 | `ContractRenewalDocuments` | Renewal documents | DocumentId, RenewalId, FileName |
-
----
-
-## MODULE 8: DOCUMENT REQUIREMENTS (2 Junction Tables)
-
-| # | Table Name | Purpose | Key Columns |
-|---|------------|---------|-------------|
-| 1 | `ContractDocumentRequirements` | Documents by nature/category | RequirementId, DocumentTypeId, ContractNatureId, IsRequired |
-| 2 | `CorrespondenceDocumentRequirements` | Documents by type/submitter | RequirementId, DocumentTypeId, CorrespondenceTypeId |
-
----
-
-## MODULE 8B: DRAFT & FAILED SUBMISSIONS (6 Tables)
-
-This module handles **saving drafts**, **failed submissions**, and **retry functionality**.
-
-### Draft Tables
-
-| # | Table Name | Purpose | Key Columns |
-|---|------------|---------|-------------|
-| 1 | `ContractDrafts` | **Saved contract drafts** | DraftId, UserId, FormData (JSON), SubmissionStatusId, CurrentStep, ProgressPercentage, SubmissionAttempts, LastSubmissionError, ExpiresAt |
-| 2 | `CorrespondenceDrafts` | **Saved correspondence drafts** | DraftId, UserId, FormData (JSON), SubmissionStatusId, CurrentStep, ProgressPercentage, SubmissionAttempts, LastSubmissionError, ExpiresAt |
-| 3 | `DraftDocuments` | **Documents uploaded to drafts** | DocumentId, ContractDraftId, CorrespondenceDraftId, FileName, FilePath |
-
-### Submission Tracking Tables
-
-| # | Table Name | Purpose | Key Columns |
-|---|------------|---------|-------------|
-| 4 | `SubmissionAttempts` | **History of all submission attempts** | AttemptId, ContractDraftId, CorrespondenceDraftId, AttemptNumber, WasSuccessful, ErrorType, ErrorMessage |
-| 5 | `FailedSubmissionNotifications` | **Notifications for failed submissions** | NotificationId, UserId, ContractDraftId, Title, Message, RetryUrl, IsRead |
-
-### Key Features
-
-**Draft Auto-Save:**
-- Forms auto-save to `ContractDrafts` or `CorrespondenceDrafts` as JSON
-- Tracks current step and progress percentage
-- Expires after 30 days
-
-**Failed Submission Handling:**
-- Each attempt logged in `SubmissionAttempts`
-- Error type categorized (VALIDATION, NETWORK, SERVER, TIMEOUT)
-- User receives notification with direct retry link
-- Dashboard shows failed submissions with "Resume" button
-
-**Retry URL Format:**
-- `/contracts?draft={DraftId}` - Resume contract submission
-- `/correspondence?draft={DraftId}` - Resume correspondence submission
-
----
-
-## MODULE 8C: WORKFLOW, CORRECTIONS & STAGE DURATION (9 Tables)
-
-This module handles **status updates**, **return for corrections**, and **stage duration tracking**.
-
-### Lookup Tables
+## MODULE 3C: LOOKUP TABLES - Workflow & Corrections (2 Tables)
 
 | # | Table Name | Purpose | Key Columns |
 |---|------------|---------|-------------|
@@ -249,65 +154,227 @@ This module handles **status updates**, **return for corrections**, and **stage 
 | `REJECTED` | Application rejected (Terminal) | - | No |
 | `WITHDRAWN` | Withdrawn by applicant (Terminal) | - | No |
 
+---
+
+## MODULE 3D: LOOKUP TABLES - Document Types (Appendix C) (1 Table)
+
+| # | Table Name | Purpose | Key Columns |
+|---|------------|---------|-------------|
+| 1 | `LookupDocumentTypes` | All 24 document types from Appendix C | DocumentTypeId, DocumentTypeCode, DocumentTypeName, DocumentCategory, ApplicableNatures |
+
+**Document Types (24 Total):**
+
+| Code | Document Name | Category | Applicable To |
+|------|--------------|----------|---------------|
+| `FORM_ACCEPT` | Acceptance of Award | Form Documents | Goods, Consultancy, Works |
+| `FORM_DRAFT` | Draft Contract | Form Documents | Goods, Consultancy, Works |
+| `FORM_LOA` | Letter of Award | Form Documents | Goods, Consultancy, Works |
+| `FORM_LOE` | Letter of Engagement | Form Documents | Consultancy |
+| `FORM_PAY_SCHED` | Payment Schedule | Form Documents | Goods, Consultancy, Works |
+| `FORM_SCHED_DELIV` | Schedule of Deliverables | Form Documents | Consultancy |
+| `FORM_SCHED_WORKS` | Schedule of Works | Form Documents | Works |
+| `PROC_SPECS` | Specifications | Procurement | Goods |
+| `PROC_TENDER` | Tender Documents | Procurement | Goods, Consultancy, Works |
+| `PROC_TOR` | Terms of Reference | Procurement | Consultancy |
+| `PROC_PROP` | Proposal | Procurement | Consultancy, Works |
+| `PROC_SCOPE` | Scope of Works | Procurement | Works |
+| `PROC_BOQ` | Bill of Quantities | Procurement | Works |
+| `PROC_DRAWINGS` | Technical Drawings | Procurement | Works |
+| `PROC_CAB_PAPER` | Cabinet Paper | Cabinet Approval | All (Conditional) |
+| `PROC_CAB_APPR` | Cabinet Approval | Cabinet Approval | All (Conditional) |
+| `PROC_SSP_REQ` | Single Source Request | Single Source | All (Conditional) |
+| `PROC_SSP_APPR` | Single Source Approval | Single Source | All (Conditional) |
+| `DUE_BUS_REG` | Business Registration | Due Diligence | Consultancy, Works |
+| `DUE_GS` | Certificate of Good Standing | Due Diligence | Consultancy, Works |
+| `DUE_INCORP` | Company Incorporation | Due Diligence | Consultancy, Works |
+| `FIN_BOND` | Performance Bond | Financial | Consultancy, Works |
+| `FIN_SURETY` | Proof of Surety | Financial | Consultancy, Works |
+| `OTHER` | Other Supporting Document | Other | All |
+
+---
+
+## MODULE 4: USER & ENTITY MANAGEMENT (8 Tables)
+
+| # | Table Name | Purpose | Key Columns |
+|---|------------|---------|-------------|
+| 1 | `Entities` | Master entity/organization | EntityId, EntityNumber, EntityName, EntityTypeId, CourtName, LawFirmName, BarNumber |
+| 2 | `UserProfiles` | All user accounts | UserId, Email, RoleId, EntityId, StatusId |
+| 3 | `EntityAuthorizedUsers` | Additional users per entity | AuthorizedUserId, EntityId, Permissions |
+| 4 | `UserSessions` | Active sessions | SessionId, UserId, Token, ExpiresAt, IPAddress |
+| 5 | `PasswordResetTokens` | Password reset tokens | TokenId, UserId, Token, ExpiresAt, IsUsed |
+| 6 | `StaffRegistrationRequests` | Staff access requests | RequestId, UserId, ApprovalStatus |
+| 7 | `StaffApprovalHistory` | Approval audit trail | HistoryId, RequestId, Action, ActionBy |
+| 8 | `EntityDocuments` | Entity verification docs | DocumentId, EntityId, DocumentType |
+
+---
+
+## MODULE 5: CORRESPONDENCE MANAGEMENT (4 Tables)
+
+| # | Table Name | Purpose | Key Columns |
+|---|------------|---------|-------------|
+| 1 | `CorrespondenceRegister` | Main submissions | CorrespondenceId, ReferenceNumber, Subject, SubmitterTypeId, UrgencyId, ConfidentialityId, ContactUnit, MinistryFileReference, UrgentReason |
+| 2 | `CorrespondenceStatusHistory` | Status audit trail | HistoryId, CorrespondenceId, FromStatus, ToStatus, StageId, StageDurationMinutes |
+| 3 | `CorrespondenceDocuments` | Attached files | DocumentId, CorrespondenceId, FileName, DocumentTypeId |
+| 4 | `CorrespondenceComments` | Notes/comments | CommentId, CorrespondenceId, CommentText, IsInternal |
+
+---
+
+## MODULE 6: CONTRACT MANAGEMENT (13 Tables)
+
+### Main Contract Tables
+
+| # | Table Name | Purpose | Key Columns |
+|---|------------|---------|-------------|
+| 1 | `ContractsRegister` | **Main contract register (70+ columns)** | See full column list below |
+| 2 | `ContractStatusHistory` | Status audit trail | HistoryId, ContractId, FromStatus, ToStatus, StageId, StageDurationMinutes |
+| 3 | `ContractDocuments` | Attached files | DocumentId, ContractId, FileName, DocumentTypeId |
+| 4 | `ContractComments` | Notes/comments | CommentId, ContractId, CommentText, IsInternal |
+| 5 | `ContractAmendments` | Contract modifications | AmendmentId, ContractId, AmendmentNumber, NewValue |
+
+### Contract Parties & Related Tables
+
+| # | Table Name | Purpose | Key Columns |
+|---|------------|---------|-------------|
+| 6 | `ContractCounterparties` | **Multiple parties per contract** | CounterpartyId, ContractId, PartyRole, PartyName, CompanyRegistrationNumber, TaxIdentificationNumber |
+| 7 | `ContractMilestones` | **Payment/delivery milestones** | MilestoneId, ContractId, MilestoneName, PaymentAmount, PlannedEndDate |
+| 8 | `ContractValueBreakdown` | **Value line items** | BreakdownId, ContractId, ItemDescription, Amount |
+| 9 | `ContractGuarantees` | **Bonds/guarantees** | GuaranteeId, ContractId, GuaranteeType, GuaranteeAmount |
+| 10 | `ContractSignatories` | **Contract signers** | SignatoryId, ContractId, SignatoryName, SignedDate |
+| 11 | `ContractTerms` | **Terms & conditions** | TermId, ContractId, TermType, TermDescription |
+
+---
+
+## MODULE 7: CONTRACT RENEWALS (3 Tables)
+
+| # | Table Name | Purpose | Key Columns |
+|---|------------|---------|-------------|
+| 1 | `ContractRenewals` | Renewal requests | RenewalId, OriginalContractId, RenewalNumber, NewValue |
+| 2 | `ContractRenewalStatusHistory` | Status audit trail | HistoryId, RenewalId, FromStatus, ToStatus |
+| 3 | `ContractRenewalDocuments` | Renewal documents | DocumentId, RenewalId, FileName |
+
+---
+
+## MODULE 8: DOCUMENT REQUIREMENTS (4 Tables) - Appendix C
+
+| # | Table Name | Purpose | Key Columns |
+|---|------------|---------|-------------|
+| 1 | `ContractDocumentRequirements` | Documents by nature/category/instrument | RequirementId, DocumentTypeId, ContractNatureId, ContractCategoryId, InstrumentId, IsRequired, IsConditional, ConditionType |
+| 2 | `CorrespondenceDocumentRequirements` | Documents by type/submitter | RequirementId, DocumentTypeId, CorrespondenceTypeId |
+| 3 | `NatureCategoryValidation` | Valid category-nature combinations | ValidationId, ContractNatureId, ContractCategoryId, IsValid |
+| 4 | `CategoryInstrumentValidation` | Valid instrument-category combinations | ValidationId, ContractCategoryId, InstrumentId, IsValid |
+
+### Document Requirements Matrix (Appendix C)
+
+**GOODS - Procurement Category:**
+| Document | Required | Conditional |
+|----------|----------|-------------|
+| Acceptance of Award | Yes | - |
+| Letter of Award | Yes | - |
+| Payment Schedule | Yes | - |
+| Specifications | Yes | - |
+| Tender Documents | Yes | - |
+| Draft Contract | Optional | - |
+| Cabinet Paper | - | If value > threshold |
+| Cabinet Approval | - | If value > threshold |
+| Single Source Request | - | If single source |
+| Single Source Approval | - | If single source |
+
+**CONSULTANCY - All Instruments:**
+| Document | Required | Conditional |
+|----------|----------|-------------|
+| Acceptance of Award | Yes | - |
+| Letter of Award | Yes | - |
+| Payment Schedule | Yes | - |
+| Schedule of Deliverables | Yes | - |
+| Proposal | Yes | - |
+| Tender Documents | Yes | - |
+| Terms of Reference | Yes | - |
+| Letter of Engagement | Optional | - |
+| Draft Contract | Optional | - |
+| Business Registration | Optional | - |
+| Good Standing | Optional | - |
+| Incorporation | Optional | - |
+| Performance Bond | Optional | - |
+| Proof of Surety | Optional | - |
+| Cabinet Paper | - | If value > threshold |
+| Cabinet Approval | - | If value > threshold |
+| Single Source Request | - | If single source |
+| Single Source Approval | - | If single source |
+
+**WORKS - Construction Category:**
+| Document | Required | Conditional |
+|----------|----------|-------------|
+| Acceptance of Award | Yes | - |
+| Letter of Award | Yes | - |
+| Payment Schedule | Yes | - |
+| Schedule of Works | Yes | - |
+| Proposal | Yes | - |
+| Scope of Works | Yes | - |
+| Tender Documents | Yes | - |
+| Bill of Quantities | Optional | - |
+| Technical Drawings | Optional | - |
+| Business Registration | Yes | - |
+| Good Standing | Yes | - |
+| Incorporation | Yes | - |
+| Draft Contract | Optional | - |
+| Performance Bond | Optional | - |
+| Proof of Surety | Optional | - |
+| Cabinet Paper | - | If value > threshold |
+| Cabinet Approval | - | If value > threshold |
+| Single Source Request | - | If single source |
+| Single Source Approval | - | If single source |
+
+---
+
+## MODULE 8B: DRAFT & FAILED SUBMISSIONS (6 Tables)
+
+| # | Table Name | Purpose | Key Columns |
+|---|------------|---------|-------------|
+| 1 | `ContractDrafts` | **Saved contract drafts** | DraftId, UserId, FormData (JSON), SubmissionStatusId, CurrentStep, ProgressPercentage, SubmissionAttempts, LastSubmissionError, ExpiresAt |
+| 2 | `CorrespondenceDrafts` | **Saved correspondence drafts** | DraftId, UserId, FormData (JSON), SubmissionStatusId, CurrentStep, ProgressPercentage, SubmissionAttempts, LastSubmissionError, ExpiresAt |
+| 3 | `DraftDocuments` | **Documents uploaded to drafts** | DocumentId, ContractDraftId, CorrespondenceDraftId, FileName, FilePath |
+| 4 | `SubmissionAttempts` | **History of all submission attempts** | AttemptId, ContractDraftId, CorrespondenceDraftId, AttemptNumber, WasSuccessful, ErrorType, ErrorMessage |
+| 5 | `FailedSubmissionNotifications` | **Notifications for failed submissions** | NotificationId, UserId, ContractDraftId, Title, Message, RetryUrl, IsRead |
+
+---
+
+## MODULE 8C: WORKFLOW, CORRECTIONS & STAGE DURATION (7 Tables)
+
 ### Correction Request Tables
 
 | # | Table Name | Purpose | Key Columns |
 |---|------------|---------|-------------|
-| 3 | `ContractCorrectionRequests` | **Correction requests for contracts** | CorrectionRequestId, ContractId, CorrectionCycleNumber, PrimaryCorrectionReasonId, CorrectionInstructions, DeadlineDate, Status, ResponseSubmittedAt, WereCorrectionsAccepted |
-| 4 | `CorrespondenceCorrectionRequests` | **Correction requests for correspondence** | CorrectionRequestId, CorrespondenceId, CorrectionCycleNumber, PrimaryCorrectionReasonId, CorrectionInstructions, DeadlineDate, Status |
-| 5 | `CorrectionDocuments` | **Documents submitted as corrections** | DocumentId, ContractCorrectionRequestId, CorrespondenceCorrectionRequestId, ReplacesDocumentId, FileName |
+| 1 | `ContractCorrectionRequests` | Correction requests for contracts | CorrectionRequestId, ContractId, CorrectionCycleNumber, PrimaryCorrectionReasonId, CorrectionInstructions, DeadlineDate, Status |
+| 2 | `CorrespondenceCorrectionRequests` | Correction requests for correspondence | CorrectionRequestId, CorrespondenceId, CorrectionCycleNumber, PrimaryCorrectionReasonId, CorrectionInstructions, DeadlineDate, Status |
+| 3 | `CorrectionDocuments` | Documents submitted as corrections | DocumentId, ContractCorrectionRequestId, CorrespondenceCorrectionRequestId, ReplacesDocumentId, FileName |
 
 ### Stage Duration Tracking Tables
 
 | # | Table Name | Purpose | Key Columns |
 |---|------------|---------|-------------|
-| 6 | `ContractStageDurations` | **Time tracking per stage for contracts** | StageDurationId, ContractId, StageId, EnteredAt, ExitedAt, DurationMinutes, DurationBusinessDays, WasOverdue, DaysOverdue, ExitReason |
-| 7 | `CorrespondenceStageDurations` | **Time tracking per stage for correspondence** | StageDurationId, CorrespondenceId, StageId, EnteredAt, ExitedAt, DurationMinutes, DurationBusinessDays, WasOverdue |
+| 4 | `ContractStageDurations` | Time tracking per stage for contracts | StageDurationId, ContractId, StageId, EnteredAt, ExitedAt, DurationMinutes, DurationBusinessDays, WasOverdue, DaysOverdue |
+| 5 | `CorrespondenceStageDurations` | Time tracking per stage for correspondence | StageDurationId, CorrespondenceId, StageId, EnteredAt, ExitedAt, DurationMinutes, DurationBusinessDays, WasOverdue |
 
-### New Columns Added to Main Tables
+---
 
-**ContractsRegister - New Columns:**
-| Column | Type | Description |
-|--------|------|-------------|
-| `CurrentStageId` | INT FK | Current workflow stage |
-| `StageEnteredAt` | DATETIME2 | When current stage started |
-| `TotalCorrectionCycles` | INT | Number of correction cycles |
-| `IsAwaitingCorrections` | BIT | Currently awaiting corrections? |
-| `CorrectionDeadline` | DATETIME2 | Deadline for corrections |
-| `LastCorrectionRequestId` | UNIQUEIDENTIFIER FK | Last correction request |
-| `TotalProcessingDays` | INT | Total days in processing |
-| `TotalBusinessDays` | DECIMAL(5,2) | Total business days |
+## MODULE 8D: CORRECTION RESPONSE TRACKING (5 Tables)
 
-**CorrespondenceRegister - Same columns added**
+| # | Table Name | Purpose | Key Columns |
+|---|------------|---------|-------------|
+| 1 | `ContractCorrectionDataChanges` | Tracks field changes during correction | ChangeId, CorrectionRequestId, FieldName, OldValue, NewValue, ChangedBy, IsVerified |
+| 2 | `CorrespondenceCorrectionDataChanges` | Tracks field changes for correspondence | ChangeId, CorrectionRequestId, FieldName, OldValue, NewValue, ChangedBy, IsVerified |
+| 3 | `ContractCorrectionResponseDrafts` | Auto-save correction response progress | DraftId, CorrectionRequestId, FormData (JSON), CurrentStep |
+| 4 | `CorrespondenceCorrectionResponseDrafts` | Auto-save for correspondence corrections | DraftId, CorrectionRequestId, FormData (JSON), CurrentStep |
+| 5 | `ContractFieldVersionHistory` | Complete version history of all field changes | VersionId, ContractId, FieldName, FieldValue, Version, CorrectionCycleNumber |
 
-**StatusHistory Tables - New Columns:**
-| Column | Type | Description |
-|--------|------|-------------|
-| `StageId` | INT FK | New stage entered |
-| `PreviousStageId` | INT FK | Previous stage exited |
-| `StageDurationMinutes` | INT | Time spent in previous stage |
-| `StageDurationBusinessDays` | DECIMAL(5,2) | Business days in stage |
-| `WasOverdue` | BIT | Was stage overdue? |
-| `DaysOverdue` | INT | Days over SLA |
-| `IsCorrection` | BIT | Is this a correction cycle? |
-| `CorrectionCycleNumber` | INT | Which correction cycle |
+---
 
-### Views for Workflow Reporting
+## MODULE 8E: RENEWAL/SUPPLEMENTAL VALIDATION (2 Tables)
 
-| View | Purpose |
-|------|---------|
-| `vw_ContractCurrentStage` | Current stage status for all contracts with SLA tracking |
-| `vw_CorrespondenceCurrentStage` | Current stage status for all correspondence |
-| `vw_PendingCorrections` | All pending correction requests (combined) |
-| `vw_StageDurationAnalytics` | Stage duration statistics and overdue percentages |
-
-### Stored Procedures
-
-| Procedure | Purpose |
-|-----------|---------|
-| `sp_RequestContractCorrections` | Create correction request, set deadline, update status |
-| `sp_SubmitContractCorrections` | Mark corrections as submitted, move to re-review |
-| `sp_ChangeContractStage` | Change stage with automatic duration tracking |
+| # | Table Name | Purpose | Key Columns |
+|---|------------|---------|-------------|
+| 1 | `LookupContractRenewalLimits` | Max renewals by contract nature | LimitId, ContractNatureId, MaxRenewals, RenewalWindowDays |
+| 2 | `ContractValidationLog` | Audit trail of validation attempts | LogId, ContractNumber, EntityId, ValidationType, WasValid, ValidationErrors |
 
 ---
 
@@ -315,9 +382,9 @@ This module handles **status updates**, **return for corrections**, and **stage 
 
 | # | Table Name | Purpose | Key Columns |
 |---|------------|---------|-------------|
-| 1 | `SLATracking` | Deadline monitoring | TrackingId, EntityType, EntityId, DueDate |
+| 1 | `SLATracking` | Deadline monitoring | TrackingId, EntityType, EntityId, DueDate, IsOverdue, EscalationLevel |
 | 2 | `EscalationRules` | Auto-escalation config | RuleId, TriggerCondition, EscalateTo |
-| 3 | `Notifications` | User notifications | NotificationId, UserId, Message, IsRead |
+| 3 | `Notifications` | User notifications | NotificationId, UserId, Message, IsRead, NotificationType |
 | 4 | `EmailQueue` | Email sending queue | EmailId, ToAddress, Status, SentAt |
 | 5 | `EmailTemplates` | Email templates | TemplateId, TemplateName, Subject, Body |
 
@@ -327,7 +394,7 @@ This module handles **status updates**, **return for corrections**, and **stage 
 
 | # | Table Name | Purpose | Key Columns |
 |---|------------|---------|-------------|
-| 1 | `AuditLog` | System-wide audit trail | LogId, TableName, Action, OldValues, NewValues |
+| 1 | `AuditLog` | System-wide audit trail | LogId, TableName, RecordId, Action, OldValues, NewValues, ChangedBy, IPAddress |
 | 2 | `ActivityLog` | User activity tracking | ActivityId, UserId, ActivityType, Description |
 | 3 | `EntityRegistrationHistory` | Registration audit | HistoryId, EntityId, Action, IPAddress |
 
@@ -375,9 +442,7 @@ This module handles **status updates**, **return for corrections**, and **stage 
 
 ---
 
-## ContractsRegister - COMPLETE Column List
-
-The main `ContractsRegister` table contains **ALL fields** from the contract submission form:
+## ContractsRegister - COMPLETE Column List (70+ Columns)
 
 ### Primary Keys & Reference
 | Column | Type | Description |
@@ -400,6 +465,14 @@ The main `ContractsRegister` table contains **ALL fields** from the contract sub
 | `ParentContractId` | UNIQUEIDENTIFIER FK | Original contract for renewals |
 | `ParentContractNumber` | NVARCHAR(100) | Original contract reference |
 
+### Entity Ownership (for validation)
+| Column | Type | Description |
+|--------|------|-------------|
+| `OwnerEntityId` | UNIQUEIDENTIFIER FK | Entity that owns this contract |
+| `OwnerEntityNumber` | NVARCHAR(50) | Entity reference number |
+| `RenewalCount` | INT | Number of renewals made |
+| `MaxRenewals` | INT | Maximum allowed renewals |
+
 ### Requesting Entity
 | Column | Type | Description |
 |--------|------|-------------|
@@ -421,7 +494,7 @@ The main `ContractsRegister` table contains **ALL fields** from the contract sub
 ### Contractor/Counterparty (Primary)
 | Column | Type | Description |
 |--------|------|-------------|
-| `CounterpartyName` | NVARCHAR(200) | **Contractor/vendor name** |
+| `CounterpartyName` | NVARCHAR(200) | Contractor/vendor name |
 | `CounterpartyAddress` | NVARCHAR(500) | Address |
 | `CounterpartyContact` | NVARCHAR(200) | Contact person |
 | `CounterpartyEmail` | NVARCHAR(255) | Email |
@@ -435,7 +508,7 @@ The main `ContractsRegister` table contains **ALL fields** from the contract sub
 ### Financial - Contract Value
 | Column | Type | Description |
 |--------|------|-------------|
-| `ContractValue` | DECIMAL(18,2) | **Main contract amount** |
+| `ContractValue` | DECIMAL(18,2) | Main contract amount |
 | `ContractValueExclTax` | DECIMAL(18,2) | Value excluding tax |
 | `TaxAmount` | DECIMAL(18,2) | Tax amount |
 | `ContractValueInclTax` | DECIMAL(18,2) | Value including tax |
@@ -466,9 +539,9 @@ The main `ContractsRegister` table contains **ALL fields** from the contract sub
 ### Contract Period - Dates
 | Column | Type | Description |
 |--------|------|-------------|
-| `ContractStartDate` | DATE | **Contract start date** |
-| `ContractEndDate` | DATE | **Contract end date** |
-| `ContractDuration` | NVARCHAR(100) | Duration text (e.g., "2 years, 3 months") |
+| `ContractStartDate` | DATE | Contract start date |
+| `ContractEndDate` | DATE | Contract end date |
+| `ContractDuration` | NVARCHAR(100) | Duration text |
 | `ContractDurationMonths` | INT | Duration in months |
 | `ProposedStartDate` | DATE | Originally proposed start |
 | `ProposedEndDate` | DATE | Originally proposed end |
@@ -504,9 +577,21 @@ The main `ContractsRegister` table contains **ALL fields** from the contract sub
 ### Legal
 | Column | Type | Description |
 |--------|------|-------------|
-| `GoverningLaw` | NVARCHAR(100) | Governing law (default: Laws of Barbados) |
+| `GoverningLaw` | NVARCHAR(100) | Governing law |
 | `ExecutionLocation` | NVARCHAR(200) | Place of execution |
-| `DisputeResolutionMethod` | NVARCHAR(100) | Dispute resolution method |
+| `DisputeResolutionMethodId` | INT FK | Dispute resolution method |
+
+### Workflow & Stage Tracking
+| Column | Type | Description |
+|--------|------|-------------|
+| `CurrentStageId` | INT FK | Current workflow stage |
+| `StageEnteredAt` | DATETIME2 | When current stage started |
+| `TotalCorrectionCycles` | INT | Number of correction cycles |
+| `IsAwaitingCorrections` | BIT | Currently awaiting corrections? |
+| `CorrectionDeadline` | DATETIME2 | Deadline for corrections |
+| `LastCorrectionRequestId` | UNIQUEIDENTIFIER FK | Last correction request |
+| `TotalProcessingDays` | INT | Total days in processing |
+| `TotalBusinessDays` | DECIMAL(5,2) | Total business days |
 
 ### Status & Assignment
 | Column | Type | Description |
@@ -537,57 +622,41 @@ The main `ContractsRegister` table contains **ALL fields** from the contract sub
 
 ---
 
-## ContractCounterparties - Multiple Parties
+## Views (40+)
 
-For contracts with multiple parties (joint ventures, subcontractors):
-
-| Column | Type | Description |
-|--------|------|-------------|
-| `CounterpartyId` | UNIQUEIDENTIFIER PK | Primary key |
-| `ContractId` | UNIQUEIDENTIFIER FK | Parent contract |
-| `PartyRole` | NVARCHAR(50) | Role (CONTRACTOR, JOINT_VENTURE_PARTNER, SUBCONTRACTOR, GUARANTOR) |
-| `IsPrimaryParty` | BIT | Is primary party? |
-| `ContractorTypeId` | INT FK | Party type |
-| `PartyName` | NVARCHAR(300) | Party name |
-| `TradingName` | NVARCHAR(300) | Trading name |
-| `AddressLine1` | NVARCHAR(200) | Address line 1 |
-| `AddressLine2` | NVARCHAR(200) | Address line 2 |
-| `City` | NVARCHAR(100) | City |
-| `StateProvince` | NVARCHAR(100) | State/Province |
-| `PostalCode` | NVARCHAR(20) | Postal code |
-| `CountryId` | INT FK | Country |
-| `ContactPerson` | NVARCHAR(200) | Contact person |
-| `ContactEmail` | NVARCHAR(255) | Email |
-| `ContactPhone` | NVARCHAR(50) | Phone |
-| `CompanyRegistrationNumber` | NVARCHAR(100) | Company reg |
-| `TaxIdentificationNumber` | NVARCHAR(100) | Tax ID |
-| `VATNumber` | NVARCHAR(100) | VAT number |
-| `BankName` | NVARCHAR(200) | Bank name |
-| `BankAccountNumber` | NVARCHAR(100) | Account number |
-| `SharePercentage` | DECIMAL(5,2) | Share % (for JVs) |
+| View | Purpose |
+|------|---------|
+| `vw_ContractCurrentStage` | Current stage status for all contracts with SLA tracking |
+| `vw_CorrespondenceCurrentStage` | Current stage status for all correspondence |
+| `vw_PendingCorrections` | All pending correction requests (combined) |
+| `vw_StageDurationAnalytics` | Stage duration statistics and overdue percentages |
+| `vw_ApplicantPendingCorrections` | Pending corrections for applicant dashboard |
+| `vw_CorrectionChangeSummary` | Summary of changes per correction cycle |
+| `vw_ContractDocumentChecklist` | Full document checklist by Nature/Category/Instrument |
+| `vw_DocumentRequirementsSummary` | Summary counts of required/conditional/optional documents |
+| `vw_ContractsWithParties` | Contracts with counterparty details |
+| `vw_ContractsWithMilestones` | Contracts with milestone summary |
+| `vw_OverdueContracts` | Contracts past SLA |
+| `vw_OverdueCorrespondence` | Correspondence past SLA |
+| `vw_DashboardMetrics` | Dashboard KPIs |
+| `vw_StaffWorkload` | Staff workload summary |
+| `vw_DepartmentPerformance` | Department performance metrics |
 
 ---
 
-## ContractMilestones - Payment Schedule
+## Stored Procedures (15+)
 
-| Column | Type | Description |
-|--------|------|-------------|
-| `MilestoneId` | UNIQUEIDENTIFIER PK | Primary key |
-| `ContractId` | UNIQUEIDENTIFIER FK | Parent contract |
-| `MilestoneNumber` | INT | Milestone sequence |
-| `MilestoneName` | NVARCHAR(200) | Milestone name |
-| `Description` | NVARCHAR(MAX) | Description |
-| `PlannedStartDate` | DATE | Planned start |
-| `PlannedEndDate` | DATE | Planned end |
-| `ActualStartDate` | DATE | Actual start |
-| `ActualEndDate` | DATE | Actual end |
-| `Deliverables` | NVARCHAR(MAX) | Deliverables |
-| `AcceptanceCriteria` | NVARCHAR(MAX) | Acceptance criteria |
-| `PaymentAmount` | DECIMAL(18,2) | Payment amount |
-| `PaymentPercentage` | DECIMAL(5,2) | Payment % |
-| `PaymentDueDate` | DATE | Payment due date |
-| `PaymentPaidDate` | DATE | Date paid |
-| `Status` | NVARCHAR(50) | Status (PENDING, IN_PROGRESS, COMPLETED) |
+| Procedure | Purpose |
+|-----------|---------|
+| `sp_RequestContractCorrections` | Create correction request, set deadline, update status |
+| `sp_SubmitContractCorrections` | Mark corrections as submitted, move to re-review |
+| `sp_ChangeContractStage` | Change stage with automatic duration tracking |
+| `sp_ValidateContractForRenewalSupplemental` | Validate contract for renewal/supplemental |
+| `sp_ValidateContractClassification` | Validate Nature->Category->Instrument selection |
+| `sp_CalculateSLADates` | Calculate SLA due dates |
+| `sp_UpdateOverdueStatus` | Update overdue flags for all records |
+| `sp_LogAuditEntry` | Log audit entries |
+| `sp_GenerateReferenceNumber` | Generate next reference number |
 
 ---
 
@@ -611,7 +680,7 @@ For contracts with multiple parties (joint ventures, subcontractors):
 | 14 | `014-renewal-supplemental-validation.sql` | Renewal/supplemental validation & entity ownership |
 | 15 | `015-missing-columns-audit-fix.sql` | Audit fix: missing form fields, SLA, sessions, audit log |
 | 16 | `016-correction-response-tracking.sql` | Correction response: data changes, drafts, documents, field history |
-| 17 | `017-appendix-c-document-requirements.sql` | **Appendix C: Complete document requirements matrix by Nature->Category->Instrument** |
+| 17 | `017-appendix-c-document-requirements.sql` | Appendix C: Complete document requirements matrix |
 
 **OR use `CONSOLIDATED_SCHEMA.sql` for single-file deployment.**
 
@@ -623,10 +692,11 @@ For contracts with multiple parties (joint ventures, subcontractors):
 |---------|------|---------|
 | 1.0 | 2024 | Initial schema |
 | 1.1 | 2024 | Added Entity master, Ask Rex, Reports |
-| 1.2 | 2024 | Added complete contract fields: ContractValue, ContractStartDate, ContractEndDate, ContractCounterparties, ContractMilestones |
-| 1.3 | 2024 | Added draft/failed submission handling with retry functionality |
+| 1.2 | 2024 | Added complete contract fields |
+| 1.3 | 2024 | Added draft/failed submission handling |
 | 1.4 | 2024 | Added workflow, corrections & stage duration tracking |
 | 1.5 | 2024 | Added renewal/supplemental validation |
-| 1.6 | 2024 | Comprehensive audit fix: missing form columns, SLA, sessions, audit log |
+| 1.6 | 2024 | Comprehensive audit fix |
 | 1.7 | 2024 | Correction response tracking |
-| 1.8 | 2024 | **Appendix C Document Requirements Matrix: All 24 document types (FORM_ACCEPT, FORM_DRAFT, FORM_LOA, FORM_LOE, FORM_PAY_SCHED, FORM_SCHED_DELIV, FORM_SCHED_WORKS, PROC_SPECS, PROC_TENDER, PROC_TOR, PROC_PROP, PROC_SCOPE, PROC_BOQ, PROC_DRAWINGS, PROC_CAB_PAPER, PROC_CAB_APPR, PROC_SSP_REQ, PROC_SSP_APPR, DUE_BUS_REG, DUE_GS, DUE_INCORP, FIN_BOND, FIN_SURETY); All instruments (GDS, UNI, CLEAN, CONS_CO, CONS_IND, IC, IC_IDB, SVC, WKS); NatureCategoryValidation and CategoryInstrumentValidation tables; sp_ValidateContractClassification; vw_ContractDocumentChecklist; vw_DocumentRequirementsSummary** |
+| 1.8 | 2024 | Appendix C Document Requirements Matrix |
+| 2.0 | Mar 2026 | Complete consolidation and documentation update |
