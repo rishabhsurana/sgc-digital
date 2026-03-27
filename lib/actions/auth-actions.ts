@@ -56,24 +56,28 @@ async function createSession(user: UserProfile): Promise<string> {
   const sessionToken = Buffer.from(JSON.stringify(sessionData)).toString('base64')
   
   const cookieStore = await cookies()
+  console.log('[v0] createSession - setting cookie for:', user.email)
+  console.log('[v0] createSession - NODE_ENV:', process.env.NODE_ENV)
   cookieStore.set(SESSION_COOKIE_NAME, sessionToken, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure: false, // Allow in all environments for now
     sameSite: 'lax',
     maxAge: SESSION_DURATION / 1000,
     path: '/'
   })
+  console.log('[v0] createSession - main session cookie set')
   
   // Set a client-readable cookie for UI state (staff check)
   // Staff roles: Staff (5), Supervisor (6), Admin (7), Super Admin (8)
   const isStaff = [5, 6, 7, 8].includes(user.roleId)
   cookieStore.set('sgc_is_staff', isStaff ? '1' : '0', {
     httpOnly: false, // Client can read this
-    secure: process.env.NODE_ENV === 'production',
+    secure: false, // Allow in all environments for now
     sameSite: 'lax',
     maxAge: SESSION_DURATION / 1000,
     path: '/'
   })
+  console.log('[v0] createSession - staff cookie set, isStaff:', isStaff)
   
   return sessionToken
 }
@@ -82,7 +86,10 @@ export async function getSession(): Promise<SessionData | null> {
   const cookieStore = await cookies()
   const sessionCookie = cookieStore.get(SESSION_COOKIE_NAME)
   
+  console.log('[v0] getSession - cookie exists:', !!sessionCookie?.value)
+  
   if (!sessionCookie?.value) {
+    console.log('[v0] getSession - no session cookie found')
     return null
   }
   
@@ -93,12 +100,15 @@ export async function getSession(): Promise<SessionData | null> {
     
     // Check if session has expired
     if (sessionData.expiresAt < Date.now()) {
+      console.log('[v0] getSession - session expired')
       await clearSession()
       return null
     }
     
+    console.log('[v0] getSession - valid session for:', sessionData.email)
     return sessionData
-  } catch {
+  } catch (error) {
+    console.log('[v0] getSession - error parsing session:', error)
     return null
   }
 }

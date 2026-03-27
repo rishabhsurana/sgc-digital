@@ -11,7 +11,9 @@ export default async function ManagementLayout({
   const pathname = headersList.get("x-pathname") || ""
   
   // Always check session - let client handle redirects for better UX
+  console.log('[v0] Management layout - checking session, pathname:', pathname)
   const session = await getSession()
+  console.log('[v0] Management layout - session result:', session ? session.email : 'null')
   
   // Build admin session if authenticated
   const adminSession: AdminSession | null = session ? {

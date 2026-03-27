@@ -31,7 +31,10 @@ export default function ManagementLoginPage() {
     console.log('[v0] loginStaff result:', result)
     
     if (result.success) {
-      console.log('[v0] Login successful, redirecting to:', redirectTo)
+      console.log('[v0] Login successful, waiting for cookie to set...')
+      // Wait for the cookie to be properly set before navigating
+      await new Promise(resolve => setTimeout(resolve, 300))
+      console.log('[v0] Redirecting to:', redirectTo)
       // Use window.location for full page navigation to ensure cookies are sent
       window.location.href = redirectTo
     } else {
