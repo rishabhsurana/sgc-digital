@@ -643,18 +643,23 @@ export async function authenticateStaff(
   email: string, 
   password: string
 ): Promise<{ success: boolean; user?: UserProfile; error?: string }> {
+  console.log('[v0] authenticateStaff called for:', email)
   const result = await authenticateUser(email, password)
   
   if (!result.success || !result.user) {
+    console.log('[v0] authenticateStaff - base auth failed:', result.error)
     return result
   }
   
   // Check if user has staff role (Staff, Supervisor, Admin, Super Admin)
   const staffRoleIds = [5, 6, 7, 8]
+  console.log('[v0] authenticateStaff - checking roleId:', result.user.roleId, 'allowed:', staffRoleIds)
   if (!staffRoleIds.includes(result.user.roleId)) {
+    console.log('[v0] authenticateStaff - role check FAILED')
     return { success: false, error: 'You do not have permission to access the Management Portal' }
   }
   
+  console.log('[v0] authenticateStaff - SUCCESS, returning user')
   return result
 }
 

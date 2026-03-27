@@ -201,20 +201,27 @@ export async function loginUser(
 export async function loginStaff(
   formData: FormData
 ): Promise<LoginResult> {
+  console.log('[v0] loginStaff action called')
   const email = formData.get('email') as string
   const password = formData.get('password') as string
   
   if (!email || !password) {
+    console.log('[v0] loginStaff - missing email or password')
     return { success: false, error: 'Email and password are required' }
   }
   
+  console.log('[v0] loginStaff - calling authenticateStaff for:', email)
   const result = await authenticateStaff(email, password)
+  console.log('[v0] loginStaff - authenticateStaff result:', result.success, result.error || 'no error')
   
   if (!result.success || !result.user) {
+    console.log('[v0] loginStaff - auth failed, returning error')
     return { success: false, error: result.error || 'Authentication failed' }
   }
   
+  console.log('[v0] loginStaff - creating session for user:', result.user.email)
   await createSession(result.user)
+  console.log('[v0] loginStaff - session created successfully')
   
   // Log the activity
   await logActivity({
@@ -227,6 +234,7 @@ export async function loginStaff(
     entityId: result.user.userId
   })
   
+  console.log('[v0] loginStaff - returning success with redirect to /management')
   return { success: true, redirectTo: '/management' }
 }
 
