@@ -1,11 +1,11 @@
 # SGC Digital - Complete Database Table List
 
-**Version:** 2.2.0  
+**Version:** 2.3.0  
 **Last Updated:** March 2026  
-**Total Tables:** 150+  
-**Total Views:** 45+  
-**Stored Procedures:** 20+  
-**SQL Scripts:** 19
+**Total Tables:** 160+  
+**Total Views:** 47+  
+**Stored Procedures:** 24+  
+**SQL Scripts:** 20
 
 ---
 
@@ -34,6 +34,7 @@
 | **Management Portal Tables** | **12** |
 | Audit & Activity Tables | 3 |
 | Reporting & Analytics Tables | 8 |
+| **Report Parameters & Lookups** | **5** |
 | Ask Rex AI Tables | 9 |
 | System Configuration Tables | 4 |
 | **TOTAL TABLES** | **~130** |
@@ -778,6 +779,80 @@
 
 ---
 
+## MODULE 16: REPORT PARAMETERS & LOOKUPS (5 Tables)
+
+**Purpose:** Store all filter/parameter options for report generation queries
+
+| # | Table Name | Purpose | Key Columns |
+|---|------------|---------|-------------|
+| 1 | `ReportParameters` | Defines parameters per report | ReportId, ParameterCode, ParameterType, DataSourceType, DataSourceName, IsRequired |
+| 2 | `ReportParameterOptions` | Static options for parameters | ParameterId, OptionValue, OptionLabel, IsDefault |
+| 3 | `LookupDateRangeOptions` | Standard date ranges | DateRangeCode, CalculationType, DaysBack, MonthsBack |
+| 4 | `LookupReportGroupings` | Data grouping options | GroupingCode, SqlGroupByFragment, SqlSelectFragment |
+| 5 | `LookupValueRanges` | Contract value bands | RangeCode, MinValue, MaxValue |
+
+**Date Range Options (16 Total):**
+| Code | Name | Calculation |
+|------|------|-------------|
+| TODAY | Today | Current day |
+| YESTERDAY | Yesterday | Previous day |
+| LAST_7 | Last 7 Days | 7 days back |
+| LAST_14 | Last 14 Days | 14 days back |
+| LAST_30 | Last 30 Days | 30 days back |
+| LAST_60 | Last 60 Days | 60 days back |
+| LAST_90 | Last 90 Days | 90 days back |
+| THIS_MONTH | This Month | Current calendar month |
+| LAST_MONTH | Last Month | Previous calendar month |
+| THIS_QUARTER | This Quarter | Current fiscal quarter |
+| LAST_QUARTER | Last Quarter | Previous fiscal quarter |
+| THIS_YEAR | This Year | Current calendar year |
+| LAST_YEAR | Last Year | Previous calendar year |
+| YTD | Year to Date | January 1 to today |
+| ALL_TIME | All Time | All data |
+| CUSTOM | Custom Range | User specifies dates |
+
+**Report Grouping Options (13 Total):**
+| Code | Name | Applicable To |
+|------|------|---------------|
+| NONE | No Grouping | All |
+| BY_DAY | By Day | All |
+| BY_WEEK | By Week | All |
+| BY_MONTH | By Month | All |
+| BY_QUARTER | By Quarter | All |
+| BY_YEAR | By Year | All |
+| BY_MDA | By Ministry/MDA | All |
+| BY_TYPE | By Type | All |
+| BY_STATUS | By Status | All |
+| BY_PRIORITY | By Priority | All |
+| BY_NATURE | By Contract Nature | Contracts |
+| BY_CATEGORY | By Contract Category | Contracts |
+| BY_ASSIGNEE | By Assignee | All |
+
+**Value Range Options (8 Total):**
+| Code | Range |
+|------|-------|
+| UNDER_50K | Under $50,000 |
+| 50K_100K | $50,000 - $100,000 |
+| 100K_250K | $100,000 - $250,000 |
+| 250K_500K | $250,000 - $500,000 |
+| 500K_1M | $500,000 - $1,000,000 |
+| 1M_5M | $1,000,000 - $5,000,000 |
+| 5M_10M | $5,000,000 - $10,000,000 |
+| OVER_10M | Over $10,000,000 |
+
+**Pre-Defined Reports (25 Total):**
+
+| Category | Reports |
+|----------|---------|
+| **Correspondence (6)** | CORR_SUMMARY, CORR_BY_MDA, CORR_BY_TYPE, CORR_TRENDS, CORR_AGING, CORR_SLA |
+| **Contracts (7)** | CONT_SUMMARY, CONT_BY_MDA, CONT_BY_NATURE, CONT_BY_VALUE, CONT_TRENDS, CONT_RENEWALS, CONT_PIPELINE |
+| **Financial (3)** | FIN_CONTRACT_VALUE, FIN_BY_FUNDING, FIN_MONTHLY |
+| **Performance (4)** | PERF_SLA_OVERALL, PERF_PROCESSING_TIME, PERF_BY_STAFF, PERF_BY_DEPT |
+| **Users (3)** | USER_REGISTRATIONS, USER_ACTIVITY, MDA_ACTIVITY |
+| **Executive (3)** | EXEC_DASHBOARD, EXEC_WEEKLY, EXEC_MONTHLY |
+
+---
+
 ## SQL Script Execution Order
 
 | # | Script | Purpose |
@@ -800,7 +875,8 @@
 | 16 | `016-correction-response-tracking.sql` | Correction response: data changes, drafts, documents, field history |
 | 17 | `017-appendix-c-document-requirements.sql` | Appendix C: Complete document requirements matrix |
 | 18 | `018-email-notification-templates.sql` | Email notification types, templates & preferences |
-| 19 | `019-management-portal-tables.sql` | **Management portal: MDAs, settings, reports, activity, statistics** |
+| 19 | `019-management-portal-tables.sql` | Management portal: MDAs, settings, reports, activity, statistics |
+| 20 | `020-report-parameters-schema.sql` | **Report parameters, date ranges, groupings, value ranges** |
 
 **OR use `CONSOLIDATED_SCHEMA.sql` for single-file deployment.**
 
@@ -821,4 +897,5 @@
 | 1.8 | 2024 | Appendix C Document Requirements Matrix |
 | 2.0 | Mar 2026 | Complete consolidation and documentation update |
 | 2.1 | Mar 2026 | Email Notification Templates |
-| 2.2 | Mar 2026 | **Management Portal Tables: MDAs, MDAContacts, MDAStatistics, SystemSettings, SystemAnnouncements, UserNotificationPreferences, SavedReports, ReportExecutionLog, DailyStatisticsSnapshot, PendingActionsQueue, LookupRejectionReasons, StaffRequestStatusHistory; sp_UpdateDailyStatistics, sp_GetSystemSetting, sp_UpdateSystemSetting, sp_RefreshMDAStatistics; vw_MDASummary, vw_PendingActionsSummary, vw_TodayStatistics, vw_RecentActivityFeed** |
+| 2.2 | Mar 2026 | Management Portal Tables |
+| 2.3 | Mar 2026 | **Report Parameters Schema: ReportParameters, ReportParameterOptions, LookupDateRangeOptions (16 date ranges), LookupReportGroupings (13 groupings), LookupValueRanges (8 value bands); 25 pre-defined reports across 6 categories; sp_GetReportParameters, sp_GetParameterOptions; vw_AvailableReports** |
