@@ -1,11 +1,11 @@
 # SGC Digital - Complete Database Table List
 
-**Version:** 2.0.0  
+**Version:** 2.1.0  
 **Last Updated:** March 2026  
-**Total Tables:** 130+  
-**Total Views:** 40+  
-**Stored Procedures:** 15+  
-**SQL Scripts:** 17
+**Total Tables:** 135+  
+**Total Views:** 42+  
+**Stored Procedures:** 16+  
+**SQL Scripts:** 18
 
 ---
 
@@ -30,6 +30,7 @@
 | Correction Response Tracking Tables | 5 |
 | Renewal/Supplemental Validation Tables | 2 |
 | Tracking & Notifications Tables | 5 |
+| **Email Notification Templates** | **5** |
 | Audit & Activity Tables | 3 |
 | Reporting & Analytics Tables | 8 |
 | Ask Rex AI Tables | 9 |
@@ -641,10 +642,53 @@
 | `vw_DashboardMetrics` | Dashboard KPIs |
 | `vw_StaffWorkload` | Staff workload summary |
 | `vw_DepartmentPerformance` | Department performance metrics |
+| `vw_EmailNotificationTypes` | All active email notification types with category |
+| `vw_EmailNotificationSummary` | Email notification summary by category |
 
 ---
 
-## Stored Procedures (15+)
+## MODULE 14: EMAIL NOTIFICATION TEMPLATES (5 Tables)
+
+| # | Table Name | Purpose | Key Columns |
+|---|------------|---------|-------------|
+| 1 | `LookupEmailCategories` | Email notification categories | CategoryCode, CategoryName |
+| 2 | `LookupEmailNotificationTypes` | Master list of all email notifications | NotificationTypeId, NotificationCode, DefaultSubject, DefaultBodyTemplate, RecipientType |
+| 3 | `UserEmailPreferences` | User opt-in/opt-out preferences | UserId, NotificationTypeId, IsEnabled |
+| 4 | `EmailSendLog` | Log of all sent emails | LogId, ToEmail, NotificationTypeId, Status, SentAt |
+| 5 | `EmailQueue` | Queue for outgoing emails | EmailId, ToEmail, Subject, BodyHtml, Status |
+
+**Email Notification Types (24 Total):**
+
+| Code | Category | Description | Recipient |
+|------|----------|-------------|-----------|
+| `REG_SUCCESS` | Registration | Registration successful | Applicant |
+| `REG_VERIFY_EMAIL` | Registration | Email verification required | Applicant |
+| `REG_PASSWORD_RESET` | Registration | Password reset request | Applicant |
+| `REG_PASSWORD_CHANGED` | Registration | Password changed confirmation | Applicant |
+| `CONTRACT_SUBMITTED` | Contract | Contract submitted by applicant | Applicant |
+| `CONTRACT_RECEIVED_SGC` | Contract | New contract received (to SGC) | Reviewer |
+| `CONTRACT_ASSIGNED` | Contract | Contract assigned to reviewer | Reviewer |
+| `CONTRACT_APPROVED` | Contract | Contract approved | Applicant |
+| `CONTRACT_REJECTED` | Contract | Contract rejected | Applicant |
+| `CORR_SUBMITTED` | Correspondence | Correspondence submitted | Applicant |
+| `CORR_RECEIVED_SGC` | Correspondence | Correspondence received (to SGC) | Reviewer |
+| `CORR_RESPONSE_READY` | Correspondence | Response ready for applicant | Applicant |
+| `CORR_COMPLETED` | Correspondence | Correspondence completed | Applicant |
+| `WF_STAGE_CHANGED` | Workflow | Workflow stage changed | Applicant |
+| `WF_PENDING_APPROVAL` | Workflow | Approval required | Approver |
+| `CORR_REQ_CLARIFICATION` | Corrections | Clarification required | Applicant |
+| `CORR_CLARIFICATION_RECEIVED` | Corrections | Clarification response received | Reviewer |
+| `CORR_CORRECTION_REQ` | Corrections | Corrections required | Applicant |
+| `CORR_CORRECTION_SUBMITTED` | Corrections | Corrections submitted | Reviewer |
+| `SLA_WARNING_REVIEWER` | SLA | SLA warning for reviewer | Reviewer |
+| `SLA_BREACH` | SLA | SLA breach notification | Admin |
+| `SLA_WARNING_APPLICANT` | SLA | Response deadline approaching | Applicant |
+| `SYS_MAINTENANCE` | System | Scheduled maintenance | Applicant |
+| `SYS_ACCOUNT_LOCKED` | System | Account locked | Applicant |
+
+---
+
+## Stored Procedures (16+)
 
 | Procedure | Purpose |
 |-----------|---------|
@@ -657,6 +701,7 @@
 | `sp_UpdateOverdueStatus` | Update overdue flags for all records |
 | `sp_LogAuditEntry` | Log audit entries |
 | `sp_GenerateReferenceNumber` | Generate next reference number |
+| `sp_QueueEmailNotification` | Queue email notification by code with template data |
 
 ---
 
@@ -681,6 +726,7 @@
 | 15 | `015-missing-columns-audit-fix.sql` | Audit fix: missing form fields, SLA, sessions, audit log |
 | 16 | `016-correction-response-tracking.sql` | Correction response: data changes, drafts, documents, field history |
 | 17 | `017-appendix-c-document-requirements.sql` | Appendix C: Complete document requirements matrix |
+| 18 | `018-email-notification-templates.sql` | **Email notification types, templates & preferences** |
 
 **OR use `CONSOLIDATED_SCHEMA.sql` for single-file deployment.**
 
@@ -700,3 +746,4 @@
 | 1.7 | 2024 | Correction response tracking |
 | 1.8 | 2024 | Appendix C Document Requirements Matrix |
 | 2.0 | Mar 2026 | Complete consolidation and documentation update |
+| 2.1 | Mar 2026 | **Email Notification Templates: 24 notification types across 7 categories (Registration, Contract, Correspondence, Workflow, Corrections, SLA, System); LookupEmailCategories, LookupEmailNotificationTypes, UserEmailPreferences, EmailSendLog; sp_QueueEmailNotification stored procedure** |
