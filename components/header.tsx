@@ -132,22 +132,22 @@ export function Header({ isStaff: isStaffProp = false }: HeaderProps) {
             <Link 
               href="/" 
               className={cn(
-                "relative flex items-center justify-center gap-2 w-[130px] px-5 py-2.5 text-sm font-semibold rounded-full transition-all duration-200 border",
+                "relative flex items-center justify-center gap-2 w-[150px] px-5 py-2.5 text-sm font-semibold rounded-full transition-all duration-200 border",
                 isActive('/') 
-                  ? "text-white bg-gradient-to-r from-teal-500 to-teal-600 shadow-lg shadow-teal-200 border-teal-500" 
-                  : "text-slate-600 bg-slate-100 hover:bg-slate-200 border-slate-300"
+                  ? "text-white bg-emerald-500 hover:bg-emerald-600 shadow-lg shadow-emerald-200 border-emerald-500" 
+                  : "text-white bg-emerald-500 hover:bg-emerald-600 border-emerald-500"
               )}
             >
-              <Home className={cn("h-4 w-4", isActive('/') ? "text-white" : "text-teal-600")} />
+              <Home className="h-4 w-4 text-white" />
               Home
             </Link>
             
             <DropdownMenu>
               <DropdownMenuTrigger 
                 className={cn(
-                  "relative flex items-center justify-center gap-2 w-[130px] px-5 py-2.5 text-sm font-semibold rounded-full transition-all duration-200 outline-none border",
+                  "relative flex items-center justify-center gap-2 w-[150px] px-5 py-2.5 text-sm font-semibold rounded-full transition-all duration-200 outline-none border",
                   isServicesActive 
-                    ? "text-white bg-gradient-to-r from-primary to-blue-600 shadow-lg shadow-blue-200 border-primary" 
+                    ? "text-white bg-blue-500 hover:bg-blue-600 shadow-lg shadow-blue-200 border-blue-500" 
 : "text-white bg-blue-500 hover:bg-blue-600 border-blue-500"
               )}
             >
@@ -184,9 +184,9 @@ export function Header({ isStaff: isStaffProp = false }: HeaderProps) {
             <Link 
               href="/dashboard" 
               className={cn(
-                "relative flex items-center justify-center gap-2 w-[130px] px-5 py-2.5 text-sm font-semibold rounded-full transition-all duration-200 border",
+                "relative flex items-center justify-center gap-2 w-[150px] px-5 py-2.5 text-sm font-semibold rounded-full transition-all duration-200 border",
                 isActive('/dashboard') 
-                  ? "text-white bg-gradient-to-r from-slate-600 to-slate-700 shadow-lg shadow-slate-300 border-slate-600" 
+                  ? "text-white bg-slate-700 hover:bg-slate-800 shadow-lg shadow-slate-300 border-slate-700" 
                   : "text-white bg-slate-700 hover:bg-slate-800 border-slate-700"
               )}
             >
