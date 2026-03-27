@@ -680,50 +680,40 @@ export default function DashboardPage() {
       
       <main className="flex-1 py-8 lg:py-12">
         <div className="container mx-auto px-4 lg:px-8">
-          {/* User Welcome Banner */}
+          {/* User Welcome Banner - Compact */}
           {userInfo && (
-            <Card className="mb-8 bg-gradient-to-r from-primary/5 via-primary/10 to-accent/5 border-primary/20">
-              <CardContent className="p-6">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                  <div className="flex items-center gap-4">
-                    <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground">
-                      <User className="h-7 w-7" />
+            <Card className="mb-6 bg-gradient-to-r from-primary/5 via-primary/10 to-accent/5 border-primary/20">
+              <CardContent className="px-4 py-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                      <User className="h-4 w-4" />
                     </div>
-                    <div>
-                      <h2 className="text-xl font-bold text-foreground">Welcome back, {userInfo.fullName}</h2>
-                      <div className="flex flex-wrap items-center gap-2 mt-1 text-sm text-muted-foreground">
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5">
+                      <span className="text-base font-semibold text-foreground">Welcome back, {userInfo.fullName}</span>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <span>{userInfo.email}</span>
-                        <span className="text-muted-foreground/50">|</span>
-                        <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
+                        <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 text-xs py-0">
                           {SUBMITTER_TYPE_LABELS[userInfo.submitterType] || userInfo.submitterType}
                         </Badge>
+                        {userInfo.organization && (
+                          <>
+                            <span className="text-muted-foreground/50">|</span>
+                            <span className="flex items-center gap-1">
+                              <Building2 className="h-3 w-3" />
+                              {userInfo.organization}
+                            </span>
+                          </>
+                        )}
                       </div>
-                      {userInfo.organization && (
-                        <div className="flex items-center gap-1 mt-1 text-sm text-muted-foreground">
-                          <Building2 className="h-3 w-3" />
-                          <span>{userInfo.organization}</span>
-                        </div>
-                      )}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    {userInfo.entityNumber && (
-                      <div className="text-right mr-4 hidden sm:block">
-                        <p className="text-xs text-muted-foreground">Entity Number</p>
-                        <p className="font-mono text-sm font-semibold text-primary">{userInfo.entityNumber}</p>
-                      </div>
-                    )}
-                    <form action={logout}>
-                      <Button 
-                        type="submit"
-                        variant="ghost" 
-                        size="sm"
-                      >
-                        <LogOut className="h-4 w-4 mr-1" />
-                        Sign Out
-                      </Button>
-                    </form>
-                  </div>
+                  <form action={logout}>
+                    <Button type="submit" variant="ghost" size="sm" className="h-8">
+                      <LogOut className="h-3.5 w-3.5 mr-1" />
+                      Sign Out
+                    </Button>
+                  </form>
                 </div>
               </CardContent>
             </Card>
