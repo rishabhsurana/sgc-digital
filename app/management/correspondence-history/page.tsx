@@ -42,7 +42,8 @@ import {
   FileImage,
   FileSpreadsheet,
   Paperclip,
-  ExternalLink
+  ExternalLink,
+  X
 } from "lucide-react"
 
 // Sample correspondence history data
@@ -201,14 +202,17 @@ export default function CorrespondenceHistoryPage() {
   const [selectedItem, setSelectedItem] = useState<typeof CORRESPONDENCE_HISTORY[0] | null>(null)
 
   const filteredData = CORRESPONDENCE_HISTORY.filter(item => {
-    const matchesSearch = 
-      item.ref.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.ministry.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.submitter.toLowerCase().includes(searchQuery.toLowerCase())
+    const searchLower = searchQuery.toLowerCase().trim()
+    const matchesSearch = searchLower === '' ||
+      item.ref.toLowerCase().includes(searchLower) ||
+      item.subject.toLowerCase().includes(searchLower) ||
+      item.ministry.toLowerCase().includes(searchLower) ||
+      item.submitter.toLowerCase().includes(searchLower)
     const matchesStatus = statusFilter === "all" || item.status === statusFilter
     return matchesSearch && matchesStatus
   })
+
+  const isFiltered = searchQuery.trim() !== '' || statusFilter !== 'all' || dateFilter !== 'all'
 
   return (
     <div className="space-y-6">
@@ -248,8 +252,16 @@ export default function CorrespondenceHistoryPage() {
                   placeholder="Search by reference, subject, ministry, or submitter..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
+                  className="pl-10 pr-10"
                 />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
               </div>
             </div>
             <div className="flex gap-2">
@@ -278,6 +290,35 @@ export default function CorrespondenceHistoryPage() {
               </Select>
             </div>
           </div>
+          
+          {/* Search Results Feedback */}
+          {isFiltered && (
+            <div className="mt-4 pt-4 border-t flex items-center justify-between">
+              <div className="flex items-center gap-2 text-sm">
+                <span className="text-muted-foreground">
+                  Showing <span className="font-semibold text-foreground">{filteredData.length}</span> of {CORRESPONDENCE_HISTORY.length} records
+                </span>
+                {searchQuery && (
+                  <span className="text-muted-foreground">
+                    for &quot;<span className="font-medium text-primary">{searchQuery}</span>&quot;
+                  </span>
+                )}
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setSearchQuery('')
+                  setStatusFilter('all')
+                  setDateFilter('all')
+                }}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-3 w-3 mr-1" />
+                Clear filters
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
 

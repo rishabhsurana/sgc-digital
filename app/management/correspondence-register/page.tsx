@@ -29,26 +29,25 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import {
-  FileText,
-  Search,
-  Filter,
+import { 
+  Search, 
+  Filter, 
+  Eye, 
+  MoreHorizontal, 
+  RefreshCw, 
   Download,
-  Eye,
-  MoreHorizontal,
-  CheckCircle,
+  FileText,
+  Mail,
+  Calendar,
+  Building2,
+  User,
+  Tag,
+  CheckCircle2,
   Clock,
   AlertCircle,
   XCircle,
-  ChevronLeft,
-  ChevronRight,
-  RefreshCw
+  MessageSquare,
+  X
 } from "lucide-react"
 
 // Sample correspondence data
@@ -93,11 +92,10 @@ export default function CorrespondenceRegisterPage() {
       item.submitter.toLowerCase().includes(searchLower)
     const matchesStatus = statusFilter === "all" || item.status === statusFilter
     const matchesType = typeFilter === "all" || item.type === typeFilter
-    
-    console.log('[v0] Search filter:', { searchQuery, searchLower, itemRef: item.ref, matchesSearch, matchesStatus, matchesType })
-    
     return matchesSearch && matchesStatus && matchesType
   })
+  
+  const isFiltered = searchQuery.trim() !== '' || statusFilter !== 'all' || typeFilter !== 'all'
 
   return (
     <div className="p-6 lg:p-8">
@@ -136,12 +134,17 @@ export default function CorrespondenceRegisterPage() {
                 <Input
                   placeholder="Search by reference, subject, ministry, or submitter..."
                   value={searchQuery}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                    console.log('[v0] Search input changed:', e.target.value)
-                    setSearchQuery(e.target.value)
-                  }}
-                  className="pl-10"
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10 pr-10"
                 />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
               </div>
             </div>
             <div className="flex gap-2">
@@ -172,6 +175,35 @@ export default function CorrespondenceRegisterPage() {
               </Select>
             </div>
           </div>
+          
+          {/* Search Results Feedback */}
+          {isFiltered && (
+            <div className="mt-4 pt-4 border-t flex items-center justify-between">
+              <div className="flex items-center gap-2 text-sm">
+                <span className="text-muted-foreground">
+                  Showing <span className="font-semibold text-foreground">{filteredData.length}</span> of {CORRESPONDENCE_DATA.length} records
+                </span>
+                {searchQuery && (
+                  <span className="text-muted-foreground">
+                    for &quot;<span className="font-medium text-primary">{searchQuery}</span>&quot;
+                  </span>
+                )}
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setSearchQuery('')
+                  setStatusFilter('all')
+                  setTypeFilter('all')
+                }}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-3 w-3 mr-1" />
+                Clear filters
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
 

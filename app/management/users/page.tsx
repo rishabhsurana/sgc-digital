@@ -72,7 +72,8 @@ import {
   CheckCircle,
   XCircle,
   Eye,
-  Loader2
+  Loader2,
+  X
 } from "lucide-react"
 import { MINISTRIES_DEPARTMENTS_AGENCIES } from "@/lib/constants"
 import { 
@@ -161,14 +162,18 @@ export default function UserManagementPage() {
 
   // Filter users
   const filteredUsers = users.filter(user => {
+    const searchLower = searchQuery.toLowerCase().trim()
     const fullName = `${user.firstName} ${user.lastName}`.toLowerCase()
-    const matchesSearch = fullName.includes(searchQuery.toLowerCase()) ||
-                          user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          (user.organizationName?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false)
+    const matchesSearch = searchLower === '' ||
+                          fullName.includes(searchLower) ||
+                          user.email.toLowerCase().includes(searchLower) ||
+                          (user.organizationName?.toLowerCase().includes(searchLower) ?? false)
     const matchesRole = roleFilter === "all" || user.roleId.toString() === roleFilter
     const matchesStatus = statusFilter === "all" || user.statusId.toString() === statusFilter
     return matchesSearch && matchesRole && matchesStatus
   })
+
+  const isFiltered = searchQuery.trim() !== '' || roleFilter !== 'all' || statusFilter !== 'all'
 
   // Filter pending requests
   const pendingRequests = staffRequests.filter(r => r.statusId === 1)
@@ -552,8 +557,16 @@ export default function UserManagementPage() {
                     placeholder="Search by name, email, or organization..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10"
+                    className="pl-10 pr-10"
                   />
+                  {searchQuery && (
+                    <button
+                      onClick={() => setSearchQuery('')}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  )}
                 </div>
                 <Select value={roleFilter} onValueChange={setRoleFilter}>
                   <SelectTrigger className="w-full sm:w-[150px]">
@@ -583,6 +596,35 @@ export default function UserManagementPage() {
                   </SelectContent>
                 </Select>
               </div>
+              
+              {/* Search Results Feedback */}
+              {isFiltered && (
+                <div className="mt-4 pt-4 border-t flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="text-muted-foreground">
+                      Showing <span className="font-semibold text-foreground">{filteredUsers.length}</span> of {users.length} users
+                    </span>
+                    {searchQuery && (
+                      <span className="text-muted-foreground">
+                        for &quot;<span className="font-medium text-primary">{searchQuery}</span>&quot;
+                      </span>
+                    )}
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setSearchQuery('')
+                      setRoleFilter('all')
+                      setStatusFilter('all')
+                    }}
+                    className="text-muted-foreground hover:text-foreground"
+                  >
+                    <X className="h-3 w-3 mr-1" />
+                    Clear filters
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
 

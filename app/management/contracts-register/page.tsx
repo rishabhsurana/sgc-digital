@@ -48,7 +48,8 @@ import {
   RefreshCw,
   DollarSign,
   Building2,
-  Calendar
+  Calendar,
+  X
 } from "lucide-react"
 
 // Contract Categories per requirements
@@ -251,17 +252,19 @@ export default function ContractsRegisterPage() {
   const [selectedItem, setSelectedItem] = useState<typeof CONTRACTS_DATA[0] | null>(null)
 
   const filteredData = CONTRACTS_DATA.filter(item => {
-    const matchesSearch = 
-      item.ref.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.originatingMDA.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.contractor.toLowerCase().includes(searchQuery.toLowerCase())
+    const searchLower = searchQuery.toLowerCase().trim()
+    const matchesSearch = searchLower === '' ||
+      item.ref.toLowerCase().includes(searchLower) ||
+      item.subject.toLowerCase().includes(searchLower) ||
+      item.originatingMDA.toLowerCase().includes(searchLower) ||
+      item.contractor.toLowerCase().includes(searchLower)
     const matchesStatus = statusFilter === "all" || item.status === statusFilter
     const matchesNature = natureFilter === "all" || item.nature === natureFilter
     const matchesContractType = contractTypeFilter === "all" || item.contractType === contractTypeFilter
     return matchesSearch && matchesStatus && matchesNature && matchesContractType
   })
 
+  const isFiltered = searchQuery.trim() !== '' || statusFilter !== 'all' || natureFilter !== 'all' || contractTypeFilter !== 'all'
   const totalValue = filteredData.reduce((sum, item) => sum + item.value, 0)
 
   return (
@@ -302,8 +305,16 @@ export default function ContractsRegisterPage() {
                   placeholder="Search by reference, title, ministry, or contractor..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
+                  className="pl-10 pr-10"
                 />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
               </div>
             </div>
             <div className="flex gap-2">
@@ -343,6 +354,36 @@ export default function ContractsRegisterPage() {
               </Select>
             </div>
           </div>
+          
+          {/* Search Results Feedback */}
+          {isFiltered && (
+            <div className="mt-4 pt-4 border-t flex items-center justify-between">
+              <div className="flex items-center gap-2 text-sm">
+                <span className="text-muted-foreground">
+                  Showing <span className="font-semibold text-foreground">{filteredData.length}</span> of {CONTRACTS_DATA.length} contracts
+                </span>
+                {searchQuery && (
+                  <span className="text-muted-foreground">
+                    for &quot;<span className="font-medium text-primary">{searchQuery}</span>&quot;
+                  </span>
+                )}
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setSearchQuery('')
+                  setStatusFilter('all')
+                  setNatureFilter('all')
+                  setContractTypeFilter('all')
+                }}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-3 w-3 mr-1" />
+                Clear filters
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
 
