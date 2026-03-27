@@ -602,24 +602,15 @@ export async function authenticateUser(
     // Demo mode - accept specific passwords for demo users
     const user = await getUserByEmail(email)
     
-    console.log('[v0] authenticateUser called with email:', email)
-    console.log('[v0] User found:', user ? `${user.firstName} ${user.lastName} (roleId: ${user.roleId}, statusId: ${user.statusId})` : 'null')
-    console.log('[v0] Total users (mock + registered):', getAllUsers().length, '| Registered users:', getRegisteredUsersStore().size)
-    
     if (!user) {
       return { success: false, error: 'Invalid email or password' }
     }
     
     // In demo mode, accept 'SGC@Demo2024!' for all users
     // In production, this would verify against hashed password in database
-    const expectedPassword = 'SGC@Demo2024!'
-    console.log('[v0] Password check - received length:', password?.length, '| expected length:', expectedPassword.length)
-    console.log('[v0] Password match:', password === expectedPassword)
-    if (password !== expectedPassword) {
-      console.log('[v0] Password mismatch - authentication failed')
+    if (password !== 'SGC@Demo2024!') {
       return { success: false, error: 'Invalid email or password' }
     }
-    console.log('[v0] Password matched - authentication successful')
     
     // Check if user is active
     if (user.statusId !== 5) {
@@ -643,23 +634,18 @@ export async function authenticateStaff(
   email: string, 
   password: string
 ): Promise<{ success: boolean; user?: UserProfile; error?: string }> {
-  console.log('[v0] authenticateStaff called for:', email)
   const result = await authenticateUser(email, password)
   
   if (!result.success || !result.user) {
-    console.log('[v0] authenticateStaff - base auth failed:', result.error)
     return result
   }
   
   // Check if user has staff role (Staff, Supervisor, Admin, Super Admin)
   const staffRoleIds = [5, 6, 7, 8]
-  console.log('[v0] authenticateStaff - checking roleId:', result.user.roleId, 'allowed:', staffRoleIds)
   if (!staffRoleIds.includes(result.user.roleId)) {
-    console.log('[v0] authenticateStaff - role check FAILED')
     return { success: false, error: 'You do not have permission to access the Management Portal' }
   }
   
-  console.log('[v0] authenticateStaff - SUCCESS, returning user')
   return result
 }
 

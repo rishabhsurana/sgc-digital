@@ -25,22 +25,24 @@ export default function ManagementLoginPage() {
     setError("")
     setIsLoading(true)
 
-    const formData = new FormData(e.currentTarget)
-    console.log('[v0] Calling loginStaff with email:', formData.get('email'))
-    const result = await loginStaff(formData)
-    console.log('[v0] loginStaff result:', result)
-    
-    if (result.success) {
-      console.log('[v0] Login successful, waiting for cookie to set...')
-      // Wait for the cookie to be properly set before navigating
-      await new Promise(resolve => setTimeout(resolve, 300))
-      console.log('[v0] Redirecting to:', redirectTo)
-      // Use window.location for full page navigation to ensure cookies are sent
-      window.location.href = redirectTo
-    } else {
-      console.log('[v0] Login failed:', result.error)
-      setError(result.error || "Login failed. Please try again.")
-      setIsLoading(false)
+    try {
+      const formData = new FormData(e.currentTarget)
+      // loginStaff will redirect on success, so this only returns on error
+      const result = await loginStaff(formData)
+      
+      // If we get here, it means there was an error (success redirects)
+      if (!result.success) {
+        setError(result.error || "Login failed. Please try again.")
+        setIsLoading(false)
+      }
+    } catch (error) {
+      // NEXT_REDIRECT errors are expected - they mean success
+      // Other errors should be displayed
+      if (error instanceof Error && error.message !== 'NEXT_REDIRECT') {
+        setError("An unexpected error occurred. Please try again.")
+        setIsLoading(false)
+      }
+      // If NEXT_REDIRECT, the redirect is happening, keep loading state
     }
   }
 

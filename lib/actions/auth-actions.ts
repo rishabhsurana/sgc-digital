@@ -56,28 +56,24 @@ async function createSession(user: UserProfile): Promise<string> {
   const sessionToken = Buffer.from(JSON.stringify(sessionData)).toString('base64')
   
   const cookieStore = await cookies()
-  console.log('[v0] createSession - setting cookie for:', user.email)
-  console.log('[v0] createSession - NODE_ENV:', process.env.NODE_ENV)
   cookieStore.set(SESSION_COOKIE_NAME, sessionToken, {
     httpOnly: true,
-    secure: false, // Allow in all environments for now
+    secure: false, // Allow in all environments
     sameSite: 'lax',
     maxAge: SESSION_DURATION / 1000,
     path: '/'
   })
-  console.log('[v0] createSession - main session cookie set')
   
   // Set a client-readable cookie for UI state (staff check)
   // Staff roles: Staff (5), Supervisor (6), Admin (7), Super Admin (8)
   const isStaff = [5, 6, 7, 8].includes(user.roleId)
   cookieStore.set('sgc_is_staff', isStaff ? '1' : '0', {
     httpOnly: false, // Client can read this
-    secure: false, // Allow in all environments for now
+    secure: false, // Allow in all environments
     sameSite: 'lax',
     maxAge: SESSION_DURATION / 1000,
     path: '/'
   })
-  console.log('[v0] createSession - staff cookie set, isStaff:', isStaff)
   
   return sessionToken
 }
@@ -86,10 +82,7 @@ export async function getSession(): Promise<SessionData | null> {
   const cookieStore = await cookies()
   const sessionCookie = cookieStore.get(SESSION_COOKIE_NAME)
   
-  console.log('[v0] getSession - cookie exists:', !!sessionCookie?.value)
-  
   if (!sessionCookie?.value) {
-    console.log('[v0] getSession - no session cookie found')
     return null
   }
   
@@ -100,15 +93,12 @@ export async function getSession(): Promise<SessionData | null> {
     
     // Check if session has expired
     if (sessionData.expiresAt < Date.now()) {
-      console.log('[v0] getSession - session expired')
       await clearSession()
       return null
     }
     
-    console.log('[v0] getSession - valid session for:', sessionData.email)
     return sessionData
-  } catch (error) {
-    console.log('[v0] getSession - error parsing session:', error)
+  } catch {
     return null
   }
 }
@@ -180,58 +170,36 @@ export async function loginUser(
     entityId: result.user.userId
   })
   
-  // Determine redirect based on user type
-  let redirectTo = '/dashboard'
-  
-  // Staff users go to management portal by default when logging in via public portal
+  // Determine redirect based on user type and redirect server-side
   if (isStaffUser) {
-    redirectTo = '/management'
+    redirect('/management')
   } else if (result.user.entityTypeId === 5) {
-    redirectTo = '/attorney/dashboard'
+    redirect('/attorney/dashboard')
   } else if (result.user.entityTypeId === 6) {
-    redirectTo = '/company/dashboard'
+    redirect('/company/dashboard')
   }
   
-  // Generate entity number from user ID (format: ENT-XXXXX)
-  const entityNumber = `ENT-${String(result.user.userId).padStart(5, '0')}`
-  
-  return { 
-    success: true, 
-    redirectTo,
-    user: {
-      fullName: `${result.user.firstName} ${result.user.lastName}`,
-      email: result.user.email,
-      organization: result.user.organizationName || result.user.departmentName,
-      submitterType: result.user.entityTypeName,
-      entityNumber
-    }
-  }
+  // Default: regular user dashboard
+  redirect('/dashboard')
 }
 
 export async function loginStaff(
   formData: FormData
 ): Promise<LoginResult> {
-  console.log('[v0] loginStaff action called')
   const email = formData.get('email') as string
   const password = formData.get('password') as string
   
   if (!email || !password) {
-    console.log('[v0] loginStaff - missing email or password')
     return { success: false, error: 'Email and password are required' }
   }
   
-  console.log('[v0] loginStaff - calling authenticateStaff for:', email)
   const result = await authenticateStaff(email, password)
-  console.log('[v0] loginStaff - authenticateStaff result:', result.success, result.error || 'no error')
   
   if (!result.success || !result.user) {
-    console.log('[v0] loginStaff - auth failed, returning error')
     return { success: false, error: result.error || 'Authentication failed' }
   }
   
-  console.log('[v0] loginStaff - creating session for user:', result.user.email)
   await createSession(result.user)
-  console.log('[v0] loginStaff - session created successfully')
   
   // Log the activity
   await logActivity({
@@ -244,8 +212,8 @@ export async function loginStaff(
     entityId: result.user.userId
   })
   
-  console.log('[v0] loginStaff - returning success with redirect to /management')
-  return { success: true, redirectTo: '/management' }
+  // Use server-side redirect to ensure cookie is sent with the request
+  redirect('/management')
 }
 
 export async function logout(): Promise<void> {

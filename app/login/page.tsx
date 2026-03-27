@@ -24,20 +24,24 @@ export default function LoginPage() {
     setIsLoading(true)
     setError("")
     
-    const formData = new FormData(e.currentTarget)
-    const result = await loginUser(formData)
-    
-    if (result.success && result.redirectTo) {
-      // Store user data in sessionStorage for client components (like Header)
-      if (result.user) {
-        sessionStorage.setItem("sgc_user", JSON.stringify(result.user))
-      }
+    try {
+      const formData = new FormData(e.currentTarget)
+      // loginUser will redirect on success, so this only returns on error
+      const result = await loginUser(formData)
       
-      // Use window.location for full page navigation to ensure cookies are sent
-      window.location.href = result.redirectTo
-    } else {
-      setError(result.error || "Login failed. Please try again.")
-      setIsLoading(false)
+      // If we get here, it means there was an error (success redirects)
+      if (!result.success) {
+        setError(result.error || "Login failed. Please try again.")
+        setIsLoading(false)
+      }
+    } catch (error) {
+      // NEXT_REDIRECT errors are expected - they mean success
+      // Other errors should be displayed
+      if (error instanceof Error && error.message !== 'NEXT_REDIRECT') {
+        setError("An unexpected error occurred. Please try again.")
+        setIsLoading(false)
+      }
+      // If NEXT_REDIRECT, the redirect is happening, keep loading state
     }
   }
 
