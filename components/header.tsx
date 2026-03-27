@@ -127,15 +127,15 @@ export function Header({ isStaff: isStaffProp = false }: HeaderProps) {
             </div>
           </Link>
 
-          {/* Navigation - All buttons with color blocks */}
+          {/* Navigation - SGC Digital brand colors: Teal, Blue, Gray */}
           <nav className="hidden items-center gap-2 lg:flex">
             <Link 
               href="/" 
               className={cn(
-                "relative flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-full transition-all duration-200",
+                "relative flex items-center justify-center gap-2 min-w-[120px] px-5 py-2.5 text-sm font-semibold rounded-full transition-all duration-200",
                 isActive('/') 
                   ? "text-white bg-gradient-to-r from-teal-500 to-teal-600 shadow-lg shadow-teal-200" 
-                  : "text-teal-700 bg-gradient-to-r from-teal-50 to-teal-100 hover:from-teal-100 hover:to-teal-200 border border-teal-200/50"
+                  : "text-teal-700 bg-gradient-to-r from-teal-50 to-teal-100 hover:from-teal-100 hover:to-teal-200 border border-teal-200"
               )}
             >
               <Home className={cn("h-4 w-4", isActive('/') ? "text-white" : "text-teal-600")} />
@@ -145,15 +145,15 @@ export function Header({ isStaff: isStaffProp = false }: HeaderProps) {
             <DropdownMenu>
               <DropdownMenuTrigger 
                 className={cn(
-                  "relative flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-full transition-all duration-200 outline-none",
+                  "relative flex items-center justify-center gap-2 min-w-[120px] px-5 py-2.5 text-sm font-semibold rounded-full transition-all duration-200 outline-none",
                   isServicesActive 
-                    ? "text-white bg-gradient-to-r from-blue-500 to-blue-600 shadow-lg shadow-blue-200" 
-                    : "text-blue-700 bg-gradient-to-r from-blue-50 to-blue-100 hover:from-blue-100 hover:to-blue-200 border border-blue-200/50"
+                    ? "text-white bg-gradient-to-r from-primary to-blue-600 shadow-lg shadow-blue-200" 
+                    : "text-primary bg-gradient-to-r from-blue-50 to-primary/10 hover:from-blue-100 hover:to-primary/20 border border-primary/30"
                 )}
               >
-                <FileText className={cn("h-4 w-4", isServicesActive ? "text-white" : "text-blue-600")} />
+                <FileText className={cn("h-4 w-4", isServicesActive ? "text-white" : "text-primary")} />
                 Services
-                <ChevronDown className={cn("h-3.5 w-3.5", isServicesActive ? "text-white/80" : "text-blue-400")} />
+                <ChevronDown className={cn("h-3.5 w-3.5", isServicesActive ? "text-white/80" : "text-primary/60")} />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="center" className="w-64 p-2">
                 <DropdownMenuItem asChild className="rounded-lg p-3 cursor-pointer">
@@ -184,13 +184,13 @@ export function Header({ isStaff: isStaffProp = false }: HeaderProps) {
             <Link 
               href="/dashboard" 
               className={cn(
-                "relative flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-full transition-all duration-200",
+                "relative flex items-center justify-center gap-2 min-w-[120px] px-5 py-2.5 text-sm font-semibold rounded-full transition-all duration-200",
                 isActive('/dashboard') 
-                  ? "text-white bg-gradient-to-r from-amber-500 to-orange-500 shadow-lg shadow-amber-200" 
-                  : "text-amber-700 bg-gradient-to-r from-amber-50 to-amber-100 hover:from-amber-100 hover:to-amber-200 border border-amber-200/50"
+                  ? "text-white bg-gradient-to-r from-slate-600 to-slate-700 shadow-lg shadow-slate-300" 
+                  : "text-slate-600 bg-gradient-to-r from-slate-100 to-slate-200 hover:from-slate-200 hover:to-slate-300 border border-slate-300"
               )}
             >
-              <LayoutDashboard className={cn("h-4 w-4", isActive('/dashboard') ? "text-white" : "text-amber-600")} />
+              <LayoutDashboard className={cn("h-4 w-4", isActive('/dashboard') ? "text-white" : "text-slate-500")} />
               Dashboard
             </Link>
           </nav>

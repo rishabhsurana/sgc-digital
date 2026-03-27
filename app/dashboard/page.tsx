@@ -680,70 +680,83 @@ export default function DashboardPage() {
       
       <main className="flex-1 py-8 lg:py-12">
         <div className="container mx-auto px-4 lg:px-8">
-          {/* Page Header with Quick Actions */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">
-                {userInfo ? `Welcome back, ${userInfo.fullName.split(' ')[0]}` : 'My Dashboard'}
-              </h1>
-              <p className="mt-1 text-slate-500">Track and manage your submissions to the Solicitor General&apos;s Chambers.</p>
-            </div>
-            <div className="flex gap-2">
-              <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white rounded-full px-5 shadow-sm" asChild>
-                <Link href="/correspondence">
-                  <Plus className="mr-1.5 h-4 w-4" />
-                  Correspondence
-                </Link>
-              </Button>
-              <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-full px-5 shadow-sm" asChild>
-                <Link href="/contracts">
-                  <Plus className="mr-1.5 h-4 w-4" />
-                  Contract
-                </Link>
-              </Button>
-            </div>
-          </div>
-          
-          {/* User Info Card - Compact */}
+          {/* User Welcome Banner */}
           {userInfo && (
-            <Card className="mb-6 border-slate-200 shadow-sm">
-              <CardContent className="p-4">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-primary to-blue-600 text-white text-sm font-semibold">
-                      {userInfo.fullName.charAt(0)}
+            <Card className="mb-8 bg-gradient-to-r from-primary/5 via-primary/10 to-accent/5 border-primary/20">
+              <CardContent className="p-6">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div className="flex items-center gap-4">
+                    <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                      <User className="h-7 w-7" />
                     </div>
                     <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold text-slate-900">{userInfo.fullName}</span>
-                        <Badge variant="secondary" className="text-xs bg-slate-100 text-slate-600">
+                      <h2 className="text-xl font-bold text-foreground">Welcome back, {userInfo.fullName}</h2>
+                      <div className="flex flex-wrap items-center gap-2 mt-1 text-sm text-muted-foreground">
+                        <span>{userInfo.email}</span>
+                        <span className="text-muted-foreground/50">|</span>
+                        <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
                           {SUBMITTER_TYPE_LABELS[userInfo.submitterType] || userInfo.submitterType}
                         </Badge>
                       </div>
-                      <div className="flex items-center gap-2 text-sm text-slate-500">
-                        {userInfo.organization && (
-                          <>
-                            <Building2 className="h-3 w-3" />
-                            <span>{userInfo.organization}</span>
-                            <span className="text-slate-300">|</span>
-                          </>
-                        )}
-                        <span>{userInfo.email}</span>
-                      </div>
+                      {userInfo.organization && (
+                        <div className="flex items-center gap-1 mt-1 text-sm text-muted-foreground">
+                          <Building2 className="h-3 w-3" />
+                          <span>{userInfo.organization}</span>
+                        </div>
+                      )}
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2">
                     {userInfo.entityNumber && (
-                      <div className="text-right hidden sm:block px-3 py-1 bg-slate-50 rounded-lg">
-                        <p className="text-[10px] text-slate-400 uppercase tracking-wider">Entity #</p>
-                        <p className="font-mono text-sm font-semibold text-slate-700">{userInfo.entityNumber}</p>
+                      <div className="text-right mr-4 hidden sm:block">
+                        <p className="text-xs text-muted-foreground">Entity Number</p>
+                        <p className="font-mono text-sm font-semibold text-primary">{userInfo.entityNumber}</p>
                       </div>
                     )}
+                    <form action={logout}>
+                      <Button 
+                        type="submit"
+                        variant="ghost" 
+                        size="sm"
+                      >
+                        <LogOut className="h-4 w-4 mr-1" />
+                        Sign Out
+                      </Button>
+                    </form>
                   </div>
                 </div>
               </CardContent>
             </Card>
           )}
+
+          {/* Hero Banner */}
+          <div className="rounded-xl bg-gradient-to-r from-slate-700 via-slate-800 to-slate-900 p-6 mb-8 text-white">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-start gap-4">
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-white/20">
+                  <LayoutDashboard className="h-7 w-7 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-2xl sm:text-3xl font-bold">My Submissions</h1>
+                  <p className="mt-1 text-white/80">Track and manage your correspondence and contract submissions.</p>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white" asChild>
+                  <Link href="/correspondence">
+                    <FileText className="mr-2 h-4 w-4" />
+                    New Correspondence
+                  </Link>
+                </Button>
+                <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white" asChild>
+                  <Link href="/contracts">
+                    <FileSignature className="mr-2 h-4 w-4" />
+                    New Contract
+                  </Link>
+                </Button>
+              </div>
+            </div>
+          </div>
 
           {/* Stats Cards */}
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-8">
