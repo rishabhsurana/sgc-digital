@@ -73,11 +73,15 @@ function getRegisteredUsersStore(): Map<string, UserProfile> {
 
 // Combine mock users with registered users
 function getAllUsers(): UserProfile[] {
+  // Sync any registered users from globalThis to MOCK_USERS (in case of warm container)
   const registeredUsers = Array.from(getRegisteredUsersStore().values())
-  // Combine MOCK_USERS with registered users, avoiding duplicates by email
-  const mockEmails = new Set(MOCK_USERS.map(u => u.email.toLowerCase()))
-  const uniqueRegistered = registeredUsers.filter(u => !mockEmails.has(u.email.toLowerCase()))
-  return [...MOCK_USERS, ...uniqueRegistered]
+  for (const user of registeredUsers) {
+    const existingIndex = MOCK_USERS.findIndex(u => u.email.toLowerCase() === user.email.toLowerCase())
+    if (existingIndex === -1) {
+      MOCK_USERS.push(user)
+    }
+  }
+  return MOCK_USERS
 }
 
 // =============================================
@@ -216,9 +220,14 @@ export async function createUser(userData: Partial<UserProfile>): Promise<UserPr
       entityTypeName: ENTITY_TYPES.find(e => e.entityTypeId === (userData.entityTypeId || 4))?.entityTypeName || 'Public',
       departmentName: userData.departmentId ? DEPARTMENTS.find(d => d.departmentId === userData.departmentId)?.departmentName : undefined
     }
-    // Store in persistent storage
+    // Store in both globalThis Map AND directly in MOCK_USERS array for persistence
     getRegisteredUsersStore().set(userId, newUser)
-    console.log('[v0] User created and stored:', newUser.email, 'Total registered:', getRegisteredUsersStore().size)
+    // Also push directly to MOCK_USERS array (persists within module instance)
+    const existingIndex = MOCK_USERS.findIndex(u => u.email.toLowerCase() === newUser.email.toLowerCase())
+    if (existingIndex === -1) {
+      MOCK_USERS.push(newUser)
+    }
+    console.log('[v0] User created and stored:', newUser.email, 'MOCK_USERS length:', MOCK_USERS.length)
     return newUser
   }
   // TODO: Implement database insert
