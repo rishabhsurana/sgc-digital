@@ -610,9 +610,9 @@ export async function authenticateUser(
       return { success: false, error: 'Invalid email or password' }
     }
     
-    // In demo mode, accept 'password123' for all users
+    // In demo mode, accept 'SGC@Demo2024!' for all users
     // In production, this would verify against hashed password in database
-    if (password !== 'password123') {
+    if (password !== 'SGC@Demo2024!') {
       return { success: false, error: 'Invalid email or password' }
     }
     
