@@ -127,6 +127,12 @@ export interface LoginResult {
   success: boolean
   error?: string
   redirectTo?: string
+  user?: {
+    fullName: string
+    email: string
+    organization?: string
+    submitterType?: string
+  }
 }
 
 export async function loginUser(
@@ -175,7 +181,16 @@ export async function loginUser(
     redirectTo = '/company/dashboard'
   }
   
-  return { success: true, redirectTo }
+  return { 
+    success: true, 
+    redirectTo,
+    user: {
+      fullName: `${result.user.firstName} ${result.user.lastName}`,
+      email: result.user.email,
+      organization: result.user.organizationName || result.user.departmentName,
+      submitterType: result.user.entityTypeName
+    }
+  }
 }
 
 export async function loginStaff(

@@ -147,6 +147,7 @@ function CorrespondencePageContent() {
   const [lastSaved, setLastSaved] = useState<Date | null>(null)
   const [submissionError, setSubmissionError] = useState<string | null>(null)
   const [isLoadingDraft, setIsLoadingDraft] = useState(false)
+  const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
   
   const searchParams = useSearchParams()
   
@@ -161,6 +162,19 @@ function CorrespondencePageContent() {
           setFormData(result.draft.formData as typeof formData)
           setCurrentStep(result.draft.currentStep)
           setLastSaved(result.draft.updatedAt)
+        } else {
+          // Fallback to localStorage if server doesn't have the draft
+          const localDraftsStr = localStorage.getItem('sgc_drafts')
+          if (localDraftsStr) {
+            const localDrafts = JSON.parse(localDraftsStr)
+            const localDraft = localDrafts.find((d: { draftId: string }) => d.draftId === draftParam)
+            if (localDraft) {
+              setDraftId(localDraft.draftId)
+              setFormData(localDraft.formData as typeof formData)
+              setCurrentStep(localDraft.currentStep)
+              setLastSaved(new Date(localDraft.updatedAt))
+            }
+          }
         }
         setIsLoadingDraft(false)
       })
@@ -188,11 +202,38 @@ function CorrespondencePageContent() {
   // Manual save draft
   const handleSaveDraft = useCallback(async () => {
     setIsSavingDraft(true)
+    setSaveMessage(null)
     const userId = 'current-user'
     const result = await saveDraft(userId, 'correspondence', formData, currentStep, STEPS.length, draftId || undefined)
     if (result.success && result.draftId) {
       setDraftId(result.draftId)
       setLastSaved(new Date())
+      
+      // Also store in localStorage as backup for serverless persistence issue
+      const draftRef = `DRAFT-COR-${result.draftId.substring(0, 8).toUpperCase()}`
+      const localDraft = {
+        draftId: result.draftId,
+        draftType: 'correspondence',
+        title: `${formData.correspondenceType || 'Correspondence'} - ${formData.subject || 'Untitled'}`.substring(0, 60),
+        formData,
+        currentStep,
+        totalSteps: STEPS.length,
+        progressPercentage: Math.round(((currentStep + 1) / STEPS.length) * 100),
+        updatedAt: new Date().toISOString(),
+        draftRef
+      }
+      // Get existing drafts from localStorage
+      const existingDrafts = JSON.parse(localStorage.getItem('sgc_drafts') || '[]')
+      const updatedDrafts = existingDrafts.filter((d: { draftId: string }) => d.draftId !== result.draftId)
+      updatedDrafts.unshift(localDraft) // Add new/updated draft at beginning
+      localStorage.setItem('sgc_drafts', JSON.stringify(updatedDrafts.slice(0, 10))) // Keep max 10 drafts
+      
+      setSaveMessage({ type: 'success', text: `Draft saved successfully! Reference: ${draftRef}` })
+      // Auto-hide message after 5 seconds
+      setTimeout(() => setSaveMessage(null), 5000)
+    } else {
+      setSaveMessage({ type: 'error', text: 'Failed to save draft. Please try again.' })
+      setTimeout(() => setSaveMessage(null), 5000)
     }
     setIsSavingDraft(false)
   }, [formData, currentStep, draftId])
@@ -410,6 +451,20 @@ function CorrespondencePageContent() {
 
           {/* Stepper */}
           <FormStepper steps={STEPS} currentStep={currentStep} className="mb-8" />
+          
+          {/* Save Draft Message */}
+          {saveMessage && (
+            <Alert className={`mb-4 ${saveMessage.type === 'success' ? 'border-green-500 bg-green-50 text-green-800' : 'border-red-500 bg-red-50 text-red-800'}`}>
+              {saveMessage.type === 'success' ? (
+                <CheckCircle className="h-4 w-4 text-green-600" />
+              ) : (
+                <AlertCircle className="h-4 w-4 text-red-600" />
+              )}
+              <AlertDescription className="ml-2 font-medium">
+                {saveMessage.text}
+              </AlertDescription>
+            </Alert>
+          )}
 
           {/* Form Card */}
           <Card className="bg-card border-border">

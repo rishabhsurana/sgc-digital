@@ -590,13 +590,41 @@ export default function DashboardPage() {
       setUserInfo(JSON.parse(storedUser))
     }
     
-    // Fetch user drafts
+    // Fetch user drafts - try server first, then fall back to localStorage
     const fetchDrafts = async () => {
       setIsLoadingDrafts(true)
       const userId = 'current-user' // TODO: Get from session
       const result = await getUserDrafts(userId)
-      if (result.success) {
+      
+      // Merge server drafts with localStorage drafts (localStorage as backup for serverless persistence)
+      const localDraftsStr = localStorage.getItem('sgc_drafts')
+      const localDrafts = localDraftsStr ? JSON.parse(localDraftsStr) : []
+      
+      if (result.success && result.drafts.length > 0) {
+        // Server has drafts, use those but keep localStorage synced
         setUserDrafts(result.drafts)
+      } else if (localDrafts.length > 0) {
+        // No server drafts, use localStorage drafts
+        const mappedDrafts = localDrafts.map((d: Record<string, unknown>) => ({
+          draftId: d.draftId as string,
+          userId: 'current-user',
+          draftType: d.draftType as 'contract' | 'correspondence',
+          formData: d.formData as Record<string, unknown>,
+          currentStep: d.currentStep as number,
+          totalSteps: d.totalSteps as number,
+          progressPercentage: d.progressPercentage as number,
+          submissionStatusId: 1,
+          submissionAttempts: 0,
+          lastSubmissionError: null,
+          lastSubmissionErrorType: null,
+          createdAt: new Date(d.updatedAt as string),
+          updatedAt: new Date(d.updatedAt as string),
+          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+          title: d.title as string
+        }))
+        setUserDrafts(mappedDrafts)
+      } else {
+        setUserDrafts([])
       }
       setIsLoadingDrafts(false)
     }
@@ -609,6 +637,13 @@ export default function DashboardPage() {
       const result = await deleteDraft(draftId)
       if (result.success) {
         setUserDrafts(prev => prev.filter(d => d.draftId !== draftId))
+        // Also remove from localStorage
+        const localDraftsStr = localStorage.getItem('sgc_drafts')
+        if (localDraftsStr) {
+          const localDrafts = JSON.parse(localDraftsStr)
+          const updatedDrafts = localDrafts.filter((d: { draftId: string }) => d.draftId !== draftId)
+          localStorage.setItem('sgc_drafts', JSON.stringify(updatedDrafts))
+        }
       }
     }
   }
