@@ -612,9 +612,14 @@ export async function authenticateUser(
     
     // In demo mode, accept 'SGC@Demo2024!' for all users
     // In production, this would verify against hashed password in database
-    if (password !== 'SGC@Demo2024!') {
+    const expectedPassword = 'SGC@Demo2024!'
+    console.log('[v0] Password check - received length:', password?.length, '| expected length:', expectedPassword.length)
+    console.log('[v0] Password match:', password === expectedPassword)
+    if (password !== expectedPassword) {
+      console.log('[v0] Password mismatch - authentication failed')
       return { success: false, error: 'Invalid email or password' }
     }
+    console.log('[v0] Password matched - authentication successful')
     
     // Check if user is active
     if (user.statusId !== 5) {
