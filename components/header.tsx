@@ -132,28 +132,28 @@ export function Header({ isStaff: isStaffProp = false }: HeaderProps) {
             <Link 
               href="/" 
               className={cn(
-                "relative flex items-center justify-center gap-2 w-[150px] px-5 py-2.5 text-sm font-semibold rounded-full transition-all duration-200 border",
+                "relative flex items-center justify-center gap-2 w-[140px] px-4 py-1.5 text-sm font-medium rounded-full transition-all duration-200 border",
                 isActive('/') 
                   ? "text-emerald-600 bg-emerald-50 hover:bg-emerald-100 shadow-sm border-emerald-200" 
                   : "text-emerald-600 bg-emerald-50/50 hover:bg-emerald-50 border-emerald-100"
               )}
             >
-              <Home className="h-4 w-4 text-emerald-600" />
+              <Home className="h-3.5 w-3.5 text-emerald-600" />
               Home
             </Link>
             
             <DropdownMenu>
               <DropdownMenuTrigger 
                 className={cn(
-                  "relative flex items-center justify-center gap-2 w-[150px] px-5 py-2.5 text-sm font-semibold rounded-full transition-all duration-200 outline-none border",
+                  "relative flex items-center justify-center gap-2 w-[140px] px-4 py-1.5 text-sm font-medium rounded-full transition-all duration-200 outline-none border",
                   isServicesActive 
                     ? "text-blue-700 bg-blue-100 hover:bg-blue-200 shadow-sm border-blue-300" 
                     : "text-blue-700 bg-blue-50 hover:bg-blue-100 border-blue-200"
               )}
             >
-              <FileText className={cn("h-4 w-4", isServicesActive ? "text-blue-600" : "text-blue-600")} />
+              <FileText className={cn("h-3.5 w-3.5", isServicesActive ? "text-blue-600" : "text-blue-600")} />
                 Services
-                <ChevronDown className={cn("h-3.5 w-3.5", isServicesActive ? "text-blue-500" : "text-blue-400")} />
+                <ChevronDown className={cn("h-3 w-3", isServicesActive ? "text-blue-500" : "text-blue-400")} />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="center" className="w-64 p-2">
                 <DropdownMenuItem asChild className="rounded-lg p-3 cursor-pointer">
@@ -184,13 +184,13 @@ export function Header({ isStaff: isStaffProp = false }: HeaderProps) {
             <Link 
               href="/dashboard" 
               className={cn(
-                "relative flex items-center justify-center gap-2 w-[150px] px-5 py-2.5 text-sm font-semibold rounded-full transition-all duration-200 border",
+                "relative flex items-center justify-center gap-2 w-[140px] px-4 py-1.5 text-sm font-medium rounded-full transition-all duration-200 border",
                 isActive('/dashboard') 
                   ? "text-slate-700 bg-slate-200 hover:bg-slate-300 shadow-sm border-slate-400" 
                   : "text-slate-600 bg-slate-100 hover:bg-slate-200 border-slate-300"
               )}
             >
-              <LayoutDashboard className={cn("h-4 w-4", isActive('/dashboard') ? "text-slate-600" : "text-slate-500")} />
+              <LayoutDashboard className={cn("h-3.5 w-3.5", isActive('/dashboard') ? "text-slate-600" : "text-slate-500")} />
               Dashboard
             </Link>
           </nav>
