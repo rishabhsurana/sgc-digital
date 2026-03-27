@@ -134,8 +134,8 @@ export function Header({ isStaff: isStaffProp = false }: HeaderProps) {
               className={cn(
                 "relative flex items-center justify-center gap-2 w-[150px] px-5 py-2.5 text-sm font-semibold rounded-full transition-all duration-200 border",
                 isActive('/') 
-                  ? "text-emerald-700 bg-emerald-100 hover:bg-emerald-200 shadow-sm border-emerald-300" 
-                  : "text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border-emerald-200"
+                  ? "text-emerald-600 bg-emerald-50 hover:bg-emerald-100 shadow-sm border-emerald-200" 
+                  : "text-emerald-600 bg-emerald-50/50 hover:bg-emerald-50 border-emerald-100"
               )}
             >
               <Home className="h-4 w-4 text-emerald-600" />
