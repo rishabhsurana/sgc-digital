@@ -9,12 +9,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Shield, Lock, AlertCircle, ArrowLeft } from "lucide-react"
+import { Shield, Lock, AlertCircle, ArrowLeft, Eye, EyeOff } from "lucide-react"
 import { loginStaff } from "@/lib/actions/auth-actions"
 
 export default function ManagementLoginPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
+  const [showPassword, setShowPassword] = useState(false)
   const router = useRouter()
   const searchParams = useSearchParams()
   const redirectTo = searchParams.get("redirect") || "/management"
@@ -25,12 +26,16 @@ export default function ManagementLoginPage() {
     setIsLoading(true)
 
     const formData = new FormData(e.currentTarget)
+    console.log('[v0] Calling loginStaff with email:', formData.get('email'))
     const result = await loginStaff(formData)
+    console.log('[v0] loginStaff result:', result)
     
     if (result.success) {
+      console.log('[v0] Login successful, redirecting to:', redirectTo)
       // Use window.location for full page navigation to ensure cookies are sent
       window.location.href = redirectTo
     } else {
+      console.log('[v0] Login failed:', result.error)
       setError(result.error || "Login failed. Please try again.")
       setIsLoading(false)
     }
@@ -97,14 +102,27 @@ export default function ManagementLoginPage() {
 
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  name="password"
-                  type="password"
-                  placeholder="Enter your password"
-                  required
-                  className="h-11"
-                />
+                <div className="relative">
+                  <Input
+                    id="password"
+                    name="password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Enter your password"
+                    required
+                    className="h-11 pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </button>
+                </div>
               </div>
 
               <Button
