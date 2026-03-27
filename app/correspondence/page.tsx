@@ -814,6 +814,7 @@ function CorrespondencePageContent() {
                       id="declaration"
                       checked={formData.declaration}
                       onCheckedChange={(checked) => updateFormData("declaration", checked === true)}
+                      className="mt-0.5 h-5 w-5 border-2 border-primary data-[state=checked]:bg-primary data-[state=checked]:border-primary"
                     />
                     <Label htmlFor="declaration" className="text-sm leading-relaxed cursor-pointer">
                       I declare that the information provided in this submission is true and accurate to the best of my knowledge. 
