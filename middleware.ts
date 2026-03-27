@@ -1,7 +1,35 @@
 import { updateSession } from '@/lib/supabase/middleware'
-import { type NextRequest } from 'next/server'
+import { NextResponse, type NextRequest } from 'next/server'
+
+// Routes that use custom authentication (not Supabase auth)
+const customAuthRoutes = [
+  '/management',
+  '/dashboard',
+  '/correspondence',
+  '/contracts'
+]
 
 export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl
+  
+  // Check if this route uses custom auth
+  const usesCustomAuth = customAuthRoutes.some(route => pathname.startsWith(route))
+  
+  if (usesCustomAuth) {
+    // For custom auth routes, just pass through with pathname header
+    const response = NextResponse.next({
+      request: {
+        headers: new Headers(request.headers),
+      },
+    })
+    
+    // Set pathname header for server components to read
+    response.headers.set('x-pathname', pathname)
+    
+    return response
+  }
+  
+  // For other routes, use Supabase session management
   return await updateSession(request)
 }
 

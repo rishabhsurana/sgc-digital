@@ -32,11 +32,8 @@ export default function LoginPage() {
         sessionStorage.setItem("sgc_user", JSON.stringify(result.user))
       }
       
-      // Refresh to ensure cookies are propagated before navigation
-      router.refresh()
-      // Small delay to allow cookie propagation
-      await new Promise(resolve => setTimeout(resolve, 100))
-      router.push(result.redirectTo)
+      // Use window.location for full page navigation to ensure cookies are sent
+      window.location.href = result.redirectTo
     } else {
       setError(result.error || "Login failed. Please try again.")
       setIsLoading(false)

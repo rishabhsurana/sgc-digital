@@ -28,11 +28,8 @@ export default function ManagementLoginPage() {
     const result = await loginStaff(formData)
     
     if (result.success) {
-      // Refresh to ensure cookies are propagated before navigation
-      router.refresh()
-      // Small delay to allow cookie propagation
-      await new Promise(resolve => setTimeout(resolve, 100))
-      router.push(redirectTo)
+      // Use window.location for full page navigation to ensure cookies are sent
+      window.location.href = redirectTo
     } else {
       setError(result.error || "Login failed. Please try again.")
       setIsLoading(false)
