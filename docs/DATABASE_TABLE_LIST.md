@@ -1,11 +1,11 @@
 # SGC Digital - Complete Database Table List
 
-**Version:** 2.1.0  
+**Version:** 2.2.0  
 **Last Updated:** March 2026  
-**Total Tables:** 135+  
-**Total Views:** 42+  
-**Stored Procedures:** 16+  
-**SQL Scripts:** 18
+**Total Tables:** 150+  
+**Total Views:** 45+  
+**Stored Procedures:** 20+  
+**SQL Scripts:** 19
 
 ---
 
@@ -31,6 +31,7 @@
 | Renewal/Supplemental Validation Tables | 2 |
 | Tracking & Notifications Tables | 5 |
 | **Email Notification Templates** | **5** |
+| **Management Portal Tables** | **12** |
 | Audit & Activity Tables | 3 |
 | Reporting & Analytics Tables | 8 |
 | Ask Rex AI Tables | 9 |
@@ -688,7 +689,41 @@
 
 ---
 
-## Stored Procedures (16+)
+## MODULE 15: MANAGEMENT PORTAL TABLES (12 Tables)
+
+| # | Table Name | Purpose | Key Columns |
+|---|------------|---------|-------------|
+| 1 | `StaffWorkloadAssignments` | Track case assignments per staff | StaffUserId, CaseType, CaseId, Status, DueDate |
+| 2 | `StaffCapacity` | Staff availability & workload limits | MaxConcurrentCases, CurrentCaseCount, IsAvailable |
+| 3 | `MDAConfiguration` | MDA-specific settings | CanSubmitContracts, RequiresSGApproval, DefaultPriority |
+| 4 | `SystemAnnouncements` | Portal announcements | Title, Message, AnnouncementType, TargetAudience |
+| 5 | `StaffPerformanceMetrics` | Daily staff performance tracking | CasesCompleted, SLAComplianceRate, AvgProcessingTime |
+| 6 | `CaseReassignmentHistory` | Track case reassignments | FromUserId, ToUserId, Reason, ReassignmentType |
+| 7 | `WorkflowStageConfiguration` | Configurable workflow stages | StageCode, StageName, DefaultSLADays, RequiresApproval |
+| 8 | `ApprovalQueue` | Items pending SG/DSG approval | CaseType, CaseId, ApprovalType, Status, Decision |
+| 9 | `DailyStatistics` | Pre-aggregated daily stats | ContractsSubmitted, SLAComplianceRate, EscalationsCount |
+| 10 | `LookupRejectionReasons` | Standard rejection reasons | ReasonCode, ReasonName, RequiresComment |
+| 11 | `UserFavorites` | Staff bookmarked cases | UserId, CaseType, CaseId, Notes |
+| 12 | `SavedFilters` | Saved search filters | FilterName, FilterCriteria, IsDefault |
+
+**Rejection Reason Values:**
+| Code | Name |
+|------|------|
+| INCOMPLETE_DOCS | Incomplete documentation |
+| INVALID_FORMAT | Invalid document format |
+| MISSING_APPROVAL | Missing required approval |
+| INCORRECT_CLASSIFICATION | Incorrect classification |
+| UNAUTHORIZED_SUBMITTER | Unauthorized submitter |
+| DUPLICATE_SUBMISSION | Duplicate submission |
+| OUTSIDE_SCOPE | Outside SGC scope |
+| INSUFFICIENT_DETAIL | Insufficient detail provided |
+| CONTRACT_VALUE_MISMATCH | Contract value does not match documents |
+| EXPIRED_DOCUMENTS | Expired supporting documents |
+| OTHER | Other (specify in comments) |
+
+---
+
+## Stored Procedures (20+)
 
 | Procedure | Purpose |
 |-----------|---------|
@@ -702,6 +737,9 @@
 | `sp_LogAuditEntry` | Log audit entries |
 | `sp_GenerateReferenceNumber` | Generate next reference number |
 | `sp_QueueEmailNotification` | Queue email notification by code with template data |
+| `sp_AssignCaseToStaff` | Assign/reassign case to staff member |
+| `sp_AutoAssignCase` | Auto-assign case using round-robin |
+| `sp_UpdateDailyStatistics` | Update daily statistics aggregation |
 
 ---
 
@@ -726,7 +764,8 @@
 | 15 | `015-missing-columns-audit-fix.sql` | Audit fix: missing form fields, SLA, sessions, audit log |
 | 16 | `016-correction-response-tracking.sql` | Correction response: data changes, drafts, documents, field history |
 | 17 | `017-appendix-c-document-requirements.sql` | Appendix C: Complete document requirements matrix |
-| 18 | `018-email-notification-templates.sql` | **Email notification types, templates & preferences** |
+| 18 | `018-email-notification-templates.sql` | Email notification types, templates & preferences |
+| 19 | `019-management-portal-gaps.sql` | **Management portal: workload, approvals, stats, config** |
 
 **OR use `CONSOLIDATED_SCHEMA.sql` for single-file deployment.**
 
@@ -746,4 +785,5 @@
 | 1.7 | 2024 | Correction response tracking |
 | 1.8 | 2024 | Appendix C Document Requirements Matrix |
 | 2.0 | Mar 2026 | Complete consolidation and documentation update |
-| 2.1 | Mar 2026 | **Email Notification Templates: 24 notification types across 7 categories (Registration, Contract, Correspondence, Workflow, Corrections, SLA, System); LookupEmailCategories, LookupEmailNotificationTypes, UserEmailPreferences, EmailSendLog; sp_QueueEmailNotification stored procedure** |
+| 2.1 | Mar 2026 | Email Notification Templates |
+| 2.2 | Mar 2026 | **Management Portal Tables: StaffWorkloadAssignments, StaffCapacity, MDAConfiguration, SystemAnnouncements, StaffPerformanceMetrics, CaseReassignmentHistory, WorkflowStageConfiguration, ApprovalQueue, DailyStatistics, LookupRejectionReasons, UserFavorites, SavedFilters; sp_AssignCaseToStaff, sp_AutoAssignCase, sp_UpdateDailyStatistics; vw_StaffDashboardSummary, vw_PendingApprovalsSummary, vw_TodayStatistics** |
