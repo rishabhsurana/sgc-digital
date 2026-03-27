@@ -85,13 +85,17 @@ export default function CorrespondenceRegisterPage() {
   const [selectedItem, setSelectedItem] = useState<typeof CORRESPONDENCE_DATA[0] | null>(null)
 
   const filteredData = CORRESPONDENCE_DATA.filter(item => {
-    const matchesSearch = 
-      item.ref.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.ministry.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.submitter.toLowerCase().includes(searchQuery.toLowerCase())
+    const searchLower = searchQuery.toLowerCase().trim()
+    const matchesSearch = searchLower === '' ||
+      item.ref.toLowerCase().includes(searchLower) ||
+      item.subject.toLowerCase().includes(searchLower) ||
+      item.ministry.toLowerCase().includes(searchLower) ||
+      item.submitter.toLowerCase().includes(searchLower)
     const matchesStatus = statusFilter === "all" || item.status === statusFilter
     const matchesType = typeFilter === "all" || item.type === typeFilter
+    
+    console.log('[v0] Search filter:', { searchQuery, searchLower, itemRef: item.ref, matchesSearch, matchesStatus, matchesType })
+    
     return matchesSearch && matchesStatus && matchesType
   })
 
@@ -132,7 +136,10 @@ export default function CorrespondenceRegisterPage() {
                 <Input
                   placeholder="Search by reference, subject, ministry, or submitter..."
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                    console.log('[v0] Search input changed:', e.target.value)
+                    setSearchQuery(e.target.value)
+                  }}
                   className="pl-10"
                 />
               </div>
