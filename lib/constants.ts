@@ -1,5 +1,27 @@
 // Government Ministries, Departments, and Agencies (MDAs)
 export const MINISTRIES_DEPARTMENTS_AGENCIES = [
+  // MINISTRIES
+  { value: "mof", label: "Ministry of Finance, Economic Affairs and Investment" },
+  { value: "mag", label: "Ministry of the Attorney General and Legal Affairs" },
+  { value: "mps", label: "Ministry of the Public Service" },
+  { value: "moed", label: "Ministry of Education, Technological and Vocational Training" },
+  { value: "moh", label: "Ministry of Health and Wellness" },
+  { value: "moha", label: "Ministry of Home Affairs and Information" },
+  { value: "mfa", label: "Ministry of Foreign Affairs and Foreign Trade" },
+  { value: "mlgrd", label: "Ministry of Local Government and Rural Development" },
+  { value: "mhle", label: "Ministry of Housing, Lands and the Environment" },
+  { value: "mmw", label: "Ministry of Maritime Affairs and the Blue Economy" },
+  { value: "mtw", label: "Ministry of Transport and Works" },
+  { value: "mte", label: "Ministry of Tourism and International Transport" },
+  { value: "mlss", label: "Ministry of Labour and Social Security" },
+  { value: "mycs", label: "Ministry of Youth, Sports and Community Empowerment" },
+  { value: "mca", label: "Ministry of Creative Economy, Culture and Sports" },
+  { value: "msme", label: "Ministry of Small Business, Entrepreneurship and Commerce" },
+  { value: "mag-energy", label: "Ministry of Agriculture, Food and Nutritional Security" },
+  { value: "meit", label: "Ministry of Energy and Business Development" },
+  { value: "pm-office", label: "Office of the Prime Minister" },
+  
+  // DEPARTMENTS AND AGENCIES
   { value: "air-nav", label: "Air Navigation Services Department" },
   { value: "analytical", label: "Analytical Services" },
   { value: "bbsa", label: "Barbados Building Standards Authority" },
