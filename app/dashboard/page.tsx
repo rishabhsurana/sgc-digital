@@ -682,7 +682,7 @@ export default function DashboardPage() {
         <div className="container mx-auto px-4 lg:px-8">
           {/* User Welcome Strip - Minimal */}
           {userInfo && (
-            <div className="mb-4 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-between text-sm">
+            <div className="mb-4 px-4 py-2 bg-gradient-to-r from-primary/10 via-blue-50 to-teal-50 border border-primary/20 rounded-lg flex items-center justify-between text-sm">
               <div className="flex items-center gap-2">
                 <span className="text-slate-600">Welcome back,</span>
                 <span className="font-medium text-slate-900">{userInfo.fullName}</span>
