@@ -1,3 +1,6 @@
+"use client"
+
+import { useEffect, useState } from "react"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { ServiceCard } from "@/components/service-card"
@@ -6,6 +9,8 @@ import { Card, CardContent } from "@/components/ui/card"
 import { AskRex } from "@/components/ask-rex"
 import Link from "next/link"
 import Image from "next/image"
+import { getUser } from "@/lib/auth"
+import { cn } from "@/lib/utils"
 import { 
   FileText, 
   FileSignature, 
@@ -21,6 +26,13 @@ import {
 } from "lucide-react"
 
 export default function HomePage() {
+  const [showContractOptions, setShowContractOptions] = useState(true)
+
+  useEffect(() => {
+    const u = getUser()
+    setShowContractOptions(!u || u.can_submit_contracts || true)
+  }, [])
+
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <Header />
@@ -39,14 +51,17 @@ export default function HomePage() {
                 <span className="text-emerald-400">SGC</span> <span className="text-blue-500">Digital</span>
               </h1>
               <p className="mt-3 text-xl text-white font-semibold">
-                Correspondence & Contract Management Portal
+                {showContractOptions
+                  ? "Correspondence & Contract Management Portal"
+                  : "Correspondence Management Portal"}
               </p>
               <p className="mt-2 text-lg text-emerald-400 italic">
                 Transforming Government Services, Powering Tomorrow
               </p>
               <p className="mt-6 text-lg text-slate-300 leading-relaxed max-w-2xl mx-auto text-pretty">
-                Submit and track Correspondence and Government Contract requests 
-                through our secure digital portal. Streamlined and automated digital services.
+                {showContractOptions
+                  ? "Submit and track Correspondence and Government Contract requests through our secure digital portal. Streamlined and automated digital services."
+                  : "Submit and track correspondence through our secure digital portal. Streamlined and automated digital services."}
               </p>
               <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
                 <Button size="lg" className="w-full sm:w-56 bg-blue-600 hover:bg-blue-700 text-white shadow-lg" asChild>
@@ -55,12 +70,14 @@ export default function HomePage() {
                     Correspondence
                   </Link>
                 </Button>
-                <Button size="lg" className="w-full sm:w-56 bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg" asChild>
-                  <Link href="/contracts">
-                    <FileSignature className="mr-2 h-5 w-5" />
-                    Contract Request
-                  </Link>
-                </Button>
+                {showContractOptions && (
+                  <Button size="lg" className="w-full sm:w-56 bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg" asChild>
+                    <Link href="/contracts">
+                      <FileSignature className="mr-2 h-5 w-5" />
+                      Contract Request
+                    </Link>
+                  </Button>
+                )}
                 <Button size="lg" className="w-full sm:w-56 bg-slate-600 hover:bg-slate-700 text-white shadow-lg" asChild>
                   <Link href="/dashboard">
                     <LayoutDashboard className="mr-2 h-5 w-5" />
@@ -85,7 +102,14 @@ export default function HomePage() {
               </p>
             </div>
             
-            <div className="grid gap-6 md:grid-cols-2 lg:gap-8 max-w-4xl mx-auto">
+            <div
+              className={cn(
+                "grid gap-6 lg:gap-8 mx-auto",
+                showContractOptions
+                  ? "md:grid-cols-2 max-w-4xl"
+                  : "max-w-xl"
+              )}
+            >
               <ServiceCard
                 title="Registry Correspondence"
                 description="Submit correspondence to the Solicitor General's Chambers Registry for processing and response."
@@ -100,20 +124,22 @@ export default function HomePage() {
                 badge="Open to All"
               />
               
-              <ServiceCard
-                title="Government Contracts"
-                description="Submit post-award contract requests for legal review and processing by the SGC."
-                icon={FileSignature}
-                href="/contracts"
-                features={[
-                  "Procurement of Goods & Services",
-                  "Consultancy & Professional Services",
-                  "Construction & Public Works",
-                  "Dynamic document checklist by contract type"
-                ]}
-                badge="Ministries Only"
-                restricted
-              />
+              {showContractOptions && (
+                <ServiceCard
+                  title="Government Contracts"
+                  description="Submit post-award contract requests for legal review and processing by the SGC."
+                  icon={FileSignature}
+                  href="/contracts"
+                  features={[
+                    "Procurement of Goods & Services",
+                    "Consultancy & Professional Services",
+                    "Construction & Public Works",
+                    "Dynamic document checklist by contract type"
+                  ]}
+                  badge="Ministries Only"
+                  restricted
+                />
+              )}
             </div>
           </div>
         </section>

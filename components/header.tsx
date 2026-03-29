@@ -18,36 +18,25 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { useRouter, usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
+import { getUser, logout, type AuthUser } from "@/lib/auth"
 
 interface HeaderProps {
   isStaff?: boolean
 }
 
-interface UserSession {
-  fullName: string
-  email: string
-  organization?: string
-  submitterType?: string
-}
-
 export function Header({ isStaff: isStaffProp = false }: HeaderProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [isStaff, setIsStaff] = useState(isStaffProp)
-  const [userSession, setUserSession] = useState<UserSession | null>(null)
+  const [userSession, setUserSession] = useState<AuthUser | null>(null)
   const router = useRouter()
   const pathname = usePathname()
 
   useEffect(() => {
-    // Check for user session in sessionStorage
+    // Check for user session in localStorage
     const checkUserSession = () => {
-      const storedUser = sessionStorage.getItem("sgc_user")
-      if (storedUser) {
-        try {
-          const userData = JSON.parse(storedUser)
-          setUserSession(userData)
-        } catch {
-          // Invalid JSON, ignore
-        }
+      const userData = getUser()
+      if (userData) {
+        setUserSession(userData)
       }
     }
     
@@ -77,18 +66,16 @@ export function Header({ isStaff: isStaffProp = false }: HeaderProps) {
   }, [isStaffProp])
   
   const handleLogout = () => {
-    sessionStorage.removeItem("sgc_user")
-    sessionStorage.removeItem("sgc_admin")
-    // Clear cookies
-    document.cookie = "sgc_is_staff=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT"
-    setUserSession(null)
-    setIsStaff(false)
-    router.push("/")
+    logout()
   }
   
   // Check if a nav item is active
   const isActive = (path: string) => pathname === path
-  const isServicesActive = pathname === '/correspondence' || pathname === '/contracts'
+  const showContractsInNav =
+    !userSession || userSession.can_submit_contracts || true
+  const isServicesActive =
+    pathname === "/correspondence" ||
+    (showContractsInNav && pathname === "/contracts")
 
   return (
     <header className="sticky top-0 z-50 w-full">
@@ -167,17 +154,19 @@ export function Header({ isStaff: isStaffProp = false }: HeaderProps) {
                     </div>
                   </Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem asChild className="rounded-lg p-3 cursor-pointer">
-                  <Link href="/contracts" className="flex items-start gap-3">
-                    <div className="p-2 rounded-lg bg-emerald-50">
-                      <FileSignature className="h-4 w-4 text-emerald-600" />
-                    </div>
-                    <div>
-                      <p className="font-semibold text-slate-900">Contracts</p>
-                      <p className="text-xs text-slate-500 mt-0.5">Government contract requests</p>
-                    </div>
-                  </Link>
-                </DropdownMenuItem>
+                {showContractsInNav && (
+                  <DropdownMenuItem asChild className="rounded-lg p-3 cursor-pointer">
+                    <Link href="/contracts" className="flex items-start gap-3">
+                      <div className="p-2 rounded-lg bg-emerald-50">
+                        <FileSignature className="h-4 w-4 text-emerald-600" />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-slate-900">Contracts</p>
+                        <p className="text-xs text-slate-500 mt-0.5">Government contract requests</p>
+                      </div>
+                    </Link>
+                  </DropdownMenuItem>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
             
@@ -212,10 +201,10 @@ export function Header({ isStaff: isStaffProp = false }: HeaderProps) {
                 <DropdownMenuTrigger asChild>
                   <Button size="sm" variant="outline" className="hidden sm:flex items-center gap-2 rounded-full border-slate-200 hover:border-primary/50 hover:bg-primary/5 px-4">
                     <div className="w-7 h-7 rounded-full bg-gradient-to-br from-primary to-blue-600 flex items-center justify-center text-white text-xs font-semibold">
-                      {(userSession.organization || userSession.fullName).charAt(0).toUpperCase()}
+                      {(userSession.organization || userSession.full_name || "U").charAt(0).toUpperCase()}
                     </div>
                     <span className="max-w-[160px] truncate font-medium text-slate-700">
-                      {userSession.organization || userSession.fullName}
+                      {userSession.organization || userSession.full_name}
                     </span>
                     <ChevronDown className="h-3.5 w-3.5 text-slate-400" />
                   </Button>
@@ -224,10 +213,10 @@ export function Header({ isStaff: isStaffProp = false }: HeaderProps) {
                   <div className="px-3 py-2 mb-1">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-blue-600 flex items-center justify-center text-white font-semibold">
-                        {(userSession.organization || userSession.fullName).charAt(0).toUpperCase()}
+                        {(userSession.organization || userSession.full_name || "U").charAt(0).toUpperCase()}
                       </div>
                       <div>
-                        <p className="font-semibold text-slate-900">{userSession.fullName}</p>
+                        <p className="font-semibold text-slate-900">{userSession.full_name}</p>
                         <p className="text-xs text-slate-500">{userSession.email}</p>
                       </div>
                     </div>
@@ -333,19 +322,21 @@ export function Header({ isStaff: isStaffProp = false }: HeaderProps) {
                     </div>
                     <span className="font-medium">Correspondence</span>
                   </Link>
-                  <Link 
-                    href="/contracts" 
-                    onClick={() => setIsOpen(false)}
-                    className={cn(
-                      "flex items-center gap-3 px-4 py-3 rounded-xl transition-all ml-1",
-                      isActive('/contracts') ? "bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-sm" : "text-slate-600 hover:bg-slate-50"
-                    )}
-                  >
-                    <div className={cn("p-1.5 rounded-lg", isActive('/contracts') ? "bg-white/20" : "bg-slate-100")}>
-                      <FileSignature className={cn("h-4 w-4", isActive('/contracts') ? "text-white" : "text-emerald-500")} />
-                    </div>
-                    <span className="font-medium">Contracts</span>
-                  </Link>
+                  {showContractsInNav && (
+                    <Link 
+                      href="/contracts" 
+                      onClick={() => setIsOpen(false)}
+                      className={cn(
+                        "flex items-center gap-3 px-4 py-3 rounded-xl transition-all ml-1",
+                        isActive('/contracts') ? "bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-sm" : "text-slate-600 hover:bg-slate-50"
+                      )}
+                    >
+                      <div className={cn("p-1.5 rounded-lg", isActive('/contracts') ? "bg-white/20" : "bg-slate-100")}>
+                        <FileSignature className={cn("h-4 w-4", isActive('/contracts') ? "text-white" : "text-emerald-500")} />
+                      </div>
+                      <span className="font-medium">Contracts</span>
+                    </Link>
+                  )}
                   
                   <p className="px-4 py-2 text-xs font-semibold text-slate-400 uppercase tracking-wider mt-2">
                     My Account
@@ -384,10 +375,10 @@ export function Header({ isStaff: isStaffProp = false }: HeaderProps) {
                       <div className="px-4 py-4 mb-3 bg-gradient-to-r from-primary/5 to-blue-50 rounded-xl">
                         <div className="flex items-center gap-3 mb-2">
                           <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-blue-600 flex items-center justify-center text-white font-semibold">
-                            {(userSession.organization || userSession.fullName).charAt(0).toUpperCase()}
+                            {(userSession.organization || userSession.full_name || "U").charAt(0).toUpperCase()}
                           </div>
                           <div>
-                            <p className="font-semibold text-slate-900">{userSession.fullName}</p>
+                            <p className="font-semibold text-slate-900">{userSession.full_name}</p>
                             <p className="text-xs text-slate-500">{userSession.email}</p>
                           </div>
                         </div>

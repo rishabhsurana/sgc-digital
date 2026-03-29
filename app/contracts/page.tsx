@@ -27,8 +27,9 @@ import { Progress } from "@/components/ui/progress"
 import { AskRex } from "@/components/ask-rex"
 import Link from "next/link"
 import { MINISTRIES_DEPARTMENTS_AGENCIES } from "@/lib/constants"
-import { saveDraft, getDraft, recordSubmissionAttempt, type Draft } from "@/lib/actions/draft-actions"
+import { apiPost, apiPut } from "@/lib/api-client"
 import { validateOriginalContract, type OriginalContractData, type ValidationResult } from "@/lib/actions/contract-validation-actions"
+import { ContractsSubmitGuard } from "@/components/contracts-submit-guard"
 
 const STEPS = [
   { id: "nature", title: "Contract Nature", description: "Select contract type" },
@@ -291,51 +292,54 @@ function ContractsPageContent() {
   
   // Load draft if URL has draft parameter
   useEffect(() => {
-    const draftParam = searchParams.get('draft')
-    if (draftParam) {
-      setIsLoadingDraft(true)
-      getDraft(draftParam).then(result => {
-        if (result.success && result.draft) {
-          setDraftId(result.draft.draftId)
-          setFormData(result.draft.formData as typeof formData)
-          setCurrentStep(result.draft.currentStep)
-          setLastSaved(result.draft.updatedAt)
-        }
-        setIsLoadingDraft(false)
-      })
-    }
+    // TODO: Load draft from backend if needed
   }, [searchParams])
   
   // Auto-save draft every 30 seconds when form data changes
-  // Note: Using refs to avoid infinite loops with object dependencies
   useEffect(() => {
     const autoSaveTimer = setInterval(async () => {
       if (formData.contractNature || formData.contractTitle) {
-        // Only auto-save if user has started filling the form
-        const userId = 'current-user' // TODO: Get from session
-        const result = await saveDraft(userId, 'contract', formData, currentStep, STEPS.length, draftId || undefined)
-        if (result.success && result.draftId) {
-          setDraftId(result.draftId)
-          setLastSaved(new Date())
+        try {
+          if (draftId) {
+            await apiPut(`/api/contracts/${draftId}`, { ...formData, status: "draft" })
+            setLastSaved(new Date())
+          } else {
+            const result = await apiPost<{ id: string }>("/api/contracts", { ...formData, status: "draft" })
+            if (result.success && result.data?.id) {
+              setDraftId(result.data.id)
+              setLastSaved(new Date())
+            }
+          }
+        } catch (e) {
+          console.error("Auto-save failed", e)
         }
       }
     }, 30000) // 30 seconds
     
     return () => clearInterval(autoSaveTimer)
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentStep, draftId])
+  }, [currentStep, draftId, formData])
   
   // Manual save draft function
   const handleSaveDraft = useCallback(async () => {
     setIsSavingDraft(true)
-    const userId = 'current-user' // TODO: Get from session
-    const result = await saveDraft(userId, 'contract', formData, currentStep, STEPS.length, draftId || undefined)
-    if (result.success && result.draftId) {
-      setDraftId(result.draftId)
-      setLastSaved(new Date())
+    try {
+      if (draftId) {
+        await apiPut(`/api/contracts/${draftId}`, { ...formData, status: "draft" })
+        setLastSaved(new Date())
+      } else {
+        const result = await apiPost<{ id: string }>("/api/contracts", { ...formData, status: "draft" })
+        if (result.success && result.data?.id) {
+          setDraftId(result.data.id)
+          setLastSaved(new Date())
+        }
+      }
+    } catch (e) {
+      console.error("Save draft failed", e)
+    } finally {
+      setIsSavingDraft(false)
     }
-    setIsSavingDraft(false)
-  }, [formData, currentStep, draftId])
+  }, [formData, draftId])
   
   // Validate parent contract for renewals/supplementals
   const handleValidateParentContract = useCallback(async () => {
@@ -512,42 +516,21 @@ function ContractsPageContent() {
     setSubmissionError(null)
     
     try {
-      // Simulate submission (replace with actual API call)
-      await new Promise(resolve => setTimeout(resolve, 2000))
-      
-      // Simulate occasional failures for testing (10% failure rate)
-      const shouldFail = Math.random() < 0.1
-      
-      if (shouldFail) {
-        throw new Error('Network error: Unable to connect to server')
-      }
-      
-      const txn = `CON-${Date.now().toString(36).toUpperCase()}`
-      setTransactionNumber(txn)
-      
-      // Record successful submission
       if (draftId) {
-        await recordSubmissionAttempt(draftId, true, undefined, undefined, txn)
+        // Update draft first, then submit
+        await apiPut(`/api/contracts/${draftId}`, { ...formData, status: "draft" })
+        const result = await apiPut<{ transaction_number: string }>(`/api/contracts/${draftId}/submit`, {})
+        if (!result.success) throw new Error(result.error || "Submission failed")
+        setTransactionNumber(result.data?.transaction_number || `CON-${Date.now().toString(36).toUpperCase()}`)
+      } else {
+        // Direct submit
+        const result = await apiPost<{ transaction_number: string }>("/api/contracts", { ...formData, status: "submitted" })
+        if (!result.success) throw new Error(result.error || "Submission failed")
+        setTransactionNumber(result.data?.transaction_number || `CON-${Date.now().toString(36).toUpperCase()}`)
       }
-      
       setIsSubmitted(true)
     } catch (error) {
       console.error('[v0] Submission failed:', error)
-      
-      // Save as failed draft
-      const userId = 'current-user' // TODO: Get from session
-      const result = await saveDraft(userId, 'contract', formData, currentStep, STEPS.length, draftId || undefined)
-      
-      if (result.success && result.draftId) {
-        setDraftId(result.draftId)
-        await recordSubmissionAttempt(
-          result.draftId, 
-          false, 
-          'NETWORK', 
-          error instanceof Error ? error.message : 'Unknown error'
-        )
-      }
-      
       setSubmissionError(
         `We're sorry, your application could not be submitted. ${error instanceof Error ? error.message : 'Please try again.'}`
       )
@@ -1914,8 +1897,10 @@ function ContractsLoading() {
 // Export with Suspense boundary for useSearchParams
 export default function ContractsPage() {
   return (
-    <Suspense fallback={<ContractsLoading />}>
-      <ContractsPageContent />
-    </Suspense>
+    <ContractsSubmitGuard>
+      <Suspense fallback={<ContractsLoading />}>
+        <ContractsPageContent />
+      </Suspense>
+    </ContractsSubmitGuard>
   )
 }

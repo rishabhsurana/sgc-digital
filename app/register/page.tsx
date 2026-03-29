@@ -14,6 +14,8 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { ArrowLeft, UserPlus, CheckCircle, Building2, Scale, Landmark, Users, Briefcase, HelpCircle, Plus, Trash2, AlertCircle, Info } from "lucide-react"
 import { MINISTRIES_DEPARTMENTS_AGENCIES } from "@/lib/constants"
+import { apiPost } from "@/lib/api-client"
+import { setAuth, type AuthUser } from "@/lib/auth"
 
 // Entity/Submitter Types per requirements document
 const SUBMITTER_TYPES = [
@@ -26,22 +28,6 @@ const SUBMITTER_TYPES = [
   { value: "other", label: "Other (Specify)", icon: HelpCircle, color: "text-gray-600", bgColor: "bg-gray-50", description: "Other entity type" }
 ]
 
-// Generate entity number based on type
-const generateEntityNumber = (type: string): string => {
-  const prefix = {
-    ministry: "MDA",
-    court: "CRT",
-    statutory: "STB",
-    public: "PUB",
-    attorney: "ATT",
-    company: "COM",
-    other: "OTH"
-  }[type] || "ENT"
-  
-  const timestamp = Date.now().toString(36).toUpperCase()
-  const random = Math.random().toString(36).substring(2, 6).toUpperCase()
-  return `${prefix}-${timestamp}-${random}`
-}
 
 export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false)
@@ -142,80 +128,62 @@ export default function RegisterPage() {
     e.preventDefault()
     setIsLoading(true)
     setExistingUserError(null)
-    
+
+    if (formData.password !== formData.confirmPassword) {
+      setExistingUserError({ isStaff: false, message: 'Passwords do not match.' })
+      setIsLoading(false)
+      return
+    }
+    if (formData.password.length < 8) {
+      setExistingUserError({ isStaff: false, message: 'Password must be at least 8 characters.' })
+      setIsLoading(false)
+      return
+    }
+
     try {
-      // Check if user already exists via API
-      const checkResponse = await fetch('/api/auth/check-email', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: formData.contactEmail })
+      const result = await apiPost<{ token: string; user: AuthUser }>('/api/auth/register', {
+        submitterType: formData.submitterType,
+        displayName: getDisplayName(),
+        contactEmail: formData.contactEmail,
+        contactPhone: formData.contactPhone,
+        password: formData.password,
+        firstName: formData.firstName,
+        middleName: formData.middleName,
+        lastName: formData.lastName,
+        companyName: formData.companyName,
+        companyNumber: formData.companyNumber,
+        tradingName: formData.tradingName,
+        selectedMDA: formData.selectedMDA,
+        courtName: formData.courtName,
+        lawFirmName: formData.lawFirmName,
+        barNumber: formData.barNumber,
+        additionalUsers: formData.additionalUsers,
+        address: formData.address,
+        otherTypeSpecify: formData.otherTypeSpecify,
       })
-      
-      const checkResult = await checkResponse.json()
-      
-      if (checkResult.exists) {
-        // User already exists
-        if (checkResult.isStaff) {
-          setExistingUserError({
-            isStaff: true,
-            message: 'This email is already registered as a staff member. You can access both the Public Portal and Management Portal with your existing credentials.'
-          })
-        } else {
-          setExistingUserError({
-            isStaff: false,
-            message: 'An account with this email already exists. Please sign in instead.'
-          })
-        }
-        setIsLoading(false)
-        return
-      }
-      
-      // Generate entity number
-      const newEntityNumber = generateEntityNumber(formData.submitterType)
-      setEntityNumber(newEntityNumber)
-      
-      // Register via API
-      const registerResponse = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          entityNumber: newEntityNumber,
-          submitterType: formData.submitterType,
-          displayName: getDisplayName(),
-          email: formData.contactEmail,
-          phone: formData.contactPhone,
-          password: formData.password,
-          firstName: formData.firstName,
-          middleName: formData.middleName,
-          lastName: formData.lastName,
-          companyName: formData.companyName,
-          companyNumber: formData.companyNumber,
-          tradingName: formData.tradingName,
-          selectedMDA: formData.selectedMDA,
-          courtName: formData.courtName,
-          lawFirmName: formData.lawFirmName,
-          barNumber: formData.barNumber,
-          additionalUsers: formData.additionalUsers
-        })
-      })
-      
-      const registerResult = await registerResponse.json()
-      
-      if (!registerResult.success) {
+
+      if (!result.success || !result.data) {
+        const msg = result.error || 'Registration failed. Please try again.'
+        const isEmailDuplicate = msg.toLowerCase().includes('already') || msg.toLowerCase().includes('duplicate')
         setExistingUserError({
           isStaff: false,
-          message: registerResult.error || 'Registration failed. Please try again.'
+          message: isEmailDuplicate
+            ? 'An account with this email already exists. Please sign in instead.'
+            : msg,
         })
         setIsLoading(false)
         return
       }
-      
+
+      const { token, user } = result.data
+      setAuth(token, user)
+      setEntityNumber(user.entity_number)
       setIsRegistered(true)
     } catch (error) {
       console.error('Registration error:', error)
       setExistingUserError({
         isStaff: false,
-        message: 'An error occurred during registration. Please try again.'
+        message: 'An error occurred during registration. Please try again.',
       })
     } finally {
       setIsLoading(false)

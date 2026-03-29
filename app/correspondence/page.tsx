@@ -19,7 +19,7 @@ import { ArrowLeft, ArrowRight, Save, Send, Info, FileText, Gavel, FileStack, He
 import { AskRex } from "@/components/ask-rex"
 import Link from "next/link"
 import { MINISTRIES_DEPARTMENTS_AGENCIES } from "@/lib/constants"
-import { saveDraft, getDraft, recordSubmissionAttempt } from "@/lib/actions/draft-actions"
+import { apiPost, apiPut } from "@/lib/api-client"
 
 const STEPS = [
   { id: "type", title: "Type", description: "Select correspondence type" },
@@ -153,90 +153,61 @@ function CorrespondencePageContent() {
   
   // Load draft if URL has draft parameter
   useEffect(() => {
-    const draftParam = searchParams.get('draft')
-    if (draftParam) {
-      setIsLoadingDraft(true)
-      getDraft(draftParam).then(result => {
-        if (result.success && result.draft) {
-          setDraftId(result.draft.draftId)
-          setFormData(result.draft.formData as typeof formData)
-          setCurrentStep(result.draft.currentStep)
-          setLastSaved(result.draft.updatedAt)
-        } else {
-          // Fallback to localStorage if server doesn't have the draft
-          const localDraftsStr = localStorage.getItem('sgc_drafts')
-          if (localDraftsStr) {
-            const localDrafts = JSON.parse(localDraftsStr)
-            const localDraft = localDrafts.find((d: { draftId: string }) => d.draftId === draftParam)
-            if (localDraft) {
-              setDraftId(localDraft.draftId)
-              setFormData(localDraft.formData as typeof formData)
-              setCurrentStep(localDraft.currentStep)
-              setLastSaved(new Date(localDraft.updatedAt))
-            }
-          }
-        }
-        setIsLoadingDraft(false)
-      })
-    }
+    // TODO: Load draft from backend if needed
   }, [searchParams])
   
   // Auto-save draft every 30 seconds
-  // Note: Using interval with current state - dependencies kept minimal to avoid infinite loops
   useEffect(() => {
     const autoSaveTimer = setInterval(async () => {
       if (formData.correspondenceType || formData.subject) {
-        const userId = 'current-user'
-        const result = await saveDraft(userId, 'correspondence', formData, currentStep, STEPS.length, draftId || undefined)
-        if (result.success && result.draftId) {
-          setDraftId(result.draftId)
-          setLastSaved(new Date())
+        try {
+          if (draftId) {
+            await apiPut(`/api/correspondences/${draftId}`, { ...formData, status: "draft" })
+            setLastSaved(new Date())
+          } else {
+            const result = await apiPost<{ id: string }>("/api/correspondences", { ...formData, status: "draft" })
+            if (result.success && result.data?.id) {
+              setDraftId(result.data.id)
+              setLastSaved(new Date())
+            }
+          }
+        } catch (e) {
+          console.error("Auto-save failed", e)
         }
       }
     }, 30000)
     
     return () => clearInterval(autoSaveTimer)
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentStep, draftId])
+  }, [currentStep, draftId, formData])
   
   // Manual save draft
   const handleSaveDraft = useCallback(async () => {
     setIsSavingDraft(true)
     setSaveMessage(null)
-    const userId = 'current-user'
-    const result = await saveDraft(userId, 'correspondence', formData, currentStep, STEPS.length, draftId || undefined)
-    if (result.success && result.draftId) {
-      setDraftId(result.draftId)
-      setLastSaved(new Date())
-      
-      // Also store in localStorage as backup for serverless persistence issue
-      const draftRef = `DRAFT-COR-${result.draftId.substring(0, 8).toUpperCase()}`
-      const localDraft = {
-        draftId: result.draftId,
-        draftType: 'correspondence',
-        title: `${formData.correspondenceType || 'Correspondence'} - ${formData.subject || 'Untitled'}`.substring(0, 60),
-        formData,
-        currentStep,
-        totalSteps: STEPS.length,
-        progressPercentage: Math.round(((currentStep + 1) / STEPS.length) * 100),
-        updatedAt: new Date().toISOString(),
-        draftRef
+    try {
+      if (draftId) {
+        await apiPut(`/api/correspondences/${draftId}`, { ...formData, status: "draft" })
+        setLastSaved(new Date())
+        setSaveMessage({ type: 'success', text: `Draft saved successfully!` })
+      } else {
+        const result = await apiPost<{ id: string }>("/api/correspondences", { ...formData, status: "draft" })
+        if (result.success && result.data?.id) {
+          setDraftId(result.data.id)
+          setLastSaved(new Date())
+          setSaveMessage({ type: 'success', text: `Draft saved successfully!` })
+        } else {
+          throw new Error(result.error || "Failed to save draft")
+        }
       }
-      // Get existing drafts from localStorage
-      const existingDrafts = JSON.parse(localStorage.getItem('sgc_drafts') || '[]')
-      const updatedDrafts = existingDrafts.filter((d: { draftId: string }) => d.draftId !== result.draftId)
-      updatedDrafts.unshift(localDraft) // Add new/updated draft at beginning
-      localStorage.setItem('sgc_drafts', JSON.stringify(updatedDrafts.slice(0, 10))) // Keep max 10 drafts
-      
-      setSaveMessage({ type: 'success', text: `Draft saved successfully! Reference: ${draftRef}` })
-      // Auto-hide message after 5 seconds
-      setTimeout(() => setSaveMessage(null), 5000)
-    } else {
+    } catch (e) {
+      console.error("Save draft failed", e)
       setSaveMessage({ type: 'error', text: 'Failed to save draft. Please try again.' })
+    } finally {
       setTimeout(() => setSaveMessage(null), 5000)
+      setIsSavingDraft(false)
     }
-    setIsSavingDraft(false)
-  }, [formData, currentStep, draftId])
+  }, [formData, draftId])
 
   const updateFormData = (field: string, value: string | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }))
@@ -269,38 +240,21 @@ function CorrespondencePageContent() {
     setSubmissionError(null)
     
     try {
-      await new Promise(resolve => setTimeout(resolve, 2000))
-      
-      // Simulate occasional failures (10% rate)
-      const shouldFail = Math.random() < 0.1
-      if (shouldFail) {
-        throw new Error('Network error: Unable to connect to server')
-      }
-      
-      const txn = `COR-${Date.now().toString(36).toUpperCase()}`
-      setTransactionNumber(txn)
-      
       if (draftId) {
-        await recordSubmissionAttempt(draftId, true, undefined, undefined, txn)
+        // Update draft first, then submit
+        await apiPut(`/api/correspondences/${draftId}`, { ...formData, status: "draft" })
+        const result = await apiPut<{ transaction_number: string }>(`/api/correspondences/${draftId}/submit`, {})
+        if (!result.success) throw new Error(result.error || "Submission failed")
+        setTransactionNumber(result.data?.transaction_number || `COR-${Date.now().toString(36).toUpperCase()}`)
+      } else {
+        // Direct submit
+        const result = await apiPost<{ transaction_number: string }>("/api/correspondences", { ...formData, status: "submitted" })
+        if (!result.success) throw new Error(result.error || "Submission failed")
+        setTransactionNumber(result.data?.transaction_number || `COR-${Date.now().toString(36).toUpperCase()}`)
       }
-      
       setIsSubmitted(true)
     } catch (error) {
       console.error('[v0] Submission failed:', error)
-      
-      const userId = 'current-user'
-      const result = await saveDraft(userId, 'correspondence', formData, currentStep, STEPS.length, draftId || undefined)
-      
-      if (result.success && result.draftId) {
-        setDraftId(result.draftId)
-        await recordSubmissionAttempt(
-          result.draftId,
-          false,
-          'NETWORK',
-          error instanceof Error ? error.message : 'Unknown error'
-        )
-      }
-      
       setSubmissionError(
         `We're sorry, your application could not be submitted. ${error instanceof Error ? error.message : 'Please try again.'}`
       )

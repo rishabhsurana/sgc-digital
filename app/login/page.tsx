@@ -6,12 +6,13 @@ import { useRouter } from "next/navigation"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { ArrowLeft, LogIn, AlertCircle, Eye, EyeOff } from "lucide-react"
-import { loginUser } from "@/lib/actions/auth-actions"
+import { apiPost } from "@/lib/api-client"
+import { setAuth, type AuthUser } from "@/lib/auth"
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
@@ -23,25 +24,35 @@ export default function LoginPage() {
     e.preventDefault()
     setIsLoading(true)
     setError("")
-    
+
+    const formData = new FormData(e.currentTarget)
+    const email = formData.get("email") as string
+    const password = formData.get("password") as string
+
+    if (!email || !password) {
+      setError("Email and password are required.")
+      setIsLoading(false)
+      return
+    }
+
     try {
-      const formData = new FormData(e.currentTarget)
-      // loginUser will redirect on success, so this only returns on error
-      const result = await loginUser(formData)
-      
-      // If we get here, it means there was an error (success redirects)
-      if (!result.success) {
+      const result = await apiPost<{ token: string; user: AuthUser }>("/api/auth/login", {
+        email,
+        password,
+      })
+
+      if (!result.success || !result.data) {
         setError(result.error || "Login failed. Please try again.")
         setIsLoading(false)
+        return
       }
-    } catch (error) {
-      // NEXT_REDIRECT errors are expected - they mean success
-      // Other errors should be displayed
-      if (error instanceof Error && error.message !== 'NEXT_REDIRECT') {
-        setError("An unexpected error occurred. Please try again.")
-        setIsLoading(false)
-      }
-      // If NEXT_REDIRECT, the redirect is happening, keep loading state
+
+      const { token, user } = result.data
+      setAuth(token, user)
+      router.push("/dashboard")
+    } catch {
+      setError("An unexpected error occurred. Please try again.")
+      setIsLoading(false)
     }
   }
 
