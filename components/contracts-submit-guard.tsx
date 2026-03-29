@@ -8,20 +8,10 @@ import { AskRex } from "@/components/ask-rex"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import {
-  ArrowLeft,
-  FileText,
-  Home,
-  LogIn,
-  ShieldAlert,
-} from "lucide-react"
-import { getToken, getUser } from "@/lib/auth"
+import { ArrowLeft, FileText, Home, ShieldAlert } from "lucide-react"
+import { getUser } from "@/lib/auth"
 
-type AccessState = "loading" | "allowed" | "sign_in_required" | "forbidden"
-
-function ContractsAccessDenied({ variant }: { variant: "sign_in_required" | "forbidden" }) {
-  const isSignIn = variant === "sign_in_required"
-
+function ContractsForbidden() {
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <Header />
@@ -39,22 +29,17 @@ function ContractsAccessDenied({ variant }: { variant: "sign_in_required" | "for
           <Card className="bg-card border-border overflow-hidden shadow-lg">
             <div className="bg-gradient-to-r from-emerald-600 via-emerald-700 to-slate-800 px-6 py-8 text-center text-white">
               <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-white/15 backdrop-blur">
-                {isSignIn ? (
-                  <LogIn className="h-7 w-7 text-white" />
-                ) : (
-                  <ShieldAlert className="h-7 w-7 text-white" />
-                )}
+                <ShieldAlert className="h-7 w-7 text-white" />
               </div>
               <Badge className="mb-3 border-0 bg-white/20 text-white hover:bg-white/25">
-                {isSignIn ? "Authentication required" : "Access restricted"}
+                Access restricted
               </Badge>
               <h1 className="font-serif text-2xl font-bold tracking-tight">
-                {isSignIn ? "Sign in to continue" : "Contract submission unavailable"}
+                Contract submission unavailable
               </h1>
               <p className="mt-2 text-sm text-emerald-100/90 leading-relaxed max-w-sm mx-auto">
-                {isSignIn
-                  ? "Government contract requests can only be submitted by signed-in users with the appropriate ministry or MDA access."
-                  : "Post-award contract submissions are limited to Ministry and Government Agency (MDA) accounts. Your profile can still submit registry correspondence."}
+                Post-award contract submissions are limited to Ministry and Government Agency (MDA)
+                accounts. Your profile can still submit registry correspondence.
               </p>
             </div>
 
@@ -62,13 +47,11 @@ function ContractsAccessDenied({ variant }: { variant: "sign_in_required" | "for
               <div className="rounded-lg border border-border bg-muted/40 p-4 text-sm text-muted-foreground">
                 <p className="font-medium text-foreground mb-2">What you can do</p>
                 <ul className="space-y-2 list-disc list-inside">
-                  <li>Use <span className="text-foreground font-medium">Correspondence</span> for all registry submissions</li>
-                  {!isSignIn && (
-                    <li>Contact your organisation administrator if you believe you need contract access</li>
-                  )}
-                  {isSignIn && (
-                    <li>Sign in with a ministry or MDA account that has been enabled for contract submission</li>
-                  )}
+                  <li>
+                    Use <span className="text-foreground font-medium">Correspondence</span> for all
+                    registry submissions
+                  </li>
+                  <li>Contact your organisation administrator if you believe you need contract access</li>
                 </ul>
               </div>
 
@@ -85,17 +68,6 @@ function ContractsAccessDenied({ variant }: { variant: "sign_in_required" | "for
                     Correspondence
                   </Link>
                 </Button>
-                {isSignIn && (
-                  <Button
-                    asChild
-                    className="bg-blue-600 hover:bg-blue-700 text-white shadow-md"
-                  >
-                    <Link href="/login">
-                      <LogIn className="mr-2 h-4 w-4" />
-                      Sign in
-                    </Link>
-                  </Button>
-                )}
               </div>
             </CardContent>
           </Card>
@@ -129,17 +101,16 @@ function ContractsGuardLoading() {
   )
 }
 
+/**
+ * Assumes the user is already authenticated (wrap with RequireAuthGuard).
+ * Blocks contract form when can_submit_contracts is false.
+ */
 export function ContractsSubmitGuard({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<AccessState>("loading")
+  const [state, setState] = useState<"loading" | "allowed" | "forbidden">("loading")
 
   useEffect(() => {
-    const token = getToken()
     const user = getUser()
-    if (!token || !user) {
-      setState("sign_in_required")
-      return
-    }
-    if (!user.can_submit_contracts) {
+    if (!user?.can_submit_contracts) {
       setState("forbidden")
       return
     }
@@ -150,8 +121,8 @@ export function ContractsSubmitGuard({ children }: { children: ReactNode }) {
     return <ContractsGuardLoading />
   }
 
-  if (state === "sign_in_required" || state === "forbidden") {
-    return <ContractsAccessDenied variant={state} />
+  if (state === "forbidden") {
+    return <ContractsForbidden />
   }
 
   return <>{children}</>

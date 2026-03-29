@@ -20,6 +20,7 @@ import { AskRex } from "@/components/ask-rex"
 import Link from "next/link"
 import { MINISTRIES_DEPARTMENTS_AGENCIES } from "@/lib/constants"
 import { apiPost, apiPut } from "@/lib/api-client"
+import { RequireAuthGuard } from "@/components/require-auth-guard"
 
 const STEPS = [
   { id: "type", title: "Type", description: "Select correspondence type" },
@@ -903,8 +904,10 @@ function CorrespondenceLoading() {
 // Export with Suspense boundary for useSearchParams
 export default function CorrespondencePage() {
   return (
-    <Suspense fallback={<CorrespondenceLoading />}>
-      <CorrespondencePageContent />
-    </Suspense>
+    <RequireAuthGuard returnPath="/correspondence">
+      <Suspense fallback={<CorrespondenceLoading />}>
+        <CorrespondencePageContent />
+      </Suspense>
+    </RequireAuthGuard>
   )
 }

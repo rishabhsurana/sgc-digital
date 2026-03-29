@@ -16,7 +16,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { useRouter, usePathname } from "next/navigation"
+import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { getUser, logout, type AuthUser } from "@/lib/auth"
 
@@ -28,7 +28,6 @@ export function Header({ isStaff: isStaffProp = false }: HeaderProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [isStaff, setIsStaff] = useState(isStaffProp)
   const [userSession, setUserSession] = useState<AuthUser | null>(null)
-  const router = useRouter()
   const pathname = usePathname()
 
   useEffect(() => {
@@ -71,11 +70,7 @@ export function Header({ isStaff: isStaffProp = false }: HeaderProps) {
   
   // Check if a nav item is active
   const isActive = (path: string) => pathname === path
-  const showContractsInNav =
-    !userSession || userSession.can_submit_contracts || true
-  const isServicesActive =
-    pathname === "/correspondence" ||
-    (showContractsInNav && pathname === "/contracts")
+  const isServicesActive = pathname === "/correspondence" || pathname === "/contracts"
 
   return (
     <header className="sticky top-0 z-50 w-full">
@@ -154,19 +149,17 @@ export function Header({ isStaff: isStaffProp = false }: HeaderProps) {
                     </div>
                   </Link>
                 </DropdownMenuItem>
-                {showContractsInNav && (
-                  <DropdownMenuItem asChild className="rounded-lg p-3 cursor-pointer">
-                    <Link href="/contracts" className="flex items-start gap-3">
-                      <div className="p-2 rounded-lg bg-emerald-50">
-                        <FileSignature className="h-4 w-4 text-emerald-600" />
-                      </div>
-                      <div>
-                        <p className="font-semibold text-slate-900">Contracts</p>
-                        <p className="text-xs text-slate-500 mt-0.5">Government contract requests</p>
-                      </div>
-                    </Link>
-                  </DropdownMenuItem>
-                )}
+                <DropdownMenuItem asChild className="rounded-lg p-3 cursor-pointer">
+                  <Link href="/contracts" className="flex items-start gap-3">
+                    <div className="p-2 rounded-lg bg-emerald-50">
+                      <FileSignature className="h-4 w-4 text-emerald-600" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-slate-900">Contracts</p>
+                      <p className="text-xs text-slate-500 mt-0.5">Government contract requests</p>
+                    </div>
+                  </Link>
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
             
@@ -322,21 +315,19 @@ export function Header({ isStaff: isStaffProp = false }: HeaderProps) {
                     </div>
                     <span className="font-medium">Correspondence</span>
                   </Link>
-                  {showContractsInNav && (
-                    <Link 
-                      href="/contracts" 
-                      onClick={() => setIsOpen(false)}
-                      className={cn(
-                        "flex items-center gap-3 px-4 py-3 rounded-xl transition-all ml-1",
-                        isActive('/contracts') ? "bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-sm" : "text-slate-600 hover:bg-slate-50"
-                      )}
-                    >
-                      <div className={cn("p-1.5 rounded-lg", isActive('/contracts') ? "bg-white/20" : "bg-slate-100")}>
-                        <FileSignature className={cn("h-4 w-4", isActive('/contracts') ? "text-white" : "text-emerald-500")} />
-                      </div>
-                      <span className="font-medium">Contracts</span>
-                    </Link>
-                  )}
+                  <Link 
+                    href="/contracts" 
+                    onClick={() => setIsOpen(false)}
+                    className={cn(
+                      "flex items-center gap-3 px-4 py-3 rounded-xl transition-all ml-1",
+                      isActive('/contracts') ? "bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-sm" : "text-slate-600 hover:bg-slate-50"
+                    )}
+                  >
+                    <div className={cn("p-1.5 rounded-lg", isActive('/contracts') ? "bg-white/20" : "bg-slate-100")}>
+                      <FileSignature className={cn("h-4 w-4", isActive('/contracts') ? "text-white" : "text-emerald-500")} />
+                    </div>
+                    <span className="font-medium">Contracts</span>
+                  </Link>
                   
                   <p className="px-4 py-2 text-xs font-semibold text-slate-400 uppercase tracking-wider mt-2">
                     My Account

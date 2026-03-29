@@ -30,6 +30,7 @@ import { MINISTRIES_DEPARTMENTS_AGENCIES } from "@/lib/constants"
 import { apiPost, apiPut } from "@/lib/api-client"
 import { validateOriginalContract, type OriginalContractData, type ValidationResult } from "@/lib/actions/contract-validation-actions"
 import { ContractsSubmitGuard } from "@/components/contracts-submit-guard"
+import { RequireAuthGuard } from "@/components/require-auth-guard"
 
 const STEPS = [
   { id: "nature", title: "Contract Nature", description: "Select contract type" },
@@ -1897,10 +1898,12 @@ function ContractsLoading() {
 // Export with Suspense boundary for useSearchParams
 export default function ContractsPage() {
   return (
-    <ContractsSubmitGuard>
-      <Suspense fallback={<ContractsLoading />}>
-        <ContractsPageContent />
-      </Suspense>
-    </ContractsSubmitGuard>
+    <RequireAuthGuard returnPath="/contracts">
+      <ContractsSubmitGuard>
+        <Suspense fallback={<ContractsLoading />}>
+          <ContractsPageContent />
+        </Suspense>
+      </ContractsSubmitGuard>
+    </RequireAuthGuard>
   )
 }
