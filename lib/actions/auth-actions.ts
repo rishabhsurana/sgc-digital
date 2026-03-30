@@ -75,6 +75,20 @@ async function createSession(user: UserProfile): Promise<string> {
     path: '/'
   })
   
+  // Set a client-readable cookie with user display info for the header
+  const userDisplayInfo = {
+    fullName: `${user.firstName} ${user.lastName}`,
+    email: user.email,
+    organization: user.organizationName || user.departmentName || ''
+  }
+  cookieStore.set('sgc_user_info', Buffer.from(JSON.stringify(userDisplayInfo)).toString('base64'), {
+    httpOnly: false, // Client can read this
+    secure: false,
+    sameSite: 'lax',
+    maxAge: SESSION_DURATION / 1000,
+    path: '/'
+  })
+  
   return sessionToken
 }
 

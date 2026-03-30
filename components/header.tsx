@@ -38,8 +38,25 @@ export function Header({ isStaff: isStaffProp = false }: HeaderProps) {
   const pathname = usePathname()
 
   useEffect(() => {
-    // Check for user session in sessionStorage
+    // Check for user session via client-readable cookie
     const checkUserSession = () => {
+      const cookies = document.cookie.split(';')
+      const userInfoCookie = cookies.find(c => c.trim().startsWith('sgc_user_info='))
+      
+      if (userInfoCookie) {
+        try {
+          const encodedValue = userInfoCookie.split('=')[1]?.trim()
+          if (encodedValue) {
+            const userData = JSON.parse(atob(encodedValue))
+            setUserSession(userData)
+            return
+          }
+        } catch {
+          // Invalid cookie data, ignore
+        }
+      }
+      
+      // Fallback to sessionStorage for backwards compatibility
       const storedUser = sessionStorage.getItem("sgc_user")
       if (storedUser) {
         try {
@@ -53,7 +70,6 @@ export function Header({ isStaff: isStaffProp = false }: HeaderProps) {
     
     // Check for staff session via client-readable cookie
     const checkStaffStatus = () => {
-      // Check the simple staff flag cookie
       const cookies = document.cookie.split(';')
       const staffCookie = cookies.find(c => c.trim().startsWith('sgc_is_staff='))
       
@@ -81,6 +97,7 @@ export function Header({ isStaff: isStaffProp = false }: HeaderProps) {
     sessionStorage.removeItem("sgc_admin")
     // Clear cookies
     document.cookie = "sgc_is_staff=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT"
+    document.cookie = "sgc_user_info=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT"
     setUserSession(null)
     setIsStaff(false)
     router.push("/")
