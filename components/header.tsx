@@ -41,18 +41,22 @@ export function Header({ isStaff: isStaffProp = false }: HeaderProps) {
     // Check for user session via client-readable cookie
     const checkUserSession = () => {
       const cookies = document.cookie.split(';')
+      console.log('[v0] Header - All cookies:', document.cookie)
       const userInfoCookie = cookies.find(c => c.trim().startsWith('sgc_user_info='))
+      console.log('[v0] Header - User info cookie found:', !!userInfoCookie)
       
       if (userInfoCookie) {
         try {
           const encodedValue = userInfoCookie.split('=')[1]?.trim()
+          console.log('[v0] Header - Encoded value:', encodedValue?.substring(0, 50) + '...')
           if (encodedValue) {
             const userData = JSON.parse(atob(encodedValue))
+            console.log('[v0] Header - Decoded user data:', userData)
             setUserSession(userData)
             return
           }
-        } catch {
-          // Invalid cookie data, ignore
+        } catch (e) {
+          console.log('[v0] Header - Error parsing cookie:', e)
         }
       }
       
@@ -61,6 +65,7 @@ export function Header({ isStaff: isStaffProp = false }: HeaderProps) {
       if (storedUser) {
         try {
           const userData = JSON.parse(storedUser)
+          console.log('[v0] Header - Using sessionStorage fallback:', userData)
           setUserSession(userData)
         } catch {
           // Invalid JSON, ignore
@@ -72,6 +77,7 @@ export function Header({ isStaff: isStaffProp = false }: HeaderProps) {
     const checkStaffStatus = () => {
       const cookies = document.cookie.split(';')
       const staffCookie = cookies.find(c => c.trim().startsWith('sgc_is_staff='))
+      console.log('[v0] Header - Staff cookie found:', !!staffCookie)
       
       if (staffCookie) {
         const value = staffCookie.split('=')[1]?.trim()
