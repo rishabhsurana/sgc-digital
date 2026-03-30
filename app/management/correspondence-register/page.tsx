@@ -29,6 +29,12 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { 
   Search, 
   Filter, 
@@ -42,12 +48,15 @@ import {
   Building2,
   User,
   Tag,
+  CheckCircle,
   CheckCircle2,
   Clock,
   AlertCircle,
   XCircle,
   MessageSquare,
-  X
+  X,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react"
 
 // Sample correspondence data
