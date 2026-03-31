@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useCallback } from "react"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
@@ -15,19 +15,11 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
+import { Dialog, DialogTrigger } from "@/components/ui/dialog"
 import { 
   Search, 
   FileText, 
   FileSignature, 
-  Clock, 
   CheckCircle, 
   AlertCircle,
   Download,
@@ -39,465 +31,50 @@ import {
   Building2,
   ArrowRight,
   RefreshCw,
-  User,
   LogOut,
-  Settings,
-  Upload,
-  Paperclip,
-  X,
-  FileIcon,
-  Send,
   LayoutDashboard,
   Pencil,
   Trash2
 } from "lucide-react"
-import { Textarea } from "@/components/ui/textarea"
-import { Label } from "@/components/ui/label"
 import { AskRex } from "@/components/ask-rex"
 import Link from "next/link"
 import { logout } from "@/lib/actions/auth-actions"
-import { getUserDrafts, deleteDraft, type Draft } from "@/lib/actions/draft-actions"
+import { RequireAuthGuard } from "@/components/require-auth-guard"
+import { getUser } from "@/lib/auth"
+import {
+  deleteDraftByType,
+  fetchAllDrafts,
+  fetchDashboardSubmissions,
+  type DashboardDraft,
+  type DashboardSubmissionItem,
+} from "@/lib/dashboard-api"
+import type { Submission } from "@/lib/dashboard-types"
+import { STATUS_CONFIG } from "@/lib/dashboard-types"
+import { DashboardSubmissionDetailDialog } from "@/components/dashboard-submission-detail-dialog"
 
-// User info interface
-interface UserInfo {
-  fullName: string
-  email: string
-  submitterType: string
-  organization?: string
-  entityNumber: string
-}
-
-// Submitter type labels
-const SUBMITTER_TYPE_LABELS: Record<string, string> = {
-  ministry: "Ministry / Government Agency",
-  court: "Court",
-  statutory: "Statutory Body",
-  public: "Member of the Public",
-  attorney: "Attorney-at-Law",
-  other: "Other"
-}
-
-type SubmissionStatus = "pending" | "in-review" | "clarification" | "approved" | "completed" | "rejected"
-
-interface SGCDocument {
-  id: string
-  name: string
-  type: string
-  size: string
-  uploadedDate: string
-  uploadedBy: string
-}
-
-interface Submission {
-  id: string
-  transactionNumber: string
-  type: "correspondence" | "contract"
-  title: string
-  submittedDate: string
-  lastUpdated: string
-  status: SubmissionStatus
-  ministry?: string
-  stage: string
-  history: { date: string; stage: string; note?: string }[]
-  sgcDocuments?: SGCDocument[]
-}
-
-// Mock data for demonstration
-const MOCK_SUBMISSIONS: Submission[] = [
-  {
-    id: "1",
-    transactionNumber: "COR-M4KL2X",
-    type: "correspondence",
-    title: "Legal Advisory Request - Land Acquisition",
-    submittedDate: "2026-02-28",
-    lastUpdated: "2026-03-02",
-    status: "in-review",
-    stage: "SGC Legal Review",
-    history: [
-      { date: "2026-02-28", stage: "Submitted", note: "Initial submission received" },
-      { date: "2026-02-28", stage: "Registry Intake", note: "Verified and assigned" },
-      { date: "2026-03-01", stage: "SGC Legal Review", note: "Under review by legal officer" }
-    ],
-    sgcDocuments: [
-      { id: "doc1", name: "Initial Review Notes.pdf", type: "PDF", size: "245 KB", uploadedDate: "2026-03-01", uploadedBy: "SGC Legal Officer" }
-    ]
-  },
-  {
-    id: "2",
-    transactionNumber: "CON-N5PQ3Y",
-    type: "contract",
-    title: "IT Services Contract - Ministry of Finance",
-    submittedDate: "2026-02-25",
-    lastUpdated: "2026-03-01",
-    status: "clarification",
-    ministry: "Ministry of Finance",
-    stage: "Returned for Clarification",
-    history: [
-      { date: "2026-02-25", stage: "Submitted", note: "Initial submission received" },
-      { date: "2026-02-26", stage: "Intake Validation", note: "Documents verified" },
-      { date: "2026-02-28", stage: "Legal Review", note: "Initial review completed" },
-      { date: "2026-03-01", stage: "Returned for Clarification", note: "Missing performance bond documentation" }
-    ],
-    sgcDocuments: [
-      { id: "doc2", name: "Clarification Request Letter.pdf", type: "PDF", size: "156 KB", uploadedDate: "2026-03-01", uploadedBy: "SGC Registry" },
-      { id: "doc3", name: "Required Documents Checklist.docx", type: "DOCX", size: "45 KB", uploadedDate: "2026-03-01", uploadedBy: "SGC Legal Officer" }
-    ]
-  },
-  {
-    id: "3",
-    transactionNumber: "COR-J2HK9Z",
-    type: "correspondence",
-    title: "Cabinet Paper Review - Housing Policy",
-    submittedDate: "2026-02-20",
-    lastUpdated: "2026-02-27",
-    status: "completed",
-    stage: "Completed",
-    history: [
-      { date: "2026-02-20", stage: "Submitted", note: "Initial submission received" },
-      { date: "2026-02-21", stage: "Registry Intake", note: "Verified and assigned" },
-      { date: "2026-02-23", stage: "Legal Review", note: "Review completed" },
-      { date: "2026-02-25", stage: "SG Approval", note: "Approved by Solicitor General" },
-      { date: "2026-02-27", stage: "Completed", note: "Response document available" }
-    ],
-    sgcDocuments: [
-      { id: "doc4", name: "Legal Opinion - Housing Policy.pdf", type: "PDF", size: "520 KB", uploadedDate: "2026-02-27", uploadedBy: "Solicitor General" },
-      { id: "doc5", name: "Cabinet Paper Approval.pdf", type: "PDF", size: "180 KB", uploadedDate: "2026-02-27", uploadedBy: "SGC Registry" }
-    ]
-  },
-  {
-    id: "4",
-    transactionNumber: "CON-R8TV4W",
-    type: "contract",
-    title: "Construction Works - School Renovation",
-    submittedDate: "2026-02-15",
-    lastUpdated: "2026-02-28",
-    status: "approved",
-    ministry: "Ministry of Education",
-    stage: "Contract Finalization",
-    history: [
-      { date: "2026-02-15", stage: "Submitted", note: "Initial submission received" },
-      { date: "2026-02-16", stage: "Intake Validation", note: "Documents verified" },
-      { date: "2026-02-20", stage: "Legal Review", note: "Review completed" },
-      { date: "2026-02-25", stage: "SG Approval", note: "Approved" },
-      { date: "2026-02-28", stage: "Contract Finalization", note: "Final contract being prepared" }
-    ]
-  },
-  {
-    id: "5",
-    transactionNumber: "COR-L6MN8V",
-    type: "correspondence",
-    title: "General Enquiry - Property Registration",
-    submittedDate: "2026-03-01",
-    lastUpdated: "2026-03-01",
-    status: "pending",
-    stage: "Registry Intake",
-    history: [
-      { date: "2026-03-01", stage: "Submitted", note: "Initial submission received" },
-      { date: "2026-03-01", stage: "Registry Intake", note: "Awaiting verification" }
-    ]
+function mapApiItemToSubmission(item: DashboardSubmissionItem): Submission {
+  return {
+    id: item.id,
+    transactionNumber: item.transaction_number || "—",
+    type: item.type,
+    title: item.title,
+    submittedDate: item.submitted_date || "—",
+    lastUpdated: item.last_updated,
+    status: item.ui_status,
+    ministry: item.ministry || undefined,
+    stage: item.stage,
+    history: [],
+    sgcDocuments: undefined,
   }
-]
-
-const STATUS_CONFIG: Record<SubmissionStatus, { label: string; color: string; icon: typeof Clock }> = {
-  pending: { label: "Pending", color: "bg-yellow-100 text-yellow-800 border-yellow-200", icon: Clock },
-  "in-review": { label: "In Review", color: "bg-blue-100 text-blue-800 border-blue-200", icon: Eye },
-  clarification: { label: "Action Required", color: "bg-orange-100 text-orange-800 border-orange-200", icon: AlertCircle },
-  approved: { label: "Approved", color: "bg-green-100 text-green-800 border-green-200", icon: CheckCircle },
-  completed: { label: "Completed", color: "bg-green-100 text-green-800 border-green-200", icon: CheckCircle },
-  rejected: { label: "Rejected", color: "bg-red-100 text-red-800 border-red-200", icon: AlertCircle }
 }
 
-// Submission Detail Dialog with tabs
-function SubmissionDetailDialog({ 
-  submission, 
-  status,
-  defaultTab = "details"
-}: { 
+function SubmissionCard({
+  submission,
+  onRefresh,
+}: {
   submission: Submission
-  status: { label: string; color: string; icon: typeof Clock }
-  defaultTab?: "details" | "documents" | "respond"
+  onRefresh: () => void
 }) {
-  const [uploadedFiles, setUploadedFiles] = useState<File[]>([])
-  const [responseMessage, setResponseMessage] = useState("")
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const fileInputRef = React.useRef<HTMLInputElement>(null)
-
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      setUploadedFiles(prev => [...prev, ...Array.from(e.target.files!)])
-    }
-  }
-
-  const removeFile = (index: number) => {
-    setUploadedFiles(prev => prev.filter((_, i) => i !== index))
-  }
-
-  const handleSubmitResponse = async () => {
-    setIsSubmitting(true)
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500))
-    setIsSubmitting(false)
-    setUploadedFiles([])
-    setResponseMessage("")
-    alert("Response submitted successfully! The SGC will be notified.")
-  }
-
-  const formatFileSize = (bytes: number) => {
-    if (bytes < 1024) return bytes + ' B'
-    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB'
-    return (bytes / (1024 * 1024)).toFixed(1) + ' MB'
-  }
-
-  return (
-    <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
-      <DialogHeader>
-        <DialogTitle className="flex items-center gap-2">
-          <span className="font-mono text-sm text-muted-foreground">
-            {submission.transactionNumber}
-          </span>
-          <Badge variant="outline" className={status.color}>
-            {status.label}
-          </Badge>
-        </DialogTitle>
-        <DialogDescription>{submission.title}</DialogDescription>
-      </DialogHeader>
-      
-      <Tabs defaultValue={defaultTab} className="flex-1 overflow-hidden flex flex-col">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="details">Details</TabsTrigger>
-          <TabsTrigger value="documents" className="relative">
-            SGC Documents
-            {submission.sgcDocuments && submission.sgcDocuments.length > 0 && (
-              <span className="ml-1.5 bg-primary text-primary-foreground text-xs rounded-full px-1.5 py-0.5">
-                {submission.sgcDocuments.length}
-              </span>
-            )}
-          </TabsTrigger>
-          <TabsTrigger value="respond">Respond</TabsTrigger>
-        </TabsList>
-        
-        {/* Details Tab */}
-        <TabsContent value="details" className="flex-1 overflow-y-auto mt-4">
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div>
-                <p className="text-muted-foreground">Type</p>
-                <p className="font-medium capitalize">{submission.type}</p>
-              </div>
-              <div>
-                <p className="text-muted-foreground">Status</p>
-                <Badge variant="outline" className={status.color}>
-                  {status.label}
-                </Badge>
-              </div>
-              <div>
-                <p className="text-muted-foreground">Submitted</p>
-                <p className="font-medium">{submission.submittedDate}</p>
-              </div>
-              <div>
-                <p className="text-muted-foreground">Last Updated</p>
-                <p className="font-medium">{submission.lastUpdated}</p>
-              </div>
-            </div>
-            
-            <div>
-              <p className="text-sm font-medium text-foreground mb-2">Current Stage</p>
-              <p className="text-sm text-muted-foreground">{submission.stage}</p>
-            </div>
-            
-            <div>
-              <p className="text-sm font-medium text-foreground mb-3">History</p>
-              <div className="space-y-3">
-                {submission.history.map((event, index) => (
-                  <div key={index} className="flex gap-3">
-                    <div className="flex flex-col items-center">
-                      <div className={`h-2 w-2 rounded-full ${
-                        index === submission.history.length - 1 ? "bg-primary" : "bg-muted-foreground/30"
-                      }`} />
-                      {index < submission.history.length - 1 && (
-                        <div className="w-px flex-1 bg-muted-foreground/20" />
-                      )}
-                    </div>
-                    <div className="pb-3">
-                      <p className="text-sm font-medium text-foreground">{event.stage}</p>
-                      <p className="text-xs text-muted-foreground">{event.date}</p>
-                      {event.note && (
-                        <p className="text-xs text-muted-foreground mt-1">{event.note}</p>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </TabsContent>
-        
-        {/* SGC Documents Tab */}
-        <TabsContent value="documents" className="flex-1 overflow-y-auto mt-4">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-foreground">Documents from SGC</p>
-              <p className="text-xs text-muted-foreground">
-                {submission.sgcDocuments?.length || 0} document(s) available
-              </p>
-            </div>
-            
-            {submission.sgcDocuments && submission.sgcDocuments.length > 0 ? (
-              <div className="space-y-2">
-                {submission.sgcDocuments.map((doc) => (
-                  <div 
-                    key={doc.id} 
-                    className="flex items-center justify-between p-3 border rounded-lg bg-card hover:bg-accent/5 transition-colors"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-                        <FileIcon className="h-5 w-5 text-primary" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-foreground">{doc.name}</p>
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                          <span>{doc.type}</span>
-                          <span>•</span>
-                          <span>{doc.size}</span>
-                          <span>•</span>
-                          <span>{doc.uploadedDate}</span>
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          Uploaded by: {doc.uploadedBy}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Button size="sm" variant="outline">
-                        <Eye className="h-4 w-4 mr-1" />
-                        Preview
-                      </Button>
-                      <Button size="sm" variant="default">
-                        <Download className="h-4 w-4 mr-1" />
-                        Download
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center py-8 text-center border rounded-lg bg-muted/20">
-                <FileText className="h-12 w-12 text-muted-foreground/50 mb-3" />
-                <p className="text-sm font-medium text-muted-foreground">No documents available</p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Documents from the SGC will appear here when available
-                </p>
-              </div>
-            )}
-          </div>
-        </TabsContent>
-        
-        {/* Respond Tab */}
-        <TabsContent value="respond" className="flex-1 overflow-y-auto mt-4">
-          <div className="space-y-4">
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <p className="text-sm text-blue-800">
-                Use this section to respond to the SGC or upload additional documents. 
-                Your response will be sent directly to the SGC for review.
-              </p>
-            </div>
-            
-            {/* Message */}
-            <div className="space-y-2">
-              <Label htmlFor="response-message">Response Message (Optional)</Label>
-              <Textarea
-                id="response-message"
-                placeholder="Enter any comments or explanations for the SGC..."
-                value={responseMessage}
-                onChange={(e) => setResponseMessage(e.target.value)}
-                rows={4}
-              />
-            </div>
-            
-            {/* File Upload */}
-            <div className="space-y-2">
-              <Label>Upload Documents</Label>
-              <div 
-                className="border-2 border-dashed rounded-lg p-6 text-center hover:border-primary/50 transition-colors cursor-pointer"
-                onClick={() => fileInputRef.current?.click()}
-              >
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  multiple
-                  className="hidden"
-                  onChange={handleFileSelect}
-                  accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
-                />
-                <Upload className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                <p className="text-sm font-medium text-foreground">
-                  Click to upload or drag and drop
-                </p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  PDF, DOC, DOCX, XLS, XLSX, JPG, PNG (max 10MB each)
-                </p>
-              </div>
-            </div>
-            
-            {/* Uploaded Files List */}
-            {uploadedFiles.length > 0 && (
-              <div className="space-y-2">
-                <Label>Files to Upload ({uploadedFiles.length})</Label>
-                <div className="space-y-2">
-                  {uploadedFiles.map((file, index) => (
-                    <div 
-                      key={index} 
-                      className="flex items-center justify-between p-3 border rounded-lg bg-card"
-                    >
-                      <div className="flex items-center gap-3">
-                        <Paperclip className="h-4 w-4 text-muted-foreground" />
-                        <div>
-                          <p className="text-sm font-medium text-foreground">{file.name}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {formatFileSize(file.size)}
-                          </p>
-                        </div>
-                      </div>
-                      <Button 
-                        size="sm" 
-                        variant="ghost" 
-                        onClick={() => removeFile(index)}
-                        className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-            
-            {/* Submit Button */}
-            <Button 
-              className="w-full" 
-              onClick={handleSubmitResponse}
-              disabled={isSubmitting || (uploadedFiles.length === 0 && !responseMessage.trim())}
-            >
-              {isSubmitting ? (
-                <>
-                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                  Submitting...
-                </>
-              ) : (
-                <>
-                  <Send className="h-4 w-4 mr-2" />
-                  Submit Response to SGC
-                </>
-              )}
-            </Button>
-          </div>
-        </TabsContent>
-      </Tabs>
-    </DialogContent>
-  )
-}
-
-function SubmissionCard({ submission }: { submission: Submission }) {
   const status = STATUS_CONFIG[submission.status]
   const StatusIcon = status.icon
   
@@ -550,14 +127,29 @@ function SubmissionCard({ submission }: { submission: Submission }) {
                     Respond
                   </Button>
                 </DialogTrigger>
-                <SubmissionDetailDialog submission={submission} status={status} defaultTab="respond" />
+                <DashboardSubmissionDetailDialog
+                  submission={submission}
+                  status={status}
+                  defaultTab="respond"
+                  onAfterRespond={onRefresh}
+                />
               </Dialog>
             )}
             {submission.status === "completed" && (
-              <Button size="sm" variant="outline">
-                <Download className="h-4 w-4 mr-1" />
-                Download
-              </Button>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button size="sm" variant="outline">
+                    <Download className="h-4 w-4 mr-1" />
+                    Download
+                  </Button>
+                </DialogTrigger>
+                <DashboardSubmissionDetailDialog
+                  submission={submission}
+                  status={status}
+                  defaultTab="documents"
+                  onAfterRespond={onRefresh}
+                />
+              </Dialog>
             )}
             <Dialog>
               <DialogTrigger asChild>
@@ -566,7 +158,11 @@ function SubmissionCard({ submission }: { submission: Submission }) {
                   Details
                 </Button>
               </DialogTrigger>
-              <SubmissionDetailDialog submission={submission} status={status} />
+              <DashboardSubmissionDetailDialog
+                submission={submission}
+                status={status}
+                onAfterRespond={onRefresh}
+              />
             </Dialog>
           </div>
         </div>
@@ -575,58 +171,54 @@ function SubmissionCard({ submission }: { submission: Submission }) {
   )
 }
 
-export default function DashboardPage() {
+function DashboardPageInner() {
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const [typeFilter, setTypeFilter] = useState<string>("all")
-  const [userInfo, setUserInfo] = useState<UserInfo | null>(null)
-  const [userDrafts, setUserDrafts] = useState<Draft[]>([])
-  const [isLoadingDrafts, setIsLoadingDrafts] = useState(true)
+  const [submissions, setSubmissions] = useState<Submission[]>([])
+  const [stats, setStats] = useState({
+    total: 0,
+    active: 0,
+    actionRequired: 0,
+    completed: 0,
+  })
+  const [submissionsLoading, setSubmissionsLoading] = useState(true)
+  const [submissionsError, setSubmissionsError] = useState<string | null>(null)
+  const [userDrafts, setUserDrafts] = useState<DashboardDraft[]>([])
+  const [draftsLoading, setDraftsLoading] = useState(true)
+  const [draftsError, setDraftsError] = useState<string | null>(null)
 
-  // Load user info from sessionStorage and fetch drafts on mount
-  useEffect(() => {
-    const storedUser = sessionStorage.getItem("sgc_user")
-    if (storedUser) {
-      setUserInfo(JSON.parse(storedUser))
+  const loadSubmissions = useCallback(async () => {
+    setSubmissionsLoading(true)
+    setSubmissionsError(null)
+    const res = await fetchDashboardSubmissions()
+    if (!res.success || !res.data) {
+      setSubmissions([])
+      setStats({ total: 0, active: 0, actionRequired: 0, completed: 0 })
+      setSubmissionsError(res.error || res.message || "Failed to load submissions")
+    } else {
+      setSubmissions(res.data.submissions.map(mapApiItemToSubmission))
+      setStats(res.data.stats)
     }
-    
-    // Fetch user drafts - try server first, then fall back to localStorage
+    setSubmissionsLoading(false)
+  }, [])
+
+  useEffect(() => {
+    loadSubmissions()
+  }, [loadSubmissions])
+
+  useEffect(() => {
     const fetchDrafts = async () => {
-      setIsLoadingDrafts(true)
-      const userId = 'current-user' // TODO: Get from session
-      const result = await getUserDrafts(userId)
-      
-      // Merge server drafts with localStorage drafts (localStorage as backup for serverless persistence)
-      const localDraftsStr = localStorage.getItem('sgc_drafts')
-      const localDrafts = localDraftsStr ? JSON.parse(localDraftsStr) : []
-      
-      if (result.success && result.drafts.length > 0) {
-        // Server has drafts, use those but keep localStorage synced
-        setUserDrafts(result.drafts)
-      } else if (localDrafts.length > 0) {
-        // No server drafts, use localStorage drafts
-        const mappedDrafts = localDrafts.map((d: Record<string, unknown>) => ({
-          draftId: d.draftId as string,
-          userId: 'current-user',
-          draftType: d.draftType as 'contract' | 'correspondence',
-          formData: d.formData as Record<string, unknown>,
-          currentStep: d.currentStep as number,
-          totalSteps: d.totalSteps as number,
-          progressPercentage: d.progressPercentage as number,
-          submissionStatusId: 1,
-          submissionAttempts: 0,
-          lastSubmissionError: null,
-          lastSubmissionErrorType: null,
-          createdAt: new Date(d.updatedAt as string),
-          updatedAt: new Date(d.updatedAt as string),
-          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-          title: d.title as string
-        }))
-        setUserDrafts(mappedDrafts)
+      setDraftsLoading(true)
+      setDraftsError(null)
+      const result = await fetchAllDrafts()
+      if (result.success && result.data) {
+        setUserDrafts(result.data)
       } else {
         setUserDrafts([])
+        setDraftsError(result.error || "Failed to load drafts")
       }
-      setIsLoadingDrafts(false)
+      setDraftsLoading(false)
     }
     fetchDrafts()
   }, [])
@@ -634,21 +226,16 @@ export default function DashboardPage() {
   // Handle delete draft
   const handleDeleteDraft = async (draftId: string) => {
     if (confirm('Are you sure you want to delete this draft? This cannot be undone.')) {
-      const result = await deleteDraft(draftId)
+      const draft = userDrafts.find((d) => d.draftId === draftId)
+      if (!draft) return
+      const result = await deleteDraftByType(draft.draftType, draftId)
       if (result.success) {
         setUserDrafts(prev => prev.filter(d => d.draftId !== draftId))
-        // Also remove from localStorage
-        const localDraftsStr = localStorage.getItem('sgc_drafts')
-        if (localDraftsStr) {
-          const localDrafts = JSON.parse(localDraftsStr)
-          const updatedDrafts = localDrafts.filter((d: { draftId: string }) => d.draftId !== draftId)
-          localStorage.setItem('sgc_drafts', JSON.stringify(updatedDrafts))
-        }
       }
     }
   }
   
-  const filteredSubmissions = MOCK_SUBMISSIONS.filter(submission => {
+  const filteredSubmissions = submissions.filter(submission => {
     const matchesSearch = 
       submission.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       submission.transactionNumber.toLowerCase().includes(searchQuery.toLowerCase())
@@ -665,13 +252,7 @@ export default function DashboardPage() {
   )
   const actionRequired = filteredSubmissions.filter(s => s.status === "clarification")
 
-  // Stats
-  const stats = {
-    total: MOCK_SUBMISSIONS.length,
-    active: MOCK_SUBMISSIONS.filter(s => !["completed", "rejected"].includes(s.status)).length,
-    actionRequired: MOCK_SUBMISSIONS.filter(s => s.status === "clarification").length,
-    completed: MOCK_SUBMISSIONS.filter(s => s.status === "completed").length
-  }
+  const authUser = getUser()
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
@@ -681,13 +262,13 @@ export default function DashboardPage() {
       <main className="flex-1 py-8 lg:py-12">
         <div className="container mx-auto px-4 lg:px-8">
           {/* User Welcome Strip - Minimal */}
-          {userInfo && (
+          {authUser && (
             <div className="mb-4 px-4 py-2 bg-gradient-to-r from-primary/10 via-blue-50 to-teal-50 border border-primary/20 rounded-lg flex items-center justify-between text-sm">
               <div className="flex items-center gap-2">
                 <span className="text-slate-600">Welcome back,</span>
-                <span className="font-medium text-slate-900">{userInfo.fullName}</span>
+                <span className="font-medium text-slate-900">{authUser.full_name}</span>
                 <span className="text-slate-300">|</span>
-                <span className="text-slate-500">{userInfo.organization || userInfo.email}</span>
+                <span className="text-slate-500">{authUser.organization || authUser.email}</span>
               </div>
               <form action={logout}>
                 <Button type="submit" variant="ghost" size="sm" className="h-6 px-2 text-xs text-slate-500 hover:text-slate-700">
@@ -726,6 +307,18 @@ export default function DashboardPage() {
               </div>
             </div>
           </div>
+
+          {submissionsError && (
+            <div
+              className="mb-6 rounded-lg border border-destructive/40 bg-destructive/5 px-4 py-3 text-sm text-destructive flex items-center justify-between gap-4"
+              role="alert"
+            >
+              <span>{submissionsError}</span>
+              <Button type="button" variant="outline" size="sm" onClick={() => loadSubmissions()}>
+                Retry
+              </Button>
+            </div>
+          )}
 
           {/* Stats Cards */}
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-8">
@@ -786,28 +379,44 @@ export default function DashboardPage() {
             </Card>
           </div>
 
+          {submissionsLoading && (
+            <p className="text-sm text-muted-foreground mb-6 flex items-center gap-2">
+              <RefreshCw className="h-4 w-4 animate-spin" />
+              Loading submissions…
+            </p>
+          )}
+
           {/* Saved Drafts Section */}
-          {userDrafts.length > 0 && (
-            <Card className="mb-8 border-amber-200 bg-amber-50/50">
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="h-8 w-8 rounded-lg bg-amber-200 flex items-center justify-center">
-                      <Pencil className="h-4 w-4 text-amber-700" />
-                    </div>
-                    <div>
-                      <CardTitle className="text-lg text-amber-900">Saved Drafts</CardTitle>
-                      <CardDescription className="text-amber-700">
-                        Continue where you left off
-                      </CardDescription>
-                    </div>
+          <Card className="mb-8 border-amber-200 bg-amber-50/50">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="h-8 w-8 rounded-lg bg-amber-200 flex items-center justify-center">
+                    <Pencil className="h-4 w-4 text-amber-700" />
                   </div>
-                  <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-300">
-                    {userDrafts.length} draft{userDrafts.length !== 1 ? 's' : ''}
-                  </Badge>
+                  <div>
+                    <CardTitle className="text-lg text-amber-900">Saved Drafts</CardTitle>
+                    <CardDescription className="text-amber-700">
+                      Continue where you left off
+                    </CardDescription>
+                  </div>
                 </div>
-              </CardHeader>
-              <CardContent>
+                <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-300">
+                  {userDrafts.length} draft{userDrafts.length !== 1 ? "s" : ""}
+                </Badge>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {draftsLoading ? (
+                <p className="text-sm text-muted-foreground flex items-center gap-2">
+                  <RefreshCw className="h-4 w-4 animate-spin" />
+                  Loading drafts…
+                </p>
+              ) : draftsError ? (
+                <p className="text-sm text-destructive">{draftsError}</p>
+              ) : userDrafts.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No saved drafts yet.</p>
+              ) : (
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                   {userDrafts.map((draft) => (
                     <div 
@@ -859,9 +468,9 @@ export default function DashboardPage() {
                     </div>
                   ))}
                 </div>
-              </CardContent>
-            </Card>
-          )}
+              )}
+            </CardContent>
+          </Card>
 
           {/* Filters */}
           <div className="flex flex-col sm:flex-row gap-4 mb-6">
@@ -897,6 +506,7 @@ export default function DashboardPage() {
                   <SelectItem value="clarification">Action Required</SelectItem>
                   <SelectItem value="approved">Approved</SelectItem>
                   <SelectItem value="completed">Completed</SelectItem>
+                  <SelectItem value="rejected">Rejected</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -960,7 +570,11 @@ export default function DashboardPage() {
               ) : (
                 <div className="space-y-3">
                   {activeSubmissions.map((submission) => (
-                    <SubmissionCard key={submission.id} submission={submission} />
+                    <SubmissionCard
+                      key={submission.id}
+                      submission={submission}
+                      onRefresh={loadSubmissions}
+                    />
                   ))}
                 </div>
               )}
@@ -980,7 +594,11 @@ export default function DashboardPage() {
               ) : (
                 <div className="space-y-3">
                   {completedSubmissions.map((submission) => (
-                    <SubmissionCard key={submission.id} submission={submission} />
+                    <SubmissionCard
+                      key={submission.id}
+                      submission={submission}
+                      onRefresh={loadSubmissions}
+                    />
                   ))}
                 </div>
               )}
@@ -991,5 +609,13 @@ export default function DashboardPage() {
 
       <Footer compact />
     </div>
+  )
+}
+
+export default function DashboardPage() {
+  return (
+    <RequireAuthGuard returnPath="/dashboard">
+      <DashboardPageInner />
+    </RequireAuthGuard>
   )
 }

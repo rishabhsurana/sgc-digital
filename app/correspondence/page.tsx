@@ -19,7 +19,7 @@ import { ArrowLeft, ArrowRight, Save, Send, Info, FileText, Gavel, FileStack, He
 import { AskRex } from "@/components/ask-rex"
 import Link from "next/link"
 import { MINISTRIES_DEPARTMENTS_AGENCIES } from "@/lib/constants"
-import { apiPost, apiPut } from "@/lib/api-client"
+import { apiGet, apiPost, apiPut } from "@/lib/api-client"
 import { RequireAuthGuard } from "@/components/require-auth-guard"
 
 const STEPS = [
@@ -119,6 +119,14 @@ const DOCUMENT_TYPES = [
 ]
 
 function CorrespondencePageContent() {
+  type CorrespondenceDraftApiRow = {
+    draft_id: string
+    form_data: string
+    current_step: number
+    total_steps: number
+    progress_percentage: number
+  }
+
   const [currentStep, setCurrentStep] = useState(0)
   const [formData, setFormData] = useState({
     correspondenceType: "",
@@ -151,27 +159,68 @@ function CorrespondencePageContent() {
   const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
   
   const searchParams = useSearchParams()
+
+  const buildDraftPayload = useCallback(() => {
+    return {
+      draft_name: formData.subject?.trim() || null,
+      form_data: formData,
+      current_step: currentStep + 1,
+      total_steps: STEPS.length,
+      progress_percentage: Math.round(((currentStep + 1) / STEPS.length) * 100),
+    }
+  }, [formData, currentStep])
   
   // Load draft if URL has draft parameter
   useEffect(() => {
-    // TODO: Load draft from backend if needed
+    const draftParam = searchParams.get("draft")
+    if (!draftParam) return
+
+    const loadDraft = async () => {
+      setIsLoadingDraft(true)
+      try {
+        const result = await apiGet<CorrespondenceDraftApiRow>(`/api/drafts/correspondence/${draftParam}`)
+        if (!result.success || !result.data) {
+          throw new Error(result.error || "Failed to load draft")
+        }
+
+        const parsed = JSON.parse(result.data.form_data || "{}") as Record<string, unknown>
+        setFormData((prev) => ({ ...prev, ...parsed }))
+        setDraftId(result.data.draft_id)
+        if (typeof result.data.current_step === "number" && result.data.current_step > 0) {
+          setCurrentStep(Math.min(result.data.current_step - 1, STEPS.length - 1))
+        }
+      } catch (err) {
+        console.error("Load draft failed", err)
+      } finally {
+        setIsLoadingDraft(false)
+      }
+    }
+
+    loadDraft()
   }, [searchParams])
+
+  const upsertDraft = useCallback(async (): Promise<string | null> => {
+    const payload = buildDraftPayload()
+    if (draftId) {
+      const result = await apiPut(`/api/drafts/correspondence/${draftId}`, payload)
+      if (!result.success) throw new Error(result.error || "Failed to update draft")
+      return draftId
+    }
+    const result = await apiPost<{ draft_id: string }>("/api/drafts/correspondence", payload)
+    if (!result.success || !result.data?.draft_id) {
+      throw new Error(result.error || "Failed to create draft")
+    }
+    setDraftId(result.data.draft_id)
+    return result.data.draft_id
+  }, [buildDraftPayload, draftId])
   
   // Auto-save draft every 30 seconds
   useEffect(() => {
     const autoSaveTimer = setInterval(async () => {
       if (formData.correspondenceType || formData.subject) {
         try {
-          if (draftId) {
-            await apiPut(`/api/correspondences/${draftId}`, { ...formData, status: "draft" })
-            setLastSaved(new Date())
-          } else {
-            const result = await apiPost<{ id: string }>("/api/correspondences", { ...formData, status: "draft" })
-            if (result.success && result.data?.id) {
-              setDraftId(result.data.id)
-              setLastSaved(new Date())
-            }
-          }
+          await upsertDraft()
+          setLastSaved(new Date())
         } catch (e) {
           console.error("Auto-save failed", e)
         }
@@ -180,27 +229,16 @@ function CorrespondencePageContent() {
     
     return () => clearInterval(autoSaveTimer)
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentStep, draftId, formData])
+  }, [currentStep, formData, upsertDraft])
   
   // Manual save draft
   const handleSaveDraft = useCallback(async () => {
     setIsSavingDraft(true)
     setSaveMessage(null)
     try {
-      if (draftId) {
-        await apiPut(`/api/correspondences/${draftId}`, { ...formData, status: "draft" })
-        setLastSaved(new Date())
-        setSaveMessage({ type: 'success', text: `Draft saved successfully!` })
-      } else {
-        const result = await apiPost<{ id: string }>("/api/correspondences", { ...formData, status: "draft" })
-        if (result.success && result.data?.id) {
-          setDraftId(result.data.id)
-          setLastSaved(new Date())
-          setSaveMessage({ type: 'success', text: `Draft saved successfully!` })
-        } else {
-          throw new Error(result.error || "Failed to save draft")
-        }
-      }
+      await upsertDraft()
+      setLastSaved(new Date())
+      setSaveMessage({ type: 'success', text: `Draft saved successfully!` })
     } catch (e) {
       console.error("Save draft failed", e)
       setSaveMessage({ type: 'error', text: 'Failed to save draft. Please try again.' })
@@ -208,7 +246,7 @@ function CorrespondencePageContent() {
       setTimeout(() => setSaveMessage(null), 5000)
       setIsSavingDraft(false)
     }
-  }, [formData, draftId])
+  }, [upsertDraft])
 
   const updateFormData = (field: string, value: string | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }))
@@ -242,17 +280,14 @@ function CorrespondencePageContent() {
     
     try {
       if (draftId) {
-        // Update draft first, then submit
-        await apiPut(`/api/correspondences/${draftId}`, { ...formData, status: "draft" })
-        const result = await apiPut<{ transaction_number: string }>(`/api/correspondences/${draftId}/submit`, {})
-        if (!result.success) throw new Error(result.error || "Submission failed")
-        setTransactionNumber(result.data?.transaction_number || `COR-${Date.now().toString(36).toUpperCase()}`)
-      } else {
-        // Direct submit
-        const result = await apiPost<{ transaction_number: string }>("/api/correspondences", { ...formData, status: "submitted" })
-        if (!result.success) throw new Error(result.error || "Submission failed")
-        setTransactionNumber(result.data?.transaction_number || `COR-${Date.now().toString(36).toUpperCase()}`)
+        await upsertDraft()
       }
+      const result = await apiPost<{ transaction_number: string }>("/api/correspondences", {
+        ...formData,
+        status: "submitted",
+      })
+      if (!result.success) throw new Error(result.error || "Submission failed")
+      setTransactionNumber(result.data?.transaction_number || `COR-${Date.now().toString(36).toUpperCase()}`)
       setIsSubmitted(true)
     } catch (error) {
       console.error('[v0] Submission failed:', error)

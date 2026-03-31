@@ -27,7 +27,7 @@ import { Progress } from "@/components/ui/progress"
 import { AskRex } from "@/components/ask-rex"
 import Link from "next/link"
 import { MINISTRIES_DEPARTMENTS_AGENCIES } from "@/lib/constants"
-import { apiPost, apiPut } from "@/lib/api-client"
+import { apiGet, apiPost, apiPut } from "@/lib/api-client"
 import { validateOriginalContract, type OriginalContractData, type ValidationResult } from "@/lib/actions/contract-validation-actions"
 import { ContractsSubmitGuard } from "@/components/contracts-submit-guard"
 import { RequireAuthGuard } from "@/components/require-auth-guard"
@@ -222,6 +222,14 @@ const REQUIRED_DOCUMENTS = {
 }
 
 function ContractsPageContent() {
+  type ContractDraftApiRow = {
+    draft_id: string
+    form_data: string
+    current_step: number
+    total_steps: number
+    progress_percentage: number
+  }
+
   const [currentStep, setCurrentStep] = useState(0)
   const [formData, setFormData] = useState({
     // Contract Classification
@@ -290,27 +298,68 @@ function ContractsPageContent() {
   const [originalContractData, setOriginalContractData] = useState<OriginalContractData | null>(null)
   
   const searchParams = useSearchParams()
+
+  const buildDraftPayload = useCallback(() => {
+    return {
+      draft_name: formData.contractTitle?.trim() || null,
+      form_data: formData,
+      current_step: currentStep + 1,
+      total_steps: STEPS.length,
+      progress_percentage: Math.round(((currentStep + 1) / STEPS.length) * 100),
+    }
+  }, [formData, currentStep])
   
   // Load draft if URL has draft parameter
   useEffect(() => {
-    // TODO: Load draft from backend if needed
+    const draftParam = searchParams.get("draft")
+    if (!draftParam) return
+
+    const loadDraft = async () => {
+      setIsLoadingDraft(true)
+      try {
+        const result = await apiGet<ContractDraftApiRow>(`/api/drafts/contract/${draftParam}`)
+        if (!result.success || !result.data) {
+          throw new Error(result.error || "Failed to load draft")
+        }
+
+        const parsed = JSON.parse(result.data.form_data || "{}") as Record<string, unknown>
+        setFormData((prev) => ({ ...prev, ...parsed }))
+        setDraftId(result.data.draft_id)
+        if (typeof result.data.current_step === "number" && result.data.current_step > 0) {
+          setCurrentStep(Math.min(result.data.current_step - 1, STEPS.length - 1))
+        }
+      } catch (err) {
+        console.error("Load draft failed", err)
+      } finally {
+        setIsLoadingDraft(false)
+      }
+    }
+
+    loadDraft()
   }, [searchParams])
+
+  const upsertDraft = useCallback(async (): Promise<string | null> => {
+    const payload = buildDraftPayload()
+    if (draftId) {
+      const result = await apiPut(`/api/drafts/contract/${draftId}`, payload)
+      if (!result.success) throw new Error(result.error || "Failed to update draft")
+      return draftId
+    }
+    const result = await apiPost<{ draft_id: string }>("/api/drafts/contract", payload)
+    if (!result.success || !result.data?.draft_id) {
+      throw new Error(result.error || "Failed to create draft")
+    }
+    setDraftId(result.data.draft_id)
+    return result.data.draft_id
+  }, [buildDraftPayload, draftId])
   
   // Auto-save draft every 30 seconds when form data changes
   useEffect(() => {
     const autoSaveTimer = setInterval(async () => {
       if (formData.contractNature || formData.contractTitle) {
         try {
-          if (draftId) {
-            await apiPut(`/api/contracts/${draftId}`, { ...formData, status: "draft" })
-            setLastSaved(new Date())
-          } else {
-            const result = await apiPost<{ id: string }>("/api/contracts", { ...formData, status: "draft" })
-            if (result.success && result.data?.id) {
-              setDraftId(result.data.id)
-              setLastSaved(new Date())
-            }
-          }
+          await upsertDraft()
+          setLastSaved(new Date())
         } catch (e) {
           console.error("Auto-save failed", e)
         }
@@ -319,28 +368,20 @@ function ContractsPageContent() {
     
     return () => clearInterval(autoSaveTimer)
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentStep, draftId, formData])
+  }, [currentStep, formData, upsertDraft])
   
   // Manual save draft function
   const handleSaveDraft = useCallback(async () => {
     setIsSavingDraft(true)
     try {
-      if (draftId) {
-        await apiPut(`/api/contracts/${draftId}`, { ...formData, status: "draft" })
-        setLastSaved(new Date())
-      } else {
-        const result = await apiPost<{ id: string }>("/api/contracts", { ...formData, status: "draft" })
-        if (result.success && result.data?.id) {
-          setDraftId(result.data.id)
-          setLastSaved(new Date())
-        }
-      }
+      await upsertDraft()
+      setLastSaved(new Date())
     } catch (e) {
       console.error("Save draft failed", e)
     } finally {
       setIsSavingDraft(false)
     }
-  }, [formData, draftId])
+  }, [upsertDraft])
   
   // Validate parent contract for renewals/supplementals
   const handleValidateParentContract = useCallback(async () => {
@@ -518,17 +559,15 @@ function ContractsPageContent() {
     
     try {
       if (draftId) {
-        // Update draft first, then submit
-        await apiPut(`/api/contracts/${draftId}`, { ...formData, status: "draft" })
-        const result = await apiPut<{ transaction_number: string }>(`/api/contracts/${draftId}/submit`, {})
-        if (!result.success) throw new Error(result.error || "Submission failed")
-        setTransactionNumber(result.data?.transaction_number || `CON-${Date.now().toString(36).toUpperCase()}`)
-      } else {
-        // Direct submit
-        const result = await apiPost<{ transaction_number: string }>("/api/contracts", { ...formData, status: "submitted" })
-        if (!result.success) throw new Error(result.error || "Submission failed")
-        setTransactionNumber(result.data?.transaction_number || `CON-${Date.now().toString(36).toUpperCase()}`)
+        await upsertDraft()
       }
+      // Always submit as a new contract submission; draft record stays as the same draft record.
+      const result = await apiPost<{ transaction_number: string }>("/api/contracts", {
+        ...formData,
+        status: "submitted",
+      })
+      if (!result.success) throw new Error(result.error || "Submission failed")
+      setTransactionNumber(result.data?.transaction_number || `CON-${Date.now().toString(36).toUpperCase()}`)
       setIsSubmitted(true)
     } catch (error) {
       console.error('[v0] Submission failed:', error)

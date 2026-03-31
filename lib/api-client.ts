@@ -61,3 +61,9 @@ export function apiPut<T = unknown>(path: string, body: unknown) {
     body: JSON.stringify(body),
   });
 }
+
+export function apiDelete<T = unknown>(path: string) {
+  return apiRequest<T>(path, {
+    method: 'DELETE',
+  });
+}

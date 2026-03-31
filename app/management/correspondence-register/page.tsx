@@ -47,8 +47,20 @@ import {
   AlertCircle,
   XCircle,
   MessageSquare,
-  X
+  CheckCircle,
+  X,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react"
+
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 // Sample correspondence data
 const CORRESPONDENCE_DATA = [
