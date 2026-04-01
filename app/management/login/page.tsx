@@ -10,7 +10,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Shield, Lock, AlertCircle, ArrowLeft, Eye, EyeOff } from "lucide-react"
-import { loginStaff } from "@/lib/actions/auth-actions"
+import { apiPost } from "@/lib/api-client"
+import { setAuth, type AuthUser } from "@/lib/auth"
 
 export default function ManagementLoginPage() {
   const [isLoading, setIsLoading] = useState(false)
@@ -27,22 +28,58 @@ export default function ManagementLoginPage() {
 
     try {
       const formData = new FormData(e.currentTarget)
-      // loginStaff will redirect on success, so this only returns on error
-      const result = await loginStaff(formData)
-      
-      // If we get here, it means there was an error (success redirects)
-      if (!result.success) {
+      const email = formData.get("email") as string
+      const password = formData.get("password") as string
+
+      const result = await apiPost<{
+        token: string
+        token_type?: string
+        expires_in?: number
+        admin: {
+          id: string
+          name: string
+          email: string
+          role: string
+          department: string | null
+          is_active: boolean
+        }
+      }>("/api/auth/admin-login", {
+        email,
+        password,
+      })
+
+      if (!result.success || !result.data) {
         setError(result.error || "Login failed. Please try again.")
         setIsLoading(false)
+        return
       }
+
+      const { token, admin } = result.data
+      const authUser: AuthUser = {
+        id: admin.id,
+        email: admin.email,
+        full_name: admin.name,
+        role: admin.role,
+        submitter_type: "management_user",
+        organization: null,
+        entity_number: "",
+        entity_id: null,
+        mda_id: null,
+        can_submit_contracts: true,
+        status: admin.is_active ? "active" : "inactive",
+        phone: null,
+        department: admin.department,
+      }
+
+      setAuth(token, authUser)
+      router.push(redirectTo)
     } catch (error) {
-      // NEXT_REDIRECT errors are expected - they mean success
-      // Other errors should be displayed
-      if (error instanceof Error && error.message !== 'NEXT_REDIRECT') {
+      if (error instanceof Error) {
+        setError(error.message || "An unexpected error occurred. Please try again.")
+      } else {
         setError("An unexpected error occurred. Please try again.")
-        setIsLoading(false)
       }
-      // If NEXT_REDIRECT, the redirect is happening, keep loading state
+      setIsLoading(false)
     }
   }
 

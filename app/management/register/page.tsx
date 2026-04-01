@@ -11,9 +11,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Textarea } from "@/components/ui/textarea"
-import { Shield, UserPlus, CheckCircle, ArrowLeft, Clock, AlertCircle } from "lucide-react"
+import { Shield, UserPlus, ArrowLeft, Clock, AlertCircle } from "lucide-react"
+import { apiPost } from "@/lib/api-client"
 
-// Management roles that can be requested
 const MANAGEMENT_ROLES = [
   { value: "SG", label: "Solicitor General (SG)" },
   { value: "DSG", label: "Deputy Solicitor General (DSG)" },
@@ -22,7 +22,7 @@ const MANAGEMENT_ROLES = [
   { value: "REGISTRY_CLERK", label: "Registry Clerk" },
   { value: "REGISTRY_SUPERVISOR", label: "Registry Supervisor" },
   { value: "SG_SECRETARY", label: "SG Secretary" },
-  { value: "ADMIN", label: "System Administrator" }
+  { value: "ADMIN", label: "System Administrator" },
 ]
 
 const DEPARTMENTS = [
@@ -32,12 +32,14 @@ const DEPARTMENTS = [
   { value: "registry", label: "Registry" },
   { value: "public_trustee", label: "Public Trustee" },
   { value: "executive", label: "Executive Office" },
-  { value: "admin", label: "Administration" }
+  { value: "admin", label: "Administration" },
 ]
 
 export default function ManagementRegisterPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
+  const [submitError, setSubmitError] = useState("")
+  const [submittedRequestNumber, setSubmittedRequestNumber] = useState("")
   const [formData, setFormData] = useState({
     firstName: "",
     middleName: "",
@@ -54,32 +56,40 @@ export default function ManagementRegisterPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setSubmitError("")
     setIsLoading(true)
-    
-    // Simulate submission (in production, this would send to the approval queue)
-    await new Promise(resolve => setTimeout(resolve, 2000))
-    
-    // Store pending registration request (demo only)
-    const requestId = `REQ-${Date.now().toString(36).toUpperCase()}`
-    const pendingRequest = {
-      requestId,
-      ...formData,
-      status: "PENDING_APPROVAL",
-      submittedAt: new Date().toISOString(),
-      approver: "ehenckel@lpacaribbean.com" // Temporary approver
+
+    const payload = {
+      firstName: formData.firstName,
+      middleName: formData.middleName,
+      lastName: formData.lastName,
+      email: formData.email,
+      phone: formData.phone,
+      requestedRoleCode: formData.role,
+      departmentCode: formData.department,
+      position: formData.role
+        ? MANAGEMENT_ROLES.find((r) => r.value === formData.role)?.label || "Staff"
+        : "Staff",
+      employeeId: formData.employeeId || null,
+      supervisorName: formData.supervisor || null,
+      supervisorEmail: null,
+      justification: formData.justification || null,
+      declarationAccepted: formData.terms,
     }
-    
-    // In production, this would be stored in a database
-    const existingRequests = JSON.parse(localStorage.getItem("sgc_pending_mgmt_registrations") || "[]")
-    existingRequests.push(pendingRequest)
-    localStorage.setItem("sgc_pending_mgmt_registrations", JSON.stringify(existingRequests))
-    
+
+    const result = await apiPost<{ request_number: string }>("/api/staff-requests", payload)
+    if (!result.success || !result.data) {
+      setSubmitError(result.error || "Could not submit request. Please try again.")
+      setIsLoading(false)
+      return
+    }
+
+    setSubmittedRequestNumber(result.data.request_number)
     setIsSubmitted(true)
     setIsLoading(false)
   }
 
   if (isSubmitted) {
-    const requestId = `REQ-${Date.now().toString(36).toUpperCase()}`
     return (
       <div className="flex min-h-screen flex-col bg-gradient-to-br from-primary/5 via-background to-accent/5">
         {/* Header */}
@@ -128,13 +138,13 @@ export default function ManagementRegisterPage() {
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Role Requested:</span>
                     <span className="font-medium text-foreground">
-                      {MANAGEMENT_ROLES.find(r => r.value === formData.role)?.label}
+                      {MANAGEMENT_ROLES.find((r) => r.value === formData.role)?.label}
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Department:</span>
                     <span className="font-medium text-foreground">
-                      {DEPARTMENTS.find(d => d.value === formData.department)?.label}
+                      {DEPARTMENTS.find((d) => d.value === formData.department)?.label}
                     </span>
                   </div>
                 </div>
@@ -143,7 +153,7 @@ export default function ManagementRegisterPage() {
               {/* Request Number */}
               <div className="rounded-xl bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 p-5 mb-6 text-center">
                 <p className="text-xs font-medium text-amber-700 uppercase tracking-wider mb-2">Request Reference</p>
-                <p className="text-2xl font-mono font-bold text-amber-800">{requestId}</p>
+                <p className="text-2xl font-mono font-bold text-amber-800">{submittedRequestNumber}</p>
                 <p className="text-xs text-amber-600 mt-2">Save this for your records</p>
               </div>
               
@@ -233,6 +243,12 @@ export default function ManagementRegisterPage() {
             
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">
+                {submitError && (
+                  <Alert variant="destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>{submitError}</AlertDescription>
+                  </Alert>
+                )}
                 {/* Personal Information */}
                 <div className="space-y-4">
                   <h3 className="text-sm font-semibold text-foreground border-b pb-2">Personal Information</h3>
@@ -399,7 +415,13 @@ export default function ManagementRegisterPage() {
                   type="submit" 
                   className="w-full bg-primary hover:bg-primary/90" 
                   size="lg" 
-                  disabled={isLoading || !formData.terms || formData.justification.length < 20}
+                  disabled={
+                    isLoading ||
+                    !formData.terms ||
+                    formData.justification.length < 20 ||
+                    !formData.role ||
+                    !formData.department
+                  }
                 >
                   {isLoading ? (
                     "Submitting Request..."

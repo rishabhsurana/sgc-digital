@@ -1,3 +1,6 @@
+"use client"
+
+import { useEffect, useMemo, useState } from "react"
 import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
 import { AskRex } from "@/components/ask-rex"
@@ -11,17 +14,28 @@ import {
   LogIn,
   UserPlus,
   Globe,
-  LayoutDashboard
+  LayoutDashboard,
+  LogOut
 } from "lucide-react"
-import { getSession } from "@/lib/actions/auth-actions"
+import { clearAuth, getToken, getUser, isManagementUser } from "@/lib/auth"
 
-export default async function ManagementLandingPage() {
-  const session = await getSession()
-  const isLoggedIn = session?.isStaff ?? false
+export default function ManagementLandingPage() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
+
+  useEffect(() => {
+    const token = getToken()
+    const user = getUser()
+    setIsLoggedIn(Boolean(token) && isManagementUser(user))
+  }, [])
 
   // Helper function to get the correct link based on login status
-  const getLink = (destination: string) => {
+  const getLink = useMemo(() => (destination: string) => {
     return isLoggedIn ? destination : `/management/login?redirect=${destination}`
+  }, [isLoggedIn])
+
+  const handleLogout = () => {
+    clearAuth()
+    window.location.href = "/management/login"
   }
 
   return (
@@ -91,12 +105,23 @@ export default async function ManagementLandingPage() {
                 </Button>
               </>
             ) : (
-              <Button size="sm" className="hidden sm:flex bg-emerald-600 hover:bg-emerald-700 text-white shadow-md" asChild>
-                <Link href="/management">
-                  <LayoutDashboard className="mr-2 h-4 w-4" />
-                  Go to Dashboard
-                </Link>
-              </Button>
+              <>
+                <Button size="sm" className="hidden sm:flex bg-emerald-600 hover:bg-emerald-700 text-white shadow-md" asChild>
+                  <Link href="/management">
+                    <LayoutDashboard className="mr-2 h-4 w-4" />
+                    Go to Dashboard
+                  </Link>
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="hidden sm:flex border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                  onClick={handleLogout}
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Logout
+                </Button>
+              </>
             )}
             
             {/* Mobile buttons */}
@@ -110,6 +135,11 @@ export default async function ManagementLandingPage() {
                 <Link href="/management/login">
                   <LogIn className="h-4 w-4" />
                 </Link>
+              </Button>
+            )}
+            {isLoggedIn && (
+              <Button variant="ghost" size="sm" className="sm:hidden" onClick={handleLogout}>
+                <LogOut className="h-4 w-4" />
               </Button>
             )}
           </div>

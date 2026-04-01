@@ -76,11 +76,10 @@ import {
   X
 } from "lucide-react"
 import { MINISTRIES_DEPARTMENTS_AGENCIES } from "@/lib/constants"
+import { apiGet, apiPut } from "@/lib/api-client"
 import { 
   getUsers, 
   getStaffRegistrationRequests, 
-  approveStaffRequest, 
-  rejectStaffRequest,
   updateUser,
   deleteUser,
   createUser,
@@ -143,16 +142,47 @@ export default function UserManagementPage() {
   const loadData = async () => {
     setIsLoading(true)
     try {
-      const [usersData, requestsData, rolesData, departmentsData] = await Promise.all([
+      const [usersData, rolesData, departmentsData, requestsResp] = await Promise.all([
         getUsers(),
-        getStaffRegistrationRequests(),
         getUserRoles(),
-        getDepartments()
+        getDepartments(),
+        apiGet<any[]>("/api/staff-requests")
       ])
       setUsers(usersData)
-      setStaffRequests(requestsData)
       setRoles(rolesData)
       setDepartments(departmentsData)
+      const apiRequests = requestsResp.success && Array.isArray(requestsResp.data) ? requestsResp.data : null
+      if (apiRequests) {
+        const mapped = apiRequests.map((row) => ({
+          requestId: row.request_id,
+          requestNumber: row.request_number,
+          firstName: row.first_name,
+          lastName: row.last_name,
+          email: row.email,
+          phone: row.phone ?? null,
+          departmentId: row.department_id,
+          position: row.position,
+          employeeId: row.employee_id ?? null,
+          supervisorName: row.supervisor_name ?? null,
+          supervisorEmail: row.supervisor_email ?? null,
+          requestedRoleId: row.requested_role_id,
+          justification: row.justification ?? null,
+          statusId: row.status_id,
+          reviewedBy: row.reviewed_by ?? null,
+          reviewedAt: row.reviewed_at ? new Date(row.reviewed_at) : null,
+          reviewNotes: row.review_notes ?? null,
+          approvedUserId: row.approved_user_id ?? null,
+          createdAt: new Date(row.created_at),
+          updatedAt: new Date(row.updated_at),
+          departmentName: departmentsData.find((d) => d.departmentId === row.department_id)?.departmentName,
+          requestedRoleName: rolesData.find((r) => r.roleId === row.requested_role_id)?.roleName,
+          statusName: row.status_id === 1 ? "Pending" : row.status_id === 2 ? "Approved" : row.status_id === 3 ? "Rejected" : "Unknown",
+        }))
+        setStaffRequests(mapped)
+      } else {
+        const fallback = await getStaffRegistrationRequests()
+        setStaffRequests(fallback)
+      }
     } catch (error) {
       console.error("Error loading data:", error)
     } finally {
@@ -233,7 +263,9 @@ export default function UserManagementPage() {
   const handleApproveRequest = async (request: StaffRegistrationRequest) => {
     setIsSubmitting(true)
     try {
-      const result = await approveStaffRequest(request.requestId, "current-admin-id", "Approved via User Management")
+      const result = await apiPut(`/api/staff-requests/${request.requestId}/approve`, {
+        reviewNotes: "Approved via User Management",
+      })
       if (result.success) {
         await loadData() // Refresh data
         setIsViewRequestOpen(false)
@@ -252,7 +284,9 @@ export default function UserManagementPage() {
     
     setIsSubmitting(true)
     try {
-      const result = await rejectStaffRequest(selectedRequest.requestId, "current-admin-id", rejectReason)
+      const result = await apiPut(`/api/staff-requests/${selectedRequest.requestId}/reject`, {
+        reviewNotes: rejectReason,
+      })
       if (result.success) {
         await loadData()
         setIsRejectDialogOpen(false)

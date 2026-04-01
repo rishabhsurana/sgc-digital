@@ -36,7 +36,7 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
 import { AskRex } from "@/components/ask-rex"
-import { logout } from "@/lib/actions/auth-actions"
+import { clearAuth, getToken, getUser, isManagementUser } from "@/lib/auth"
 
 export interface AdminSession {
   userId: string
@@ -261,26 +261,50 @@ const publicPages = ["/management/login", "/management/register", "/management/l
 
 export function ManagementLayoutClient({
   children,
-  adminSession,
 }: {
   children: React.ReactNode
-  adminSession: AdminSession | null
 }) {
   const pathname = usePathname()
   const router = useRouter()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [adminSession, setAdminSession] = useState<AdminSession | null>(null)
+  const [isAuthReady, setIsAuthReady] = useState(false)
   
   const isPublicPage = publicPages.includes(pathname)
 
+  useEffect(() => {
+    const token = getToken()
+    const user = getUser()
+    const isManagement = isManagementUser(user)
+
+    if (token && user && isManagement) {
+      const [firstName = user.full_name, ...rest] = user.full_name.split(" ")
+      setAdminSession({
+        userId: user.id,
+        email: user.email,
+        firstName,
+        lastName: rest.join(" "),
+        roleName: user.role,
+        departmentName: user.department || undefined,
+      })
+    } else {
+      setAdminSession(null)
+    }
+
+    setIsAuthReady(true)
+  }, [pathname])
+
   // Redirect to login if not authenticated on protected pages
   useEffect(() => {
+    if (!isAuthReady) return
     if (!isPublicPage && !adminSession) {
-      router.push("/management/landing")
+      router.push("/management/login")
     }
-  }, [isPublicPage, adminSession, router])
+  }, [isPublicPage, adminSession, isAuthReady, router])
 
-  const handleSignOut = async () => {
-    await logout()
+  const handleSignOut = () => {
+    clearAuth()
+    router.push("/management/login")
   }
 
   // Render public pages (login, register) without sidebar
@@ -289,7 +313,7 @@ export function ManagementLayoutClient({
   }
 
   // Show loading state while checking auth
-  if (!adminSession) {
+  if (!isAuthReady || !adminSession) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-muted/30">
         <div className="text-center">

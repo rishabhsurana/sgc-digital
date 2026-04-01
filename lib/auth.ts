@@ -42,6 +42,19 @@ export function isLoggedIn(): boolean {
   return !!getToken();
 }
 
+export function isManagementUser(user: AuthUser | null): boolean {
+  if (!user) return false;
+  if (user.submitter_type === 'management_user') return true;
+
+  const normalizedRole = String(user.role || '').toLowerCase();
+  return (
+    normalizedRole.includes('admin') ||
+    normalizedRole.includes('manager') ||
+    normalizedRole.includes('supervisor') ||
+    normalizedRole.includes('staff')
+  );
+}
+
 export function clearAuth(): void {
   localStorage.removeItem(TOKEN_KEY);
   localStorage.removeItem(USER_KEY);
