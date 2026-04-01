@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { Suspense, useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { useRouter, useSearchParams } from "next/navigation"
@@ -13,7 +13,7 @@ import { Shield, Lock, AlertCircle, ArrowLeft, Eye, EyeOff } from "lucide-react"
 import { apiPost } from "@/lib/api-client"
 import { setAuth, type AuthUser } from "@/lib/auth"
 
-export default function ManagementLoginPage() {
+function ManagementLoginContent() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
   const [showPassword, setShowPassword] = useState(false)
@@ -72,7 +72,9 @@ export default function ManagementLoginPage() {
       }
 
       setAuth(token, authUser)
-      router.push(redirectTo)
+      // Ensure localStorage write is visible before protected-layout auth guard executes.
+      await new Promise((resolve) => setTimeout(resolve, 150))
+      window.location.href = redirectTo
     } catch (error) {
       if (error instanceof Error) {
         setError(error.message || "An unexpected error occurred. Please try again.")
@@ -208,5 +210,13 @@ export default function ManagementLoginPage() {
         </div>
       </footer>
     </div>
+  )
+}
+
+export default function ManagementLoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-background" />}>
+      <ManagementLoginContent />
+    </Suspense>
   )
 }

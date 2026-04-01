@@ -164,7 +164,7 @@ function SidebarContent({
   return (
     <div className="flex h-full flex-col">
       {/* Header */}
-      <div className="flex h-16 items-center border-b border-primary/10 px-4">
+      <div className="flex h-20 items-center border-b border-primary/10 px-4 py-1">
         <Link href="/management" className="flex items-center gap-3">
           <Image
             src="/images/barbados-coat-of-arms.png"
@@ -267,8 +267,8 @@ export function ManagementLayoutClient({
   const pathname = usePathname()
   const router = useRouter()
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [adminSession, setAdminSession] = useState<AdminSession | null>(null)
-  const [isAuthReady, setIsAuthReady] = useState(false)
+  // undefined = checking auth, null = unauthenticated, object = authenticated
+  const [adminSession, setAdminSession] = useState<AdminSession | null | undefined>(undefined)
   
   const isPublicPage = publicPages.includes(pathname)
 
@@ -290,17 +290,15 @@ export function ManagementLayoutClient({
     } else {
       setAdminSession(null)
     }
-
-    setIsAuthReady(true)
   }, [pathname])
 
   // Redirect to login if not authenticated on protected pages
   useEffect(() => {
-    if (!isAuthReady) return
-    if (!isPublicPage && !adminSession) {
+    if (adminSession === undefined) return
+    if (!isPublicPage && adminSession === null) {
       router.push("/management/login")
     }
-  }, [isPublicPage, adminSession, isAuthReady, router])
+  }, [isPublicPage, adminSession, router])
 
   const handleSignOut = () => {
     clearAuth()
@@ -313,7 +311,7 @@ export function ManagementLayoutClient({
   }
 
   // Show loading state while checking auth
-  if (!isAuthReady || !adminSession) {
+  if (adminSession === undefined || adminSession === null) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-muted/30">
         <div className="text-center">
@@ -365,37 +363,49 @@ export function ManagementLayoutClient({
         <main className="flex-1">
           {/* Breadcrumbs */}
           <div className="border-b border-primary/10 bg-card px-6 py-3">
-            <Breadcrumb>
-              <BreadcrumbList>
-                <BreadcrumbItem>
-                  <BreadcrumbLink href="/management/landing" className="flex items-center gap-1 text-muted-foreground hover:text-primary">
-                    <Home className="h-3.5 w-3.5" />
-                    Home
-                  </BreadcrumbLink>
-                </BreadcrumbItem>
-                <BreadcrumbSeparator>
-                  <ChevronRight className="h-3.5 w-3.5" />
-                </BreadcrumbSeparator>
-                {getBreadcrumbs(pathname).map((crumb, index, arr) => (
-                  <React.Fragment key={crumb.href}>
-                    <BreadcrumbItem>
-                      {crumb.isCurrentPage ? (
-                        <BreadcrumbPage className="font-medium">{crumb.label}</BreadcrumbPage>
-                      ) : (
-                        <BreadcrumbLink href={crumb.href} className="text-muted-foreground hover:text-primary">
-                          {crumb.label}
-                        </BreadcrumbLink>
+            <div className="flex items-center justify-between gap-4">
+              <Breadcrumb>
+                <BreadcrumbList>
+                  <BreadcrumbItem>
+                    <BreadcrumbLink href="/management/landing" className="flex items-center gap-1 text-muted-foreground hover:text-primary">
+                      <Home className="h-3.5 w-3.5" />
+                      Home
+                    </BreadcrumbLink>
+                  </BreadcrumbItem>
+                  <BreadcrumbSeparator>
+                    <ChevronRight className="h-3.5 w-3.5" />
+                  </BreadcrumbSeparator>
+                  {getBreadcrumbs(pathname).map((crumb, index, arr) => (
+                    <React.Fragment key={crumb.href}>
+                      <BreadcrumbItem>
+                        {crumb.isCurrentPage ? (
+                          <BreadcrumbPage className="font-medium">{crumb.label}</BreadcrumbPage>
+                        ) : (
+                          <BreadcrumbLink href={crumb.href} className="text-muted-foreground hover:text-primary">
+                            {crumb.label}
+                          </BreadcrumbLink>
+                        )}
+                      </BreadcrumbItem>
+                      {index < arr.length - 1 && (
+                        <BreadcrumbSeparator>
+                          <ChevronRight className="h-3.5 w-3.5" />
+                        </BreadcrumbSeparator>
                       )}
-                    </BreadcrumbItem>
-                    {index < arr.length - 1 && (
-                      <BreadcrumbSeparator>
-                        <ChevronRight className="h-3.5 w-3.5" />
-                      </BreadcrumbSeparator>
-                    )}
-                  </React.Fragment>
-                ))}
-              </BreadcrumbList>
-            </Breadcrumb>
+                    </React.Fragment>
+                  ))}
+                </BreadcrumbList>
+              </Breadcrumb>
+
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-destructive hover:text-destructive"
+                onClick={handleSignOut}
+              >
+                <LogOut className="mr-2 h-4 w-4" />
+                Logout
+              </Button>
+            </div>
           </div>
           
           <div className="p-6">
