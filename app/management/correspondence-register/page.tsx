@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -52,6 +52,7 @@ import {
   ChevronLeft,
   ChevronRight
 } from "lucide-react"
+import { apiGet } from "@/lib/api-client"
 
 import {
   DropdownMenu,
@@ -93,20 +94,57 @@ export default function CorrespondenceRegisterPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
   const [typeFilter, setTypeFilter] = useState("all")
-  const [selectedItem, setSelectedItem] = useState<typeof CORRESPONDENCE_DATA[0] | null>(null)
+  const [selectedItem, setSelectedItem] = useState<any | null>(null)
+  const [rows, setRows] = useState<any[]>([])
+  const [page, setPage] = useState(1)
+  const [total, setTotal] = useState(0)
+  const [totalPages, setTotalPages] = useState(1)
+  const [loading, setLoading] = useState(false)
+  const limit = 20
 
-  const filteredData = CORRESPONDENCE_DATA.filter(item => {
-    const searchLower = searchQuery.toLowerCase().trim()
-    const matchesSearch = searchLower === '' ||
-      item.ref.toLowerCase().includes(searchLower) ||
-      item.subject.toLowerCase().includes(searchLower) ||
-      item.ministry.toLowerCase().includes(searchLower) ||
-      item.submitter.toLowerCase().includes(searchLower)
-    const matchesStatus = statusFilter === "all" || item.status === statusFilter
-    const matchesType = typeFilter === "all" || item.type === typeFilter
-    return matchesSearch && matchesStatus && matchesType
-  })
-  
+  const loadRegisters = async (targetPage = page) => {
+    setLoading(true)
+    const q = new URLSearchParams({ page: String(targetPage), limit: String(limit) })
+    if (searchQuery.trim()) q.set("search", searchQuery.trim())
+    if (statusFilter !== "all") q.set("status", statusFilter)
+
+    const res = await apiGet<any>(`/api/registers/correspondence?${q.toString()}`)
+    if (res.success && Array.isArray(res.data)) {
+      const pagination = (res as any).pagination ?? {}
+      setRows(res.data)
+      setTotal(pagination.total ?? res.data.length)
+      setTotalPages(pagination.totalPages ?? 1)
+    } else {
+      setRows([])
+      setTotal(0)
+      setTotalPages(1)
+    }
+    setLoading(false)
+  }
+
+  useEffect(() => {
+    void loadRegisters(1)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [statusFilter])
+
+  const filteredData = useMemo(
+    () =>
+      rows
+        .filter((item) => typeFilter === "all" || (item.correspondence_type ?? "") === typeFilter)
+        .map((item) => ({
+          id: item.register_id,
+          ref: item.reference_number,
+          type: item.correspondence_type ?? "-",
+          subject: item.subject ?? "-",
+          ministry: item.originating_mda ?? "-",
+          submitter: item.submitter_name ?? "-",
+          date: item.date_received ? String(item.date_received).slice(0, 10) : "-",
+          status: String(item.current_status_code ?? "pending").toLowerCase().replace(/_/g, "-"),
+          priority: String(item.priority_level ?? "medium").toLowerCase(),
+        })),
+    [rows, typeFilter]
+  )
+
   const isFiltered = searchQuery.trim() !== '' || statusFilter !== 'all' || typeFilter !== 'all'
 
   return (
@@ -124,7 +162,12 @@ export default function CorrespondenceRegisterPage() {
             </div>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" className="border-white/30 text-white hover:bg-white/10">
+            <Button
+              variant="outline"
+              size="sm"
+              className="border-white/30 text-white hover:bg-white/10"
+              onClick={() => void loadRegisters(page)}
+            >
               <RefreshCw className="mr-2 h-4 w-4" />
               Refresh
             </Button>
@@ -147,6 +190,12 @@ export default function CorrespondenceRegisterPage() {
                   placeholder="Search by reference, subject, ministry, or submitter..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      setPage(1)
+                      void loadRegisters(1)
+                    }
+                  }}
                   className="pl-10 pr-10"
                 />
                 {searchQuery && (
@@ -193,7 +242,7 @@ export default function CorrespondenceRegisterPage() {
             <div className="mt-4 pt-4 border-t flex items-center justify-between">
               <div className="flex items-center gap-2 text-sm">
                 <span className="text-muted-foreground">
-                  Showing <span className="font-semibold text-foreground">{filteredData.length}</span> of {CORRESPONDENCE_DATA.length} records
+                  Showing <span className="font-semibold text-foreground">{filteredData.length}</span> of {total} records
                 </span>
                 {searchQuery && (
                   <span className="text-muted-foreground">
@@ -208,6 +257,8 @@ export default function CorrespondenceRegisterPage() {
                   setSearchQuery('')
                   setStatusFilter('all')
                   setTypeFilter('all')
+                  setPage(1)
+                  void loadRegisters(1)
                 }}
                 className="text-muted-foreground hover:text-foreground"
               >
@@ -226,7 +277,7 @@ export default function CorrespondenceRegisterPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs font-medium text-amber-700">Pending</p>
-                <p className="text-2xl font-bold text-amber-900">{CORRESPONDENCE_DATA.filter(i => i.status === 'pending').length}</p>
+                <p className="text-2xl font-bold text-amber-900">{rows.filter(i => String(i.current_status_code ?? '').toLowerCase() === 'pending').length}</p>
               </div>
               <Clock className="h-8 w-8 text-amber-500" />
             </div>
@@ -237,7 +288,7 @@ export default function CorrespondenceRegisterPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs font-medium text-blue-700">Under Review</p>
-                <p className="text-2xl font-bold text-blue-900">{CORRESPONDENCE_DATA.filter(i => i.status === 'under-review').length}</p>
+                <p className="text-2xl font-bold text-blue-900">{rows.filter(i => String(i.current_status_code ?? '').toLowerCase() === 'under_review').length}</p>
               </div>
               <Eye className="h-8 w-8 text-blue-500" />
             </div>
@@ -248,7 +299,7 @@ export default function CorrespondenceRegisterPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs font-medium text-green-700">Completed</p>
-                <p className="text-2xl font-bold text-green-900">{CORRESPONDENCE_DATA.filter(i => i.status === 'completed').length}</p>
+                <p className="text-2xl font-bold text-green-900">{rows.filter(i => String(i.current_status_code ?? '').toLowerCase() === 'completed').length}</p>
               </div>
               <CheckCircle className="h-8 w-8 text-green-500" />
             </div>
@@ -259,7 +310,7 @@ export default function CorrespondenceRegisterPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs font-medium text-red-700">Rejected</p>
-                <p className="text-2xl font-bold text-red-900">{CORRESPONDENCE_DATA.filter(i => i.status === 'rejected').length}</p>
+                <p className="text-2xl font-bold text-red-900">{rows.filter(i => String(i.current_status_code ?? '').toLowerCase() === 'rejected').length}</p>
               </div>
               <XCircle className="h-8 w-8 text-red-500" />
             </div>
@@ -336,6 +387,13 @@ export default function CorrespondenceRegisterPage() {
                     </TableRow>
                   )
                 })}
+                {!loading && filteredData.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
+                      No correspondence found.
+                    </TableCell>
+                  </TableRow>
+                )}
               </TableBody>
             </Table>
           </div>
@@ -343,14 +401,32 @@ export default function CorrespondenceRegisterPage() {
           {/* Pagination */}
           <div className="flex items-center justify-between px-4 py-4 border-t">
             <p className="text-sm text-muted-foreground">
-              Showing {filteredData.length} of {CORRESPONDENCE_DATA.length} entries
+              Showing {filteredData.length} of {total} entries
             </p>
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" disabled>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={page <= 1 || loading}
+                onClick={() => {
+                  const nextPage = page - 1
+                  setPage(nextPage)
+                  void loadRegisters(nextPage)
+                }}
+              >
                 <ChevronLeft className="h-4 w-4" />
                 Previous
               </Button>
-              <Button variant="outline" size="sm">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={page >= totalPages || loading}
+                onClick={() => {
+                  const nextPage = page + 1
+                  setPage(nextPage)
+                  void loadRegisters(nextPage)
+                }}
+              >
                 Next
                 <ChevronRight className="h-4 w-4" />
               </Button>

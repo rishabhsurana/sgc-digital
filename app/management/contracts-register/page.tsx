@@ -1,7 +1,7 @@
 "use client"
 
-import { useState } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { useEffect, useMemo, useState } from "react"
+import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -47,10 +47,9 @@ import {
   ChevronRight,
   RefreshCw,
   DollarSign,
-  Building2,
-  Calendar,
   X
 } from "lucide-react"
+import { apiGet } from "@/lib/api-client"
 
 // Contract Categories per requirements
 const CONTRACT_CATEGORIES = {
@@ -249,20 +248,62 @@ export default function ContractsRegisterPage() {
   const [statusFilter, setStatusFilter] = useState("all")
   const [natureFilter, setNatureFilter] = useState("all")
   const [contractTypeFilter, setContractTypeFilter] = useState("all")
-  const [selectedItem, setSelectedItem] = useState<typeof CONTRACTS_DATA[0] | null>(null)
+  const [selectedItem, setSelectedItem] = useState<any | null>(null)
+  const [rows, setRows] = useState<any[]>([])
+  const [page, setPage] = useState(1)
+  const [total, setTotal] = useState(0)
+  const [totalPages, setTotalPages] = useState(1)
+  const [loading, setLoading] = useState(false)
+  const limit = 20
 
-  const filteredData = CONTRACTS_DATA.filter(item => {
-    const searchLower = searchQuery.toLowerCase().trim()
-    const matchesSearch = searchLower === '' ||
-      item.ref.toLowerCase().includes(searchLower) ||
-      item.subject.toLowerCase().includes(searchLower) ||
-      item.originatingMDA.toLowerCase().includes(searchLower) ||
-      item.contractor.toLowerCase().includes(searchLower)
-    const matchesStatus = statusFilter === "all" || item.status === statusFilter
-    const matchesNature = natureFilter === "all" || item.nature === natureFilter
-    const matchesContractType = contractTypeFilter === "all" || item.contractType === contractTypeFilter
-    return matchesSearch && matchesStatus && matchesNature && matchesContractType
-  })
+  const loadRegisters = async (targetPage = page) => {
+    setLoading(true)
+    const q = new URLSearchParams({ page: String(targetPage), limit: String(limit) })
+    if (searchQuery.trim()) q.set("search", searchQuery.trim())
+    if (statusFilter !== "all") q.set("status", statusFilter)
+
+    const res = await apiGet<any>(`/api/registers/contracts?${q.toString()}`)
+    if (res.success && Array.isArray(res.data)) {
+      const pagination = (res as any).pagination ?? {}
+      setRows(res.data)
+      setTotal(pagination.total ?? res.data.length)
+      setTotalPages(pagination.totalPages ?? 1)
+    } else {
+      setRows([])
+      setTotal(0)
+      setTotalPages(1)
+    }
+    setLoading(false)
+  }
+
+  useEffect(() => {
+    void loadRegisters(1)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [statusFilter])
+
+  const filteredData = useMemo(
+    () =>
+      rows
+        .filter((item) => natureFilter === "all" || (item.nature_of_contract ?? "") === natureFilter)
+        .filter((item) => contractTypeFilter === "all" || (item.contract_type ?? "") === contractTypeFilter)
+        .map((item) => ({
+          id: item.register_id,
+          ref: item.contract_number,
+          subject: item.subject ?? "-",
+          nature: item.nature_of_contract ?? "-",
+          category: item.category ?? "-",
+          contractType: item.contract_type ?? "-",
+          originatingMDA: item.originating_mda ?? "-",
+          contractor: item.contractor_name ?? "-",
+          value: Number(item.contract_value ?? 0),
+          currency: item.contract_currency ?? "BBD",
+          dateReceived: item.date_received ? String(item.date_received).slice(0, 10) : "-",
+          dateCompleted: item.date_completed ? String(item.date_completed).slice(0, 10) : null,
+          status: String(item.current_status_code ?? "pending").toLowerCase().replace(/_/g, "-"),
+          submittedBy: item.submitted_by_name ?? "-",
+        })),
+    [rows, natureFilter, contractTypeFilter]
+  )
 
   const isFiltered = searchQuery.trim() !== '' || statusFilter !== 'all' || natureFilter !== 'all' || contractTypeFilter !== 'all'
   const totalValue = filteredData.reduce((sum, item) => sum + item.value, 0)
@@ -282,7 +323,12 @@ export default function ContractsRegisterPage() {
             </div>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" className="border-white/30 text-white hover:bg-white/10">
+            <Button
+              variant="outline"
+              size="sm"
+              className="border-white/30 text-white hover:bg-white/10"
+              onClick={() => void loadRegisters(page)}
+            >
               <RefreshCw className="mr-2 h-4 w-4" />
               Refresh
             </Button>
@@ -305,6 +351,12 @@ export default function ContractsRegisterPage() {
                   placeholder="Search by reference, title, ministry, or contractor..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      setPage(1)
+                      void loadRegisters(1)
+                    }
+                  }}
                   className="pl-10 pr-10"
                 />
                 {searchQuery && (
@@ -360,7 +412,7 @@ export default function ContractsRegisterPage() {
             <div className="mt-4 pt-4 border-t flex items-center justify-between">
               <div className="flex items-center gap-2 text-sm">
                 <span className="text-muted-foreground">
-                  Showing <span className="font-semibold text-foreground">{filteredData.length}</span> of {CONTRACTS_DATA.length} contracts
+                  Showing <span className="font-semibold text-foreground">{filteredData.length}</span> of {total} contracts
                 </span>
                 {searchQuery && (
                   <span className="text-muted-foreground">
@@ -376,6 +428,8 @@ export default function ContractsRegisterPage() {
                   setStatusFilter('all')
                   setNatureFilter('all')
                   setContractTypeFilter('all')
+                  setPage(1)
+                  void loadRegisters(1)
                 }}
                 className="text-muted-foreground hover:text-foreground"
               >
@@ -394,7 +448,7 @@ export default function ContractsRegisterPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs font-medium text-amber-700">Pending</p>
-                <p className="text-2xl font-bold text-amber-900">{CONTRACTS_DATA.filter(i => i.status === 'pending').length}</p>
+                <p className="text-2xl font-bold text-amber-900">{rows.filter(i => String(i.current_status_code ?? '').toLowerCase() === 'pending').length}</p>
               </div>
               <Clock className="h-8 w-8 text-amber-500" />
             </div>
@@ -405,7 +459,7 @@ export default function ContractsRegisterPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs font-medium text-blue-700">Under Review</p>
-                <p className="text-2xl font-bold text-blue-900">{CONTRACTS_DATA.filter(i => i.status === 'under-review').length}</p>
+                <p className="text-2xl font-bold text-blue-900">{rows.filter(i => String(i.current_status_code ?? '').toLowerCase() === 'under_review').length}</p>
               </div>
               <Eye className="h-8 w-8 text-blue-500" />
             </div>
@@ -416,7 +470,7 @@ export default function ContractsRegisterPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs font-medium text-green-700">Approved</p>
-                <p className="text-2xl font-bold text-green-900">{CONTRACTS_DATA.filter(i => i.status === 'approved').length}</p>
+                <p className="text-2xl font-bold text-green-900">{rows.filter(i => String(i.current_status_code ?? '').toLowerCase() === 'approved').length}</p>
               </div>
               <CheckCircle className="h-8 w-8 text-green-500" />
             </div>
@@ -427,7 +481,7 @@ export default function ContractsRegisterPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs font-medium text-red-700">Rejected</p>
-                <p className="text-2xl font-bold text-red-900">{CONTRACTS_DATA.filter(i => i.status === 'rejected').length}</p>
+                <p className="text-2xl font-bold text-red-900">{rows.filter(i => String(i.current_status_code ?? '').toLowerCase() === 'rejected').length}</p>
               </div>
               <XCircle className="h-8 w-8 text-red-500" />
             </div>
@@ -526,6 +580,13 @@ export default function ContractsRegisterPage() {
                     </TableRow>
                   )
                 })}
+                {!loading && filteredData.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={10} className="text-center text-muted-foreground py-8">
+                      No contracts found.
+                    </TableCell>
+                  </TableRow>
+                )}
               </TableBody>
             </Table>
           </div>
@@ -533,14 +594,32 @@ export default function ContractsRegisterPage() {
           {/* Pagination */}
           <div className="flex items-center justify-between px-4 py-4 border-t">
             <p className="text-sm text-muted-foreground">
-              Showing {filteredData.length} of {CONTRACTS_DATA.length} entries
+              Showing {filteredData.length} of {total} entries
             </p>
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" disabled>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={page <= 1 || loading}
+                onClick={() => {
+                  const nextPage = page - 1
+                  setPage(nextPage)
+                  void loadRegisters(nextPage)
+                }}
+              >
                 <ChevronLeft className="h-4 w-4" />
                 Previous
               </Button>
-              <Button variant="outline" size="sm">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={page >= totalPages || loading}
+                onClick={() => {
+                  const nextPage = page + 1
+                  setPage(nextPage)
+                  void loadRegisters(nextPage)
+                }}
+              >
                 Next
                 <ChevronRight className="h-4 w-4" />
               </Button>
