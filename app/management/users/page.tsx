@@ -52,12 +52,10 @@ import {
 } from "@/components/ui/alert-dialog"
 import { 
   Search, 
-  Plus, 
   MoreHorizontal, 
   UserPlus, 
   Shield, 
   ShieldCheck, 
-  ShieldAlert,
   Mail,
   Building2,
   Calendar,
@@ -75,48 +73,132 @@ import {
   Loader2,
   X
 } from "lucide-react"
-import { MINISTRIES_DEPARTMENTS_AGENCIES } from "@/lib/constants"
-import { apiGet, apiPut } from "@/lib/api-client"
-import { 
-  getUsers, 
-  getStaffRegistrationRequests, 
-  updateUser,
-  deleteUser,
-  createUser,
-  getUserRoles,
-  getDepartments
-} from "@/lib/data/data-service"
-import type { UserProfile, StaffRegistrationRequest, UserRole, Department } from "@/lib/data/types"
+import { apiPut } from "@/lib/api-client"
+import type { StaffRegistrationRequest } from "@/lib/data/types"
+import {
+  createManagementUserApi,
+  createPortalUserApi,
+  deletePortalUserApi,
+  fetchAllPortalUsers,
+  fetchManagementUsers,
+  fetchMdasForSelect,
+  fetchStaffRequestOptions,
+  fetchStaffRequestsRaw,
+  mapPortalRow,
+  updateManagementUserApi,
+  updatePortalUserApi,
+  updatePortalUserStatusApi,
+  type ManagementUserApiRow,
+  type PortalUserRow,
+  type StaffRequestOptions,
+  type MdaOption,
+} from "@/lib/user-management-api"
 
-const STATUSES = [
-  { value: "active", label: "Active", color: "bg-green-100 text-green-800", statusId: 5 },
-  { value: "pending", label: "Pending", color: "bg-yellow-100 text-yellow-800", statusId: 1 },
-  { value: "inactive", label: "Inactive", color: "bg-gray-100 text-gray-800", statusId: 6 },
-  { value: "suspended", label: "Suspended", color: "bg-red-100 text-red-800", statusId: 4 }
+const PORTAL_STATUSES = [
+  { value: "active", label: "Active", color: "bg-green-100 text-green-800" },
+  { value: "pending", label: "Pending", color: "bg-yellow-100 text-yellow-800" },
+  { value: "inactive", label: "Inactive", color: "bg-gray-100 text-gray-800" },
+  { value: "suspended", label: "Suspended", color: "bg-red-100 text-red-800" },
 ]
+
+const PORTAL_ROLE_OPTIONS = [
+  { value: "submitter", label: "Submitter" },
+  { value: "reviewer", label: "Reviewer" },
+  { value: "user", label: "User" },
+  { value: "manager", label: "Manager" },
+  { value: "admin", label: "Admin" },
+  { value: "super_admin", label: "Super Admin" },
+]
+
+const SUBMITTER_TYPES = [
+  { value: "public", label: "Public" },
+  { value: "ministry", label: "Ministry" },
+  { value: "mda_staff", label: "MDA Staff" },
+  { value: "statutory_body", label: "Statutory body" },
+  { value: "attorney", label: "Attorney" },
+  { value: "other", label: "Other" },
+]
+
+const MANAGEMENT_ROLE_OPTIONS = [
+  { value: "manager", label: "Manager" },
+  { value: "admin", label: "Admin" },
+  { value: "super_admin", label: "Super Admin" },
+]
+
+function mapStaffRequestFromApi(
+  row: Record<string, unknown>,
+  options: StaffRequestOptions | null
+): StaffRegistrationRequest {
+  const departmentId = Number(row.department_id)
+  const requestedRoleId = Number(row.requested_role_id)
+  const statusId = Number(row.status_id)
+  const dept = options?.departments.find((d) => d.department_id === departmentId)
+  const role = options?.roles.find((r) => r.role_id === requestedRoleId)
+  return {
+    requestId: String(row.request_id ?? ""),
+    requestNumber: String(row.request_number ?? ""),
+    firstName: String(row.first_name ?? ""),
+    lastName: String(row.last_name ?? ""),
+    email: String(row.email ?? ""),
+    phone: row.phone != null ? String(row.phone) : null,
+    departmentId,
+    position: String(row.position ?? ""),
+    employeeId: row.employee_id != null ? String(row.employee_id) : null,
+    supervisorName: row.supervisor_name != null ? String(row.supervisor_name) : null,
+    supervisorEmail: row.supervisor_email != null ? String(row.supervisor_email) : null,
+    requestedRoleId,
+    justification: row.justification != null ? String(row.justification) : null,
+    statusId,
+    reviewedBy: row.reviewed_by != null ? String(row.reviewed_by) : null,
+    reviewedAt: row.reviewed_at ? new Date(String(row.reviewed_at)) : null,
+    reviewNotes: row.review_notes != null ? String(row.review_notes) : null,
+    approvedUserId: row.approved_user_id != null ? String(row.approved_user_id) : null,
+    createdAt: new Date(String(row.created_at ?? "")),
+    updatedAt: new Date(String(row.updated_at ?? row.created_at ?? "")),
+    departmentName: dept?.department_name,
+    requestedRoleName: role?.role_name,
+    statusName:
+      statusId === 1 ? "Pending" : statusId === 2 ? "Approved" : statusId === 3 ? "Rejected" : "Unknown",
+  }
+}
+
+function currentManagementJwtRole(): string | null {
+  if (typeof window === "undefined") return null
+  try {
+    const raw = localStorage.getItem("sgc_user")
+    if (!raw) return null
+    const u = JSON.parse(raw) as { role?: string }
+    return u.role ? String(u.role) : null
+  } catch {
+    return null
+  }
+}
 
 export default function UserManagementPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [roleFilter, setRoleFilter] = useState("all")
   const [statusFilter, setStatusFilter] = useState("all")
-  const [activeTab, setActiveTab] = useState("users")
-  
-  // Data state
-  const [users, setUsers] = useState<UserProfile[]>([])
+  const [activeTab, setActiveTab] = useState("portal")
+
+  const [portalUsers, setPortalUsers] = useState<PortalUserRow[]>([])
+  const [managementUsers, setManagementUsers] = useState<ManagementUserApiRow[]>([])
   const [staffRequests, setStaffRequests] = useState<StaffRegistrationRequest[]>([])
-  const [roles, setRoles] = useState<UserRole[]>([])
-  const [departments, setDepartments] = useState<Department[]>([])
+  const [mdas, setMdas] = useState<MdaOption[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [loadError, setLoadError] = useState<string | null>(null)
   
   // Dialog state
   const [isAddUserOpen, setIsAddUserOpen] = useState(false)
+  const [isAddMgmtUserOpen, setIsAddMgmtUserOpen] = useState(false)
   const [isEditUserOpen, setIsEditUserOpen] = useState(false)
+  const [isEditMgmtUserOpen, setIsEditMgmtUserOpen] = useState(false)
   const [isViewRequestOpen, setIsViewRequestOpen] = useState(false)
   const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   
   // Selected items
-  const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null)
+  const [selectedUser, setSelectedUser] = useState<PortalUserRow | null>(null)
+  const [selectedMgmtUser, setSelectedMgmtUser] = useState<ManagementUserApiRow | null>(null)
   const [selectedRequest, setSelectedRequest] = useState<StaffRegistrationRequest | null>(null)
   
   // Form state
@@ -129,9 +211,33 @@ export default function UserManagementPage() {
     lastName: "",
     email: "",
     phone: "",
-    departmentId: "",
+    password: "",
+    submitterType: "public",
+    mdaId: "",
+    department: "",
     position: "",
-    roleId: ""
+    role: "submitter",
+  })
+
+  const [newMgmtUserForm, setNewMgmtUserForm] = useState({
+    name: "",
+    email: "",
+    password: "",
+    role: "manager",
+    department: "",
+  })
+
+  const [editPortalForm, setEditPortalForm] = useState({
+    role: "submitter",
+    status: "active",
+    department: "",
+    phone: "",
+  })
+
+  const [editMgmtForm, setEditMgmtForm] = useState({
+    role: "manager",
+    department: "",
+    isActive: true,
   })
 
   // Load data on mount
@@ -141,120 +247,106 @@ export default function UserManagementPage() {
 
   const loadData = async () => {
     setIsLoading(true)
+    setLoadError(null)
     try {
-      const [usersData, rolesData, departmentsData, requestsResp] = await Promise.all([
-        getUsers(),
-        getUserRoles(),
-        getDepartments(),
-        apiGet<any[]>("/api/staff-requests")
+      const [portalRows, options, staffRaw, mgmtRows, mdaList] = await Promise.all([
+        fetchAllPortalUsers(),
+        fetchStaffRequestOptions(),
+        fetchStaffRequestsRaw(),
+        fetchManagementUsers(),
+        fetchMdasForSelect(),
       ])
-      setUsers(usersData)
-      setRoles(rolesData)
-      setDepartments(departmentsData)
-      const apiRequests = requestsResp.success && Array.isArray(requestsResp.data) ? requestsResp.data : null
-      if (apiRequests) {
-        const mapped = apiRequests.map((row) => ({
-          requestId: row.request_id,
-          requestNumber: row.request_number,
-          firstName: row.first_name,
-          lastName: row.last_name,
-          email: row.email,
-          phone: row.phone ?? null,
-          departmentId: row.department_id,
-          position: row.position,
-          employeeId: row.employee_id ?? null,
-          supervisorName: row.supervisor_name ?? null,
-          supervisorEmail: row.supervisor_email ?? null,
-          requestedRoleId: row.requested_role_id,
-          justification: row.justification ?? null,
-          statusId: row.status_id,
-          reviewedBy: row.reviewed_by ?? null,
-          reviewedAt: row.reviewed_at ? new Date(row.reviewed_at) : null,
-          reviewNotes: row.review_notes ?? null,
-          approvedUserId: row.approved_user_id ?? null,
-          createdAt: new Date(row.created_at),
-          updatedAt: new Date(row.updated_at),
-          departmentName: departmentsData.find((d) => d.departmentId === row.department_id)?.departmentName,
-          requestedRoleName: rolesData.find((r) => r.roleId === row.requested_role_id)?.roleName,
-          statusName: row.status_id === 1 ? "Pending" : row.status_id === 2 ? "Approved" : row.status_id === 3 ? "Rejected" : "Unknown",
-        }))
-        setStaffRequests(mapped)
-      } else {
-        const fallback = await getStaffRegistrationRequests()
-        setStaffRequests(fallback)
-      }
+      setPortalUsers(portalRows.map(mapPortalRow))
+      const opt = options
+      setStaffRequests(
+        staffRaw.map((row) => mapStaffRequestFromApi(row as Record<string, unknown>, opt))
+      )
+      setManagementUsers(mgmtRows)
+      setMdas(mdaList)
     } catch (error) {
       console.error("Error loading data:", error)
+      setLoadError(error instanceof Error ? error.message : "Failed to load users")
     } finally {
       setIsLoading(false)
     }
   }
 
-  // Filter users
-  const filteredUsers = users.filter(user => {
+  const portalRoleValues = Array.from(new Set(portalUsers.map((u) => u.role))).sort()
+
+  const filteredPortalUsers = portalUsers.filter((user) => {
     const searchLower = searchQuery.toLowerCase().trim()
     const fullName = `${user.firstName} ${user.lastName}`.toLowerCase()
-    const matchesSearch = searchLower === '' ||
-                          fullName.includes(searchLower) ||
-                          user.email.toLowerCase().includes(searchLower) ||
-                          (user.organizationName?.toLowerCase().includes(searchLower) ?? false)
-    const matchesRole = roleFilter === "all" || user.roleId.toString() === roleFilter
-    const matchesStatus = statusFilter === "all" || user.statusId.toString() === statusFilter
+    const matchesSearch =
+      searchLower === '' ||
+      fullName.includes(searchLower) ||
+      user.email.toLowerCase().includes(searchLower) ||
+      user.organizationLabel.toLowerCase().includes(searchLower)
+    const matchesRole = roleFilter === "all" || user.role === roleFilter
+    const matchesStatus = statusFilter === "all" || user.status === statusFilter
     return matchesSearch && matchesRole && matchesStatus
   })
 
-  const isFiltered = searchQuery.trim() !== '' || roleFilter !== 'all' || statusFilter !== 'all'
+  const isFiltered =
+    searchQuery.trim() !== '' || roleFilter !== 'all' || statusFilter !== 'all'
 
   // Filter pending requests
   const pendingRequests = staffRequests.filter(r => r.statusId === 1)
 
-  const getStatusBadge = (statusId: number) => {
-    const status = STATUSES.find(s => s.statusId === statusId)
+  const getPortalStatusBadge = (status: string) => {
+    const s = PORTAL_STATUSES.find((x) => x.value === status)
     return (
-      <Badge variant="outline" className={status?.color || "bg-gray-100"}>
-        {status?.label || "Unknown"}
+      <Badge variant="outline" className={s?.color || "bg-gray-100"}>
+        {s?.label || status || "Unknown"}
       </Badge>
     )
   }
 
-  const getRoleBadge = (roleId: number) => {
-    const role = roles.find(r => r.roleId === roleId)
-    const roleName = role?.roleName || "Unknown"
-    
-    if (roleId === 8) { // Super Admin
-      return (
-        <Badge className="bg-red-100 text-red-800">
-          <ShieldCheck className="h-3 w-3 mr-1" />
-          {roleName}
-        </Badge>
-      )
-    }
-    if (roleId === 7) { // Admin
+  const getPortalRoleBadge = (role: string) => {
+    const r = String(role || "").toLowerCase()
+    if (r === "super_admin" || r === "admin") {
       return (
         <Badge className="bg-purple-100 text-purple-800">
           <ShieldCheck className="h-3 w-3 mr-1" />
-          {roleName}
+          {role}
         </Badge>
       )
     }
-    if (roleId === 6) { // Supervisor
+    if (r === "manager" || r === "reviewer") {
       return (
         <Badge className="bg-blue-100 text-blue-800">
           <Shield className="h-3 w-3 mr-1" />
-          {roleName}
+          {role}
         </Badge>
       )
     }
-    if (roleId === 5) { // Staff
+    if (r === "submitter") {
+      return <Badge className="bg-slate-100 text-slate-800">{role}</Badge>
+    }
+    return <Badge variant="outline">{role || "—"}</Badge>
+  }
+
+  const getManagementRoleBadge = (role: string) => {
+    const r = String(role || "").toLowerCase()
+    if (r === "super_admin") {
       return (
-        <Badge className="bg-slate-100 text-slate-800">
-          {roleName}
+        <Badge className="bg-red-100 text-red-800">
+          <ShieldCheck className="h-3 w-3 mr-1" />
+          Super Admin
+        </Badge>
+      )
+    }
+    if (r === "admin") {
+      return (
+        <Badge className="bg-purple-100 text-purple-800">
+          <ShieldCheck className="h-3 w-3 mr-1" />
+          Admin
         </Badge>
       )
     }
     return (
-      <Badge variant="outline">
-        {roleName}
+      <Badge className="bg-blue-100 text-blue-800">
+        <Shield className="h-3 w-3 mr-1" />
+        Manager
       </Badge>
     )
   }
@@ -301,24 +393,22 @@ export default function UserManagementPage() {
     }
   }
 
-  // Handle update user status
-  const handleUpdateUserStatus = async (userId: string, newStatusId: number) => {
+  const handleUpdateUserStatus = async (userId: string, newStatus: string) => {
     try {
-      await updateUser(userId, { statusId: newStatusId })
-      await loadData()
+      const res = await updatePortalUserStatusApi(userId, newStatus)
+      if (res.success) await loadData()
     } catch (error) {
       console.error("Error updating user:", error)
     }
   }
 
-  // Handle delete user
   const handleDeleteUser = async () => {
     if (!selectedUser) return
-    
+
     setIsSubmitting(true)
     try {
-      const success = await deleteUser(selectedUser.userId)
-      if (success) {
+      const res = await deletePortalUserApi(selectedUser.id)
+      if (res.success) {
         await loadData()
         setIsDeleteDialogOpen(false)
         setSelectedUser(null)
@@ -330,33 +420,41 @@ export default function UserManagementPage() {
     }
   }
 
-  // Handle create user
-  const handleCreateUser = async () => {
-    if (!newUserForm.firstName || !newUserForm.lastName || !newUserForm.email) return
-    
+  const handleCreatePortalUser = async () => {
+    if (!newUserForm.firstName.trim() || !newUserForm.lastName.trim() || !newUserForm.email.trim())
+      return
+
     setIsSubmitting(true)
     try {
-      await createUser({
-        firstName: newUserForm.firstName,
-        lastName: newUserForm.lastName,
-        email: newUserForm.email,
-        phone: newUserForm.phone || null,
-        departmentId: newUserForm.departmentId ? parseInt(newUserForm.departmentId) : null,
-        position: newUserForm.position || null,
-        roleId: newUserForm.roleId ? parseInt(newUserForm.roleId) : 5,
-        statusId: 5 // Active
+      const mdaId = newUserForm.mdaId ? parseInt(newUserForm.mdaId, 10) : null
+      const res = await createPortalUserApi({
+        firstName: newUserForm.firstName.trim(),
+        lastName: newUserForm.lastName.trim(),
+        email: newUserForm.email.trim().toLowerCase(),
+        password: newUserForm.password.trim() || "TempPassword1!",
+        phone: newUserForm.phone.trim() || undefined,
+        role: newUserForm.role,
+        submitter_type: newUserForm.submitterType,
+        department: newUserForm.department.trim() || undefined,
+        mda_id: mdaId || undefined,
+        organizationId: mdaId || undefined,
       })
-      await loadData()
-      setIsAddUserOpen(false)
-      setNewUserForm({
-        firstName: "",
-        lastName: "",
-        email: "",
-        phone: "",
-        departmentId: "",
-        position: "",
-        roleId: ""
-      })
+      if (res.success) {
+        await loadData()
+        setIsAddUserOpen(false)
+        setNewUserForm({
+          firstName: "",
+          lastName: "",
+          email: "",
+          phone: "",
+          password: "",
+          submitterType: "public",
+          mdaId: "",
+          department: "",
+          position: "",
+          role: "submitter",
+        })
+      }
     } catch (error) {
       console.error("Error creating user:", error)
     } finally {
@@ -364,11 +462,105 @@ export default function UserManagementPage() {
     }
   }
 
-  // Stats
-  const totalUsers = users.length
-  const activeUsers = users.filter(u => u.statusId === 5).length
+  const openEditPortalUser = (user: PortalUserRow) => {
+    setSelectedUser(user)
+    setEditPortalForm({
+      role: user.role,
+      status: user.status,
+      department: user.department || "",
+      phone: user.phone || "",
+    })
+    setIsEditUserOpen(true)
+  }
+
+  const handleSavePortalUser = async () => {
+    if (!selectedUser) return
+    setIsSubmitting(true)
+    try {
+      const full_name = `${selectedUser.firstName} ${selectedUser.lastName}`.trim()
+      const res = await updatePortalUserApi(selectedUser.id, {
+        full_name,
+        role: editPortalForm.role,
+        status: editPortalForm.status,
+        department: editPortalForm.department.trim() || null,
+        phone: editPortalForm.phone.trim() || null,
+      })
+      if (res.success) {
+        await loadData()
+        setIsEditUserOpen(false)
+        setSelectedUser(null)
+      }
+    } catch (error) {
+      console.error("Error saving user:", error)
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const handleCreateManagementUser = async () => {
+    if (!newMgmtUserForm.name.trim() || !newMgmtUserForm.email.trim()) return
+    setIsSubmitting(true)
+    try {
+      const res = await createManagementUserApi({
+        email: newMgmtUserForm.email.trim().toLowerCase(),
+        name: newMgmtUserForm.name.trim(),
+        password: newMgmtUserForm.password.trim() || "TempPassword1!",
+        role: newMgmtUserForm.role,
+        department: newMgmtUserForm.department.trim() || null,
+      })
+      if (res.success) {
+        await loadData()
+        setIsAddMgmtUserOpen(false)
+        setNewMgmtUserForm({
+          name: "",
+          email: "",
+          password: "",
+          role: "manager",
+          department: "",
+        })
+      }
+    } catch (error) {
+      console.error("Error creating management user:", error)
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const openEditMgmtUser = (user: ManagementUserApiRow) => {
+    setSelectedMgmtUser(user)
+    setEditMgmtForm({
+      role: user.role,
+      department: user.department || "",
+      isActive: user.is_active,
+    })
+    setIsEditMgmtUserOpen(true)
+  }
+
+  const handleSaveMgmtUser = async () => {
+    if (!selectedMgmtUser) return
+    setIsSubmitting(true)
+    try {
+      const res = await updateManagementUserApi(selectedMgmtUser.id, {
+        role: editMgmtForm.role,
+        department: editMgmtForm.department.trim() || null,
+        is_active: editMgmtForm.isActive,
+      })
+      if (res.success) {
+        await loadData()
+        setIsEditMgmtUserOpen(false)
+        setSelectedMgmtUser(null)
+      }
+    } catch (error) {
+      console.error("Error saving management user:", error)
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const totalPortalUsers = portalUsers.length
+  const activePortalUsers = portalUsers.filter((u) => u.status === "active").length
   const pendingRequestsCount = pendingRequests.length
-  const adminUsers = users.filter(u => u.roleId === 7 || u.roleId === 8).length
+  const totalManagementUsers = managementUsers.filter((u) => u.is_active).length
 
   if (isLoading) {
     return (
@@ -438,6 +630,16 @@ export default function UserManagementPage() {
                   />
                 </div>
                 <div className="space-y-2">
+                  <Label htmlFor="portal-password">Password (optional)</Label>
+                  <Input
+                    id="portal-password"
+                    type="password"
+                    placeholder="Defaults to TempPassword1!"
+                    value={newUserForm.password}
+                    onChange={(e) => setNewUserForm((prev) => ({ ...prev, password: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
                   <Label htmlFor="phone">Phone (Optional)</Label>
                   <Input 
                     id="phone" 
@@ -448,22 +650,51 @@ export default function UserManagementPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="department">Department</Label>
-                  <Select 
-                    value={newUserForm.departmentId}
-                    onValueChange={(value) => setNewUserForm(prev => ({ ...prev, departmentId: value }))}
+                  <Label htmlFor="submitter-type">Submitter type</Label>
+                  <Select
+                    value={newUserForm.submitterType}
+                    onValueChange={(value) => setNewUserForm((prev) => ({ ...prev, submitterType: value }))}
                   >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select department" />
+                    <SelectTrigger id="submitter-type">
+                      <SelectValue placeholder="Type" />
                     </SelectTrigger>
                     <SelectContent>
-                      {departments.map((dept) => (
-                        <SelectItem key={dept.departmentId} value={dept.departmentId.toString()}>
-                          {dept.departmentName}
+                      {SUBMITTER_TYPES.map((t) => (
+                        <SelectItem key={t.value} value={t.value}>
+                          {t.label}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
+                </div>
+                {(newUserForm.submitterType === "ministry" || newUserForm.submitterType === "mda_staff") && (
+                  <div className="space-y-2">
+                    <Label htmlFor="mda">MDA / Ministry</Label>
+                    <Select
+                      value={newUserForm.mdaId}
+                      onValueChange={(value) => setNewUserForm((prev) => ({ ...prev, mdaId: value }))}
+                    >
+                      <SelectTrigger id="mda">
+                        <SelectValue placeholder="Select MDA" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {mdas.map((m) => (
+                          <SelectItem key={m.id} value={m.id.toString()}>
+                            {m.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+                <div className="space-y-2">
+                  <Label htmlFor="department-txt">Department (optional)</Label>
+                  <Input
+                    id="department-txt"
+                    placeholder="Unit or department name"
+                    value={newUserForm.department}
+                    onChange={(e) => setNewUserForm((prev) => ({ ...prev, department: e.target.value }))}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="position">Position (Optional)</Label>
@@ -475,18 +706,18 @@ export default function UserManagementPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="role">Role</Label>
+                  <Label htmlFor="role">Portal role</Label>
                   <Select 
-                    value={newUserForm.roleId}
-                    onValueChange={(value) => setNewUserForm(prev => ({ ...prev, roleId: value }))}
+                    value={newUserForm.role}
+                    onValueChange={(value) => setNewUserForm(prev => ({ ...prev, role: value }))}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger id="role">
                       <SelectValue placeholder="Select role" />
                     </SelectTrigger>
                     <SelectContent>
-                      {roles.filter(r => r.roleId >= 5).map((role) => (
-                        <SelectItem key={role.roleId} value={role.roleId.toString()}>
-                          {role.roleName}
+                      {PORTAL_ROLE_OPTIONS.map((role) => (
+                        <SelectItem key={role.value} value={role.value}>
+                          {role.label}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -494,8 +725,10 @@ export default function UserManagementPage() {
                 </div>
               </div>
               <DialogFooter>
-                <Button variant="outline" onClick={() => setIsAddUserOpen(false)}>Cancel</Button>
-                <Button onClick={handleCreateUser} disabled={isSubmitting}>
+                <Button variant="outline" onClick={() => setIsAddUserOpen(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={handleCreatePortalUser} disabled={isSubmitting}>
                   {isSubmitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                   Create User
                 </Button>
@@ -514,8 +747,8 @@ export default function UserManagementPage() {
                 <Users className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{totalUsers}</p>
-                <p className="text-xs text-muted-foreground">Total Users</p>
+                <p className="text-2xl font-bold">{totalPortalUsers}</p>
+                <p className="text-xs text-muted-foreground">Portal users</p>
               </div>
             </div>
           </CardContent>
@@ -527,8 +760,8 @@ export default function UserManagementPage() {
                 <UserCheck className="h-5 w-5 text-green-600" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{activeUsers}</p>
-                <p className="text-xs text-muted-foreground">Active Users</p>
+                <p className="text-2xl font-bold">{activePortalUsers}</p>
+                <p className="text-xs text-muted-foreground">Active portal</p>
               </div>
             </div>
           </CardContent>
@@ -553,8 +786,8 @@ export default function UserManagementPage() {
                 <ShieldCheck className="h-5 w-5 text-purple-600" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{adminUsers}</p>
-                <p className="text-xs text-muted-foreground">Administrators</p>
+                <p className="text-2xl font-bold">{totalManagementUsers}</p>
+                <p className="text-xs text-muted-foreground">Management admins</p>
               </div>
             </div>
           </CardContent>
@@ -562,15 +795,23 @@ export default function UserManagementPage() {
       </div>
 
       {/* Tabs for Users and Requests */}
+      {loadError ? (
+        <p className="text-sm text-destructive">{loadError}</p>
+      ) : null}
+
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-2 max-w-md">
-          <TabsTrigger value="users" className="flex items-center gap-2">
+        <TabsList className="grid w-full grid-cols-3 max-w-2xl">
+          <TabsTrigger value="portal" className="flex items-center gap-2">
             <Users className="h-4 w-4" />
-            Users
+            Portal users
+          </TabsTrigger>
+          <TabsTrigger value="management" className="flex items-center gap-2">
+            <ShieldCheck className="h-4 w-4" />
+            Management / Admin
           </TabsTrigger>
           <TabsTrigger value="requests" className="flex items-center gap-2">
             <ClipboardList className="h-4 w-4" />
-            Staff Requests
+            Staff requests
             {pendingRequestsCount > 0 && (
               <Badge variant="destructive" className="ml-1 h-5 w-5 p-0 text-xs flex items-center justify-center">
                 {pendingRequestsCount}
@@ -579,8 +820,8 @@ export default function UserManagementPage() {
           </TabsTrigger>
         </TabsList>
 
-        {/* Users Tab */}
-        <TabsContent value="users" className="space-y-4">
+        {/* Portal users tab */}
+        <TabsContent value="portal" className="space-y-4">
           {/* Filters */}
           <Card>
             <CardContent className="p-4">
@@ -609,9 +850,9 @@ export default function UserManagementPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Roles</SelectItem>
-                    {roles.map((role) => (
-                      <SelectItem key={role.roleId} value={role.roleId.toString()}>
-                        {role.roleName}
+                    {portalRoleValues.map((role) => (
+                      <SelectItem key={role} value={role}>
+                        {role}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -622,8 +863,8 @@ export default function UserManagementPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Statuses</SelectItem>
-                    {STATUSES.map((status) => (
-                      <SelectItem key={status.statusId} value={status.statusId.toString()}>
+                    {PORTAL_STATUSES.map((status) => (
+                      <SelectItem key={status.value} value={status.value}>
                         {status.label}
                       </SelectItem>
                     ))}
@@ -636,7 +877,7 @@ export default function UserManagementPage() {
                 <div className="mt-4 pt-4 border-t flex items-center justify-between">
                   <div className="flex items-center gap-2 text-sm">
                     <span className="text-muted-foreground">
-                      Showing <span className="font-semibold text-foreground">{filteredUsers.length}</span> of {users.length} users
+                      Showing <span className="font-semibold text-foreground">{filteredPortalUsers.length}</span> of {portalUsers.length} users
                     </span>
                     {searchQuery && (
                       <span className="text-muted-foreground">
@@ -667,7 +908,7 @@ export default function UserManagementPage() {
             <CardHeader>
               <CardTitle>Users</CardTitle>
               <CardDescription>
-                {filteredUsers.length} user{filteredUsers.length !== 1 ? "s" : ""} found
+                {filteredPortalUsers.length} user{filteredPortalUsers.length !== 1 ? "s" : ""} found
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -685,12 +926,13 @@ export default function UserManagementPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredUsers.map((user) => (
-                      <TableRow key={user.userId}>
+                    {filteredPortalUsers.map((user) => (
+                      <TableRow key={user.id}>
                         <TableCell>
                           <div className="flex items-center gap-3">
                             <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-primary font-medium">
-                              {user.firstName[0]}{user.lastName[0]}
+                              {(user.firstName[0] || "?").toUpperCase()}
+                              {(user.lastName[0] || "").toUpperCase()}
                             </div>
                             <div>
                               <p className="font-medium">{user.firstName} {user.lastName}</p>
@@ -704,11 +946,11 @@ export default function UserManagementPage() {
                         <TableCell>
                           <div className="flex items-center gap-1 text-sm">
                             <Building2 className="h-3 w-3 text-muted-foreground" />
-                            <span className="truncate max-w-[200px]">{user.organizationName || "N/A"}</span>
+                            <span className="truncate max-w-[200px]">{user.organizationLabel}</span>
                           </div>
                         </TableCell>
-                        <TableCell>{getRoleBadge(user.roleId)}</TableCell>
-                        <TableCell>{getStatusBadge(user.statusId)}</TableCell>
+                        <TableCell>{getPortalRoleBadge(user.role)}</TableCell>
+                        <TableCell>{getPortalStatusBadge(user.status)}</TableCell>
                         <TableCell>
                           <div className="flex items-center gap-1 text-sm text-muted-foreground">
                             <Calendar className="h-3 w-3" />
@@ -730,23 +972,23 @@ export default function UserManagementPage() {
                             <DropdownMenuContent align="end">
                               <DropdownMenuLabel>Actions</DropdownMenuLabel>
                               <DropdownMenuSeparator />
-                              <DropdownMenuItem onClick={() => { setSelectedUser(user); setIsEditUserOpen(true); }}>
+                              <DropdownMenuItem onClick={() => openEditPortalUser(user)}>
                                 <Edit className="h-4 w-4 mr-2" />
                                 Edit User
                               </DropdownMenuItem>
-                              {user.statusId !== 5 && (
-                                <DropdownMenuItem 
+                              {user.status !== "active" && (
+                                <DropdownMenuItem
                                   className="text-green-600"
-                                  onClick={() => handleUpdateUserStatus(user.userId, 5)}
+                                  onClick={() => handleUpdateUserStatus(user.id, "active")}
                                 >
                                   <UserCheck className="h-4 w-4 mr-2" />
                                   Activate
                                 </DropdownMenuItem>
                               )}
-                              {user.statusId === 5 && (
-                                <DropdownMenuItem 
+                              {user.status === "active" && (
+                                <DropdownMenuItem
                                   className="text-yellow-600"
-                                  onClick={() => handleUpdateUserStatus(user.userId, 6)}
+                                  onClick={() => handleUpdateUserStatus(user.id, "inactive")}
                                 >
                                   <UserX className="h-4 w-4 mr-2" />
                                   Deactivate
@@ -768,6 +1010,72 @@ export default function UserManagementPage() {
                   </TableBody>
                 </Table>
               </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="management" className="space-y-4">
+          <Card>
+            <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <CardTitle>Management &amp; admin accounts</CardTitle>
+                <CardDescription>
+                  Users who sign in at <span className="font-medium">/management/login</span> (separate from portal
+                  accounts).
+                </CardDescription>
+              </div>
+              <Button onClick={() => setIsAddMgmtUserOpen(true)}>
+                <UserPlus className="h-4 w-4 mr-2" />
+                Add management user
+              </Button>
+            </CardHeader>
+            <CardContent>
+              {managementUsers.length === 0 ? (
+                <p className="text-sm text-muted-foreground py-8 text-center">No management users found.</p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Role</TableHead>
+                        <TableHead>Department</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Created</TableHead>
+                        <TableHead className="w-[50px]" />
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {managementUsers.map((u) => (
+                        <TableRow key={u.id}>
+                          <TableCell className="font-medium">{u.name}</TableCell>
+                          <TableCell className="text-sm text-muted-foreground">{u.email}</TableCell>
+                          <TableCell>{getManagementRoleBadge(u.role)}</TableCell>
+                          <TableCell>{u.department || "—"}</TableCell>
+                          <TableCell>
+                            {u.is_active ? (
+                              <Badge className="bg-green-100 text-green-800">Active</Badge>
+                            ) : (
+                              <Badge variant="outline" className="text-muted-foreground">
+                                Inactive
+                              </Badge>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-sm text-muted-foreground">
+                            {new Date(u.created_at).toLocaleDateString()}
+                          </TableCell>
+                          <TableCell>
+                            <Button variant="ghost" size="icon" onClick={() => openEditMgmtUser(u)}>
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -881,6 +1189,242 @@ export default function UserManagementPage() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      <Dialog open={isAddMgmtUserOpen} onOpenChange={setIsAddMgmtUserOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add management user</DialogTitle>
+            <DialogDescription>
+              Creates an account for the management portal. Sign-in uses the same email and password at{" "}
+              <span className="font-medium">/management/login</span>.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="mgmt-name">Full name</Label>
+              <Input
+                id="mgmt-name"
+                value={newMgmtUserForm.name}
+                onChange={(e) => setNewMgmtUserForm((p) => ({ ...p, name: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="mgmt-email">Email</Label>
+              <Input
+                id="mgmt-email"
+                type="email"
+                value={newMgmtUserForm.email}
+                onChange={(e) => setNewMgmtUserForm((p) => ({ ...p, email: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="mgmt-password">Password (optional)</Label>
+              <Input
+                id="mgmt-password"
+                type="password"
+                placeholder="Defaults to TempPassword1!"
+                value={newMgmtUserForm.password}
+                onChange={(e) => setNewMgmtUserForm((p) => ({ ...p, password: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Role</Label>
+              <Select
+                value={newMgmtUserForm.role}
+                onValueChange={(value) => setNewMgmtUserForm((p) => ({ ...p, role: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {MANAGEMENT_ROLE_OPTIONS.filter(
+                    (r) =>
+                      r.value !== "super_admin" || currentManagementJwtRole() === "super_admin"
+                  ).map((r) => (
+                    <SelectItem key={r.value} value={r.value}>
+                      {r.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="mgmt-dept">Department (optional)</Label>
+              <Input
+                id="mgmt-dept"
+                value={newMgmtUserForm.department}
+                onChange={(e) => setNewMgmtUserForm((p) => ({ ...p, department: e.target.value }))}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsAddMgmtUserOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleCreateManagementUser} disabled={isSubmitting}>
+              {isSubmitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Create
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={isEditUserOpen}
+        onOpenChange={(open) => {
+          setIsEditUserOpen(open)
+          if (!open) setSelectedUser(null)
+        }}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit portal user</DialogTitle>
+            <DialogDescription>
+              {selectedUser ? `${selectedUser.firstName} ${selectedUser.lastName} · ${selectedUser.email}` : ""}
+            </DialogDescription>
+          </DialogHeader>
+          {selectedUser ? (
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label>Role</Label>
+                <Select
+                  value={editPortalForm.role}
+                  onValueChange={(value) => setEditPortalForm((p) => ({ ...p, role: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PORTAL_ROLE_OPTIONS.map((r) => (
+                      <SelectItem key={r.value} value={r.value}>
+                        {r.label}
+                      </SelectItem>
+                    ))}
+                    {selectedUser &&
+                    !PORTAL_ROLE_OPTIONS.some((r) => r.value === selectedUser.role) ? (
+                      <SelectItem value={selectedUser.role}>{selectedUser.role}</SelectItem>
+                    ) : null}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Status</Label>
+                <Select
+                  value={editPortalForm.status}
+                  onValueChange={(value) => setEditPortalForm((p) => ({ ...p, status: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PORTAL_STATUSES.map((s) => (
+                      <SelectItem key={s.value} value={s.value}>
+                        {s.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-phone">Phone</Label>
+                <Input
+                  id="edit-phone"
+                  value={editPortalForm.phone}
+                  onChange={(e) => setEditPortalForm((p) => ({ ...p, phone: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-dept">Department</Label>
+                <Input
+                  id="edit-dept"
+                  value={editPortalForm.department}
+                  onChange={(e) => setEditPortalForm((p) => ({ ...p, department: e.target.value }))}
+                />
+              </div>
+            </div>
+          ) : null}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditUserOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSavePortalUser} disabled={isSubmitting || !selectedUser}>
+              {isSubmitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Save
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={isEditMgmtUserOpen}
+        onOpenChange={(open) => {
+          setIsEditMgmtUserOpen(open)
+          if (!open) setSelectedMgmtUser(null)
+        }}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit management user</DialogTitle>
+            <DialogDescription>
+              {selectedMgmtUser ? `${selectedMgmtUser.name} · ${selectedMgmtUser.email}` : ""}
+            </DialogDescription>
+          </DialogHeader>
+          {selectedMgmtUser ? (
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label>Role</Label>
+                <Select
+                  value={editMgmtForm.role}
+                  onValueChange={(value) => setEditMgmtForm((p) => ({ ...p, role: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {MANAGEMENT_ROLE_OPTIONS.filter(
+                      (r) =>
+                        r.value !== "super_admin" || currentManagementJwtRole() === "super_admin"
+                    ).map((r) => (
+                      <SelectItem key={r.value} value={r.value}>
+                        {r.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-mgmt-dept">Department</Label>
+                <Input
+                  id="edit-mgmt-dept"
+                  value={editMgmtForm.department}
+                  onChange={(e) => setEditMgmtForm((p) => ({ ...p, department: e.target.value }))}
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  id="edit-mgmt-active"
+                  type="checkbox"
+                  className="h-4 w-4"
+                  checked={editMgmtForm.isActive}
+                  onChange={(e) => setEditMgmtForm((p) => ({ ...p, isActive: e.target.checked }))}
+                />
+                <Label htmlFor="edit-mgmt-active" className="font-normal cursor-pointer">
+                  Account active
+                </Label>
+              </div>
+            </div>
+          ) : null}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditMgmtUserOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSaveMgmtUser} disabled={isSubmitting || !selectedMgmtUser}>
+              {isSubmitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Save
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* View Request Dialog */}
       <Dialog open={isViewRequestOpen} onOpenChange={setIsViewRequestOpen}>
