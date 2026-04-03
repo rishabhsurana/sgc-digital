@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -33,8 +33,6 @@ import {
   Search,
   Download,
   Eye,
-  ChevronLeft,
-  ChevronRight,
   RefreshCw,
   FileText,
   Calendar,
@@ -42,181 +40,171 @@ import {
   FileImage,
   FileSpreadsheet,
   Paperclip,
-  ExternalLink,
-  X
+  X,
 } from "lucide-react"
+import { apiGet } from "@/lib/api-client"
+import { downloadDocumentAuthorized, formatBytes } from "@/lib/dashboard-api"
+import { ManagementPaginationBar } from "@/components/management/management-pagination-bar"
 
-// Sample correspondence history data
-const CORRESPONDENCE_HISTORY = [
-  { 
-    id: 1, 
-    dateReceived: "2026-03-05",
-    ref: "COR-2026-0234", 
-    subject: "Request for Legal Opinion on Property Acquisition",
-    ministry: "Ministry of Finance",
-    submitter: "John Smith",
-    submitterEmail: "john.smith@finance.gov.bb",
-    submitterPhone: "(246) 555-0101",
-    status: "Under Review",
-    documents: [
-      { name: "Legal_Opinion_Request.pdf", type: "pdf", size: "1.2 MB", uploadedAt: "2026-03-05 09:15" },
-      { name: "Property_Deed_Copy.pdf", type: "pdf", size: "2.4 MB", uploadedAt: "2026-03-05 09:15" },
-      { name: "Valuation_Report.pdf", type: "pdf", size: "856 KB", uploadedAt: "2026-03-05 09:20" },
-    ]
-  },
-  { 
-    id: 2, 
-    dateReceived: "2026-03-04",
-    ref: "COR-2026-0233", 
-    subject: "Crown Proceedings Act Matter - Case #45892",
-    ministry: "Ministry of Health",
-    submitter: "Mary Johnson",
-    submitterEmail: "mary.johnson@health.gov.bb",
-    submitterPhone: "(246) 555-0102",
-    status: "Pending",
-    documents: [
-      { name: "Case_Summary.docx", type: "doc", size: "458 KB", uploadedAt: "2026-03-04 11:30" },
-      { name: "Supporting_Evidence.pdf", type: "pdf", size: "3.1 MB", uploadedAt: "2026-03-04 11:35" },
-      { name: "Medical_Records.pdf", type: "pdf", size: "5.2 MB", uploadedAt: "2026-03-04 11:40" },
-      { name: "Witness_Statements.pdf", type: "pdf", size: "1.8 MB", uploadedAt: "2026-03-04 11:45" },
-    ]
-  },
-  { 
-    id: 3, 
-    dateReceived: "2026-03-04",
-    ref: "COR-2026-0232", 
-    subject: "Constitutional Amendment Review",
-    ministry: "Cabinet Office",
-    submitter: "Robert Williams",
-    submitterEmail: "robert.williams@cabinet.gov.bb",
-    submitterPhone: "(246) 555-0103",
-    status: "Completed",
-    documents: [
-      { name: "Draft_Amendment.pdf", type: "pdf", size: "2.1 MB", uploadedAt: "2026-03-04 08:00" },
-      { name: "Legal_Analysis.docx", type: "doc", size: "890 KB", uploadedAt: "2026-03-04 08:05" },
-    ]
-  },
-  { 
-    id: 4, 
-    dateReceived: "2026-03-03",
-    ref: "COR-2026-0231", 
-    subject: "Land Compensation Claim - Lot 456",
-    ministry: "Ministry of Housing",
-    submitter: "Patricia Davis",
-    submitterEmail: "patricia.davis@housing.gov.bb",
-    submitterPhone: "(246) 555-0104",
-    status: "Under Review",
-    documents: [
-      { name: "Compensation_Claim_Form.pdf", type: "pdf", size: "456 KB", uploadedAt: "2026-03-03 14:20" },
-      { name: "Land_Survey.pdf", type: "pdf", size: "8.9 MB", uploadedAt: "2026-03-03 14:25" },
-      { name: "Property_Photos.zip", type: "zip", size: "15.2 MB", uploadedAt: "2026-03-03 14:30" },
-      { name: "Valuation_Certificate.pdf", type: "pdf", size: "234 KB", uploadedAt: "2026-03-03 14:35" },
-      { name: "Ownership_Proof.pdf", type: "pdf", size: "1.1 MB", uploadedAt: "2026-03-03 14:40" },
-    ]
-  },
-  { 
-    id: 5, 
-    dateReceived: "2026-03-02",
-    ref: "COR-2026-0230", 
-    subject: "Trade Agreement Review - CARICOM Partnership",
-    ministry: "Ministry of Foreign Affairs",
-    submitter: "James Wilson",
-    submitterEmail: "james.wilson@foreignaffairs.gov.bb",
-    submitterPhone: "(246) 555-0105",
-    status: "Pending",
-    documents: [
-      { name: "Draft_Agreement.pdf", type: "pdf", size: "4.5 MB", uploadedAt: "2026-03-02 10:00" },
-      { name: "Terms_Analysis.xlsx", type: "excel", size: "1.2 MB", uploadedAt: "2026-03-02 10:05" },
-    ]
-  },
-  { 
-    id: 6, 
-    dateReceived: "2026-03-01",
-    ref: "COR-2026-0229", 
-    subject: "Employment Contract Template Review",
-    ministry: "Ministry of Labour",
-    submitter: "Elizabeth Brown",
-    submitterEmail: "elizabeth.brown@labour.gov.bb",
-    submitterPhone: "(246) 555-0106",
-    status: "Completed",
-    documents: [
-      { name: "Contract_Template.docx", type: "doc", size: "345 KB", uploadedAt: "2026-03-01 09:00" },
-      { name: "Legal_Requirements.pdf", type: "pdf", size: "678 KB", uploadedAt: "2026-03-01 09:05" },
-    ]
-  },
-  { 
-    id: 7, 
-    dateReceived: "2026-02-28",
-    ref: "COR-2026-0228", 
-    subject: "Judicial Review Application - Planning Decision",
-    ministry: "Ministry of Planning",
-    submitter: "Michael Taylor",
-    submitterEmail: "michael.taylor@planning.gov.bb",
-    submitterPhone: "(246) 555-0107",
-    status: "Under Review",
-    documents: [
-      { name: "Review_Application.pdf", type: "pdf", size: "2.3 MB", uploadedAt: "2026-02-28 15:00" },
-      { name: "Planning_Decision.pdf", type: "pdf", size: "1.5 MB", uploadedAt: "2026-02-28 15:05" },
-      { name: "Appeal_Grounds.docx", type: "doc", size: "567 KB", uploadedAt: "2026-02-28 15:10" },
-    ]
-  },
-  { 
-    id: 8, 
-    dateReceived: "2026-02-27",
-    ref: "COR-2026-0227", 
-    subject: "Regulatory Framework for Digital Services",
-    ministry: "Ministry of ICT",
-    submitter: "Sarah Anderson",
-    submitterEmail: "sarah.anderson@ict.gov.bb",
-    submitterPhone: "(246) 555-0108",
-    status: "Pending",
-    documents: [
-      { name: "Draft_Framework_v2.docx", type: "doc", size: "1.8 MB", uploadedAt: "2026-02-27 11:00" },
-      { name: "Stakeholder_Comments.pdf", type: "pdf", size: "3.4 MB", uploadedAt: "2026-02-27 11:10" },
-      { name: "Impact_Assessment.xlsx", type: "excel", size: "890 KB", uploadedAt: "2026-02-27 11:15" },
-    ]
-  },
-]
+type HistoryRow = {
+  id: string
+  dateReceived: string
+  ref: string
+  subject: string
+  ministry: string
+  submitter: string
+  submitterEmail: string
+  submitterPhone: string
+  status: string
+  statusLabel: string
+  correspondence_type?: string
+  document_count: number
+}
+
+type HistoryDoc = {
+  id: string
+  name: string
+  type: string
+  sizeBytes: number
+  mime_type: string
+  uploadedAt: string
+  document_type_label?: string
+}
+
+type DetailData = {
+  id: string
+  dateReceived: string
+  ref: string
+  subject: string
+  description?: string | null
+  ministry: string
+  department?: string
+  correspondence_type?: string
+  submitter: string
+  submitterEmail: string
+  submitterPhone: string
+  status: string
+  statusLabel: string
+  priority?: string
+  stage?: string | null
+  documents: HistoryDoc[]
+}
 
 const STATUS_CONFIG: Record<string, string> = {
-  "Pending": "bg-amber-100 text-amber-700 border-amber-200",
+  Pending: "bg-amber-100 text-amber-700 border-amber-200",
   "Under Review": "bg-blue-100 text-blue-700 border-blue-200",
-  "Completed": "bg-green-100 text-green-700 border-green-200",
-  "Rejected": "bg-red-100 text-red-700 border-red-200",
+  Completed: "bg-green-100 text-green-700 border-green-200",
+  Rejected: "bg-red-100 text-red-700 border-red-200",
 }
 
 const getFileIcon = (type: string) => {
   switch (type) {
-    case "pdf": return <FileText className="h-4 w-4 text-red-500" />
-    case "doc": return <File className="h-4 w-4 text-blue-500" />
-    case "excel": return <FileSpreadsheet className="h-4 w-4 text-green-500" />
-    case "image": return <FileImage className="h-4 w-4 text-purple-500" />
-    default: return <Paperclip className="h-4 w-4 text-gray-500" />
+    case "pdf":
+      return <FileText className="h-4 w-4 text-red-500" />
+    case "doc":
+      return <File className="h-4 w-4 text-blue-500" />
+    case "excel":
+      return <FileSpreadsheet className="h-4 w-4 text-green-500" />
+    case "image":
+      return <FileImage className="h-4 w-4 text-purple-500" />
+    default:
+      return <Paperclip className="h-4 w-4 text-gray-500" />
   }
 }
 
 export default function CorrespondenceHistoryPage() {
-  const [searchQuery, setSearchQuery] = useState("")
+  const [searchInput, setSearchInput] = useState("")
+  const [debouncedSearch, setDebouncedSearch] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
   const [dateFilter, setDateFilter] = useState("all")
-  const [selectedItem, setSelectedItem] = useState<typeof CORRESPONDENCE_HISTORY[0] | null>(null)
-
-  const filteredData = CORRESPONDENCE_HISTORY.filter(item => {
-    const searchLower = searchQuery.toLowerCase().trim()
-    const matchesSearch = searchLower === '' ||
-      item.ref.toLowerCase().includes(searchLower) ||
-      item.subject.toLowerCase().includes(searchLower) ||
-      item.ministry.toLowerCase().includes(searchLower) ||
-      item.submitter.toLowerCase().includes(searchLower)
-    const matchesStatus = statusFilter === "all" || item.status === statusFilter
-    return matchesSearch && matchesStatus
+  const [page, setPage] = useState(1)
+  const [rows, setRows] = useState<HistoryRow[]>([])
+  const [pagination, setPagination] = useState({ page: 1, limit: 20, total: 0, totalPages: 1 })
+  const [summary, setSummary] = useState({
+    total: 0,
+    pending: 0,
+    underReview: 0,
+    completed: 0,
+    rejected: 0,
   })
+  const [loading, setLoading] = useState(true)
+  const [listError, setListError] = useState<string | null>(null)
+  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [detail, setDetail] = useState<DetailData | null>(null)
+  const [detailLoading, setDetailLoading] = useState(false)
+  const [detailError, setDetailError] = useState<string | null>(null)
 
-  const isFiltered = searchQuery.trim() !== '' || statusFilter !== 'all' || dateFilter !== 'all'
+  const [limit, setLimit] = useState(20)
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(searchInput.trim()), 400)
+    return () => clearTimeout(t)
+  }, [searchInput])
+
+  useEffect(() => {
+    setPage(1)
+  }, [debouncedSearch, statusFilter, dateFilter])
+
+  const loadList = useCallback(async () => {
+    setLoading(true)
+    setListError(null)
+    const q = new URLSearchParams({
+      page: String(page),
+      limit: String(limit),
+    })
+    if (debouncedSearch) q.set("search", debouncedSearch)
+    if (statusFilter !== "all") q.set("status", statusFilter)
+    if (dateFilter !== "all") q.set("date_range", dateFilter)
+
+    const res = await apiGet<HistoryRow[]>(`/api/management/history/correspondences?${q.toString()}`)
+    const ext = res as {
+      pagination?: typeof pagination
+      summary?: typeof summary
+    }
+    if (res.success && Array.isArray(res.data)) {
+      setRows(res.data)
+      if (ext.pagination) setPagination(ext.pagination)
+      if (ext.summary) setSummary(ext.summary)
+    } else {
+      setRows([])
+      setListError(res.error || res.message || "Failed to load history.")
+    }
+    setLoading(false)
+  }, [page, limit, debouncedSearch, statusFilter, dateFilter])
+
+  useEffect(() => {
+    void loadList()
+  }, [loadList])
+
+  useEffect(() => {
+    if (!selectedId) {
+      setDetail(null)
+      return
+    }
+    let cancelled = false
+    setDetailLoading(true)
+    setDetailError(null)
+    void (async () => {
+      const res = await apiGet<DetailData>(`/api/management/history/correspondences/${selectedId}`)
+      if (cancelled) return
+      if (res.success && res.data && typeof res.data === "object") {
+        setDetail(res.data as DetailData)
+      } else {
+        setDetail(null)
+        setDetailError(res.error || res.message || "Could not load details.")
+      }
+      setDetailLoading(false)
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [selectedId])
+
+  const isFiltered =
+    searchInput.trim() !== "" || statusFilter !== "all" || dateFilter !== "all"
 
   return (
     <div className="space-y-6">
-      {/* Hero Banner */}
       <div className="rounded-xl bg-gradient-to-r from-teal-600 via-teal-700 to-slate-800 p-6 mb-6 text-white">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div className="flex items-start gap-4">
@@ -225,23 +213,26 @@ export default function CorrespondenceHistoryPage() {
             </div>
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold">Correspondence History</h1>
-              <p className="mt-1 text-white/80">View all submitted correspondence with documents and submitter details.</p>
+              <p className="mt-1 text-white/80">
+                View all submitted correspondence with documents and submitter details.
+              </p>
             </div>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" className="border-white/30 text-white hover:bg-white/10">
-              <RefreshCw className="mr-2 h-4 w-4" />
+            <Button
+              variant="outline"
+              size="sm"
+              className="border-white/30 text-white hover:bg-white/10"
+              onClick={() => void loadList()}
+              disabled={loading}
+            >
+              <RefreshCw className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`} />
               Refresh
-            </Button>
-            <Button size="sm" className="bg-white/20 hover:bg-white/30 text-white">
-              <Download className="mr-2 h-4 w-4" />
-              Export
             </Button>
           </div>
         </div>
       </div>
 
-      {/* Filters */}
       <Card className="border-primary/20">
         <CardContent className="pt-6">
           <div className="flex flex-col sm:flex-row gap-4">
@@ -250,13 +241,14 @@ export default function CorrespondenceHistoryPage() {
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   placeholder="Search by reference, subject, ministry, or submitter..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
                   className="pl-10 pr-10"
                 />
-                {searchQuery && (
+                {searchInput && (
                   <button
-                    onClick={() => setSearchQuery('')}
+                    type="button"
+                    onClick={() => setSearchInput("")}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                   >
                     <X className="h-4 w-4" />
@@ -271,10 +263,10 @@ export default function CorrespondenceHistoryPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="Pending">Pending</SelectItem>
-                  <SelectItem value="Under Review">Under Review</SelectItem>
-                  <SelectItem value="Completed">Completed</SelectItem>
-                  <SelectItem value="Rejected">Rejected</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="under_review">Under Review</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                  <SelectItem value="rejected">Rejected</SelectItem>
                 </SelectContent>
               </Select>
               <Select value={dateFilter} onValueChange={setDateFilter}>
@@ -290,17 +282,22 @@ export default function CorrespondenceHistoryPage() {
               </Select>
             </div>
           </div>
-          
-          {/* Search Results Feedback */}
+
+          {listError ? (
+            <p className="mt-4 text-sm text-destructive" role="alert">
+              {listError}
+            </p>
+          ) : null}
+
           {isFiltered && (
             <div className="mt-4 pt-4 border-t flex items-center justify-between">
               <div className="flex items-center gap-2 text-sm">
                 <span className="text-muted-foreground">
-                  Showing <span className="font-semibold text-foreground">{filteredData.length}</span> of {CORRESPONDENCE_HISTORY.length} records
+                  {pagination.total} record{pagination.total === 1 ? "" : "s"} match your filters
                 </span>
-                {searchQuery && (
+                {searchInput && (
                   <span className="text-muted-foreground">
-                    for &quot;<span className="font-medium text-primary">{searchQuery}</span>&quot;
+                    for &quot;<span className="font-medium text-primary">{searchInput}</span>&quot;
                   </span>
                 )}
               </div>
@@ -308,9 +305,9 @@ export default function CorrespondenceHistoryPage() {
                 variant="ghost"
                 size="sm"
                 onClick={() => {
-                  setSearchQuery('')
-                  setStatusFilter('all')
-                  setDateFilter('all')
+                  setSearchInput("")
+                  setStatusFilter("all")
+                  setDateFilter("all")
                 }}
                 className="text-muted-foreground hover:text-foreground"
               >
@@ -322,14 +319,15 @@ export default function CorrespondenceHistoryPage() {
         </CardContent>
       </Card>
 
-      {/* Summary Stats */}
       <div className="grid gap-4 sm:grid-cols-4">
         <Card className="bg-muted/50 border-primary/10">
           <CardContent className="pt-4 pb-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs font-medium text-muted-foreground">Total Records</p>
-                <p className="text-2xl font-bold text-foreground">{CORRESPONDENCE_HISTORY.length}</p>
+                <p className="text-2xl font-bold text-foreground">
+                  {loading ? "—" : summary.total.toLocaleString()}
+                </p>
               </div>
               <History className="h-8 w-8 text-primary/50" />
             </div>
@@ -340,7 +338,9 @@ export default function CorrespondenceHistoryPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs font-medium text-amber-700">Pending</p>
-                <p className="text-2xl font-bold text-amber-900">{CORRESPONDENCE_HISTORY.filter(i => i.status === 'Pending').length}</p>
+                <p className="text-2xl font-bold text-amber-900">
+                  {loading ? "—" : summary.pending}
+                </p>
               </div>
               <Calendar className="h-8 w-8 text-amber-500" />
             </div>
@@ -351,7 +351,9 @@ export default function CorrespondenceHistoryPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs font-medium text-blue-700">Under Review</p>
-                <p className="text-2xl font-bold text-blue-900">{CORRESPONDENCE_HISTORY.filter(i => i.status === 'Under Review').length}</p>
+                <p className="text-2xl font-bold text-blue-900">
+                  {loading ? "—" : summary.underReview}
+                </p>
               </div>
               <RefreshCw className="h-8 w-8 text-blue-500" />
             </div>
@@ -362,7 +364,9 @@ export default function CorrespondenceHistoryPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs font-medium text-green-700">Completed</p>
-                <p className="text-2xl font-bold text-green-900">{CORRESPONDENCE_HISTORY.filter(i => i.status === 'Completed').length}</p>
+                <p className="text-2xl font-bold text-green-900">
+                  {loading ? "—" : summary.completed}
+                </p>
               </div>
               <FileText className="h-8 w-8 text-green-500" />
             </div>
@@ -370,7 +374,6 @@ export default function CorrespondenceHistoryPage() {
         </Card>
       </div>
 
-      {/* Table */}
       <Card className="border-primary/20">
         <CardContent className="p-0">
           <div className="overflow-x-auto">
@@ -388,26 +391,54 @@ export default function CorrespondenceHistoryPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredData.map((item) => (
+                {loading && rows.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={8} className="text-center text-muted-foreground py-12">
+                      Loading…
+                    </TableCell>
+                  </TableRow>
+                ) : null}
+                {!loading && rows.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={8} className="text-center text-muted-foreground py-12">
+                      No correspondence found.
+                    </TableCell>
+                  </TableRow>
+                ) : null}
+                {rows.map((item) => (
                   <TableRow key={item.id} className="hover:bg-muted/30">
-                    <TableCell className="text-sm text-muted-foreground whitespace-nowrap">{item.dateReceived}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
+                      {item.dateReceived || "—"}
+                    </TableCell>
                     <TableCell className="font-mono text-sm font-medium text-primary">{item.ref}</TableCell>
-                    <TableCell className="max-w-[250px] truncate" title={item.subject}>{item.subject}</TableCell>
-                    <TableCell className="text-sm max-w-[150px] truncate" title={item.ministry}>{item.ministry}</TableCell>
-                    <TableCell className="text-sm">{item.submitter}</TableCell>
+                    <TableCell className="max-w-[250px] truncate" title={item.subject}>
+                      {item.subject}
+                    </TableCell>
+                    <TableCell className="text-sm max-w-[150px] truncate" title={item.ministry}>
+                      {item.ministry || "—"}
+                    </TableCell>
+                    <TableCell className="text-sm">{item.submitter || "—"}</TableCell>
                     <TableCell>
-                      <Badge className={STATUS_CONFIG[item.status]} variant="secondary">
-                        {item.status}
+                      <Badge
+                        className={STATUS_CONFIG[item.statusLabel] ?? "bg-muted"}
+                        variant="secondary"
+                      >
+                        {item.statusLabel}
                       </Badge>
                     </TableCell>
                     <TableCell>
                       <Badge variant="outline" className="font-mono">
                         <Paperclip className="mr-1 h-3 w-3" />
-                        {item.documents.length}
+                        {item.document_count}
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <Button variant="ghost" size="sm" className="h-8" onClick={() => setSelectedItem(item)}>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8"
+                        onClick={() => setSelectedId(item.id)}
+                      >
                         <Eye className="h-4 w-4 mr-1" />
                         View
                       </Button>
@@ -418,27 +449,31 @@ export default function CorrespondenceHistoryPage() {
             </Table>
           </div>
 
-          {/* Pagination */}
-          <div className="flex items-center justify-between px-4 py-4 border-t">
-            <p className="text-sm text-muted-foreground">
-              Showing {filteredData.length} of {CORRESPONDENCE_HISTORY.length} entries
-            </p>
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" disabled>
-                <ChevronLeft className="h-4 w-4" />
-                Previous
-              </Button>
-              <Button variant="outline" size="sm">
-                Next
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
+          <ManagementPaginationBar
+            page={page}
+            totalPages={pagination.totalPages}
+            total={pagination.total}
+            limit={limit}
+            loading={loading}
+            onPageChange={setPage}
+            onLimitChange={(n) => {
+              setLimit(n)
+              setPage(1)
+            }}
+          />
         </CardContent>
       </Card>
 
-      {/* Detail Dialog with Tabs */}
-      <Dialog open={!!selectedItem} onOpenChange={() => setSelectedItem(null)}>
+      <Dialog
+        open={!!selectedId}
+        onOpenChange={(open) => {
+          if (!open) {
+            setSelectedId(null)
+            setDetail(null)
+            setDetailError(null)
+          }
+        }}
+      >
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -446,93 +481,112 @@ export default function CorrespondenceHistoryPage() {
               Correspondence Details
             </DialogTitle>
             <DialogDescription>
-              Reference: {selectedItem?.ref}
+              {detail ? `Reference: ${detail.ref}` : "Loading…"}
             </DialogDescription>
           </DialogHeader>
-          
-          {selectedItem && (
+
+          {detailError ? (
+            <p className="text-sm text-destructive">{detailError}</p>
+          ) : null}
+
+          {detailLoading && !detail ? (
+            <p className="text-sm text-muted-foreground py-8 text-center">Loading details…</p>
+          ) : null}
+
+          {detail && (
             <Tabs defaultValue="details" className="flex-1 overflow-hidden flex flex-col">
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="details">Details</TabsTrigger>
-                <TabsTrigger value="documents">
-                  Documents ({selectedItem.documents.length})
-                </TabsTrigger>
+                <TabsTrigger value="documents">Documents ({detail.documents?.length ?? 0})</TabsTrigger>
               </TabsList>
-              
+
               <TabsContent value="details" className="flex-1 overflow-auto mt-4">
                 <div className="space-y-6">
-                  {/* Basic Info */}
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1">
                       <p className="text-xs font-medium text-muted-foreground">Date Received</p>
-                      <p className="font-medium">{selectedItem.dateReceived}</p>
+                      <p className="font-medium">{detail.dateReceived || "—"}</p>
                     </div>
                     <div className="space-y-1">
                       <p className="text-xs font-medium text-muted-foreground">Reference Number</p>
-                      <p className="font-mono font-medium text-primary">{selectedItem.ref}</p>
+                      <p className="font-mono font-medium text-primary">{detail.ref}</p>
                     </div>
                     <div className="space-y-1 col-span-2">
                       <p className="text-xs font-medium text-muted-foreground">Subject</p>
-                      <p className="font-medium">{selectedItem.subject}</p>
+                      <p className="font-medium">{detail.subject}</p>
                     </div>
+                    {detail.description ? (
+                      <div className="space-y-1 col-span-2">
+                        <p className="text-xs font-medium text-muted-foreground">Description</p>
+                        <p className="text-sm">{detail.description}</p>
+                      </div>
+                    ) : null}
                     <div className="space-y-1">
                       <p className="text-xs font-medium text-muted-foreground">Ministry/MDA</p>
-                      <p className="font-medium">{selectedItem.ministry}</p>
+                      <p className="font-medium">{detail.ministry || "—"}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-xs font-medium text-muted-foreground">Type</p>
+                      <p className="font-medium">{detail.correspondence_type || "—"}</p>
                     </div>
                     <div className="space-y-1">
                       <p className="text-xs font-medium text-muted-foreground">Status</p>
-                      <Badge className={STATUS_CONFIG[selectedItem.status]}>
-                        {selectedItem.status}
+                      <Badge className={STATUS_CONFIG[detail.statusLabel] ?? "bg-muted"}>
+                        {detail.statusLabel}
                       </Badge>
                     </div>
                   </div>
 
-                  {/* Submitter Info */}
                   <div className="border-t pt-4">
                     <h4 className="text-sm font-semibold mb-3">Submitter Information</h4>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-1">
                         <p className="text-xs font-medium text-muted-foreground">Name</p>
-                        <p className="font-medium">{selectedItem.submitter}</p>
+                        <p className="font-medium">{detail.submitter || "—"}</p>
                       </div>
                       <div className="space-y-1">
                         <p className="text-xs font-medium text-muted-foreground">Email</p>
-                        <p className="font-medium text-primary">{selectedItem.submitterEmail}</p>
+                        <p className="font-medium text-primary">{detail.submitterEmail || "—"}</p>
                       </div>
                       <div className="space-y-1">
                         <p className="text-xs font-medium text-muted-foreground">Phone</p>
-                        <p className="font-medium">{selectedItem.submitterPhone}</p>
+                        <p className="font-medium">{detail.submitterPhone || "—"}</p>
                       </div>
                     </div>
                   </div>
                 </div>
               </TabsContent>
-              
+
               <TabsContent value="documents" className="flex-1 overflow-auto mt-4">
                 <div className="space-y-3">
                   <p className="text-sm text-muted-foreground mb-4">
-                    {selectedItem.documents.length} document(s) uploaded by the applicant
+                    {(detail.documents?.length ?? 0)} document(s) on file
                   </p>
-                  {selectedItem.documents.map((doc, index) => (
-                    <div 
-                      key={index}
+                  {(detail.documents ?? []).map((doc) => (
+                    <div
+                      key={doc.id}
                       className="flex items-center justify-between p-3 bg-muted/50 rounded-lg border hover:bg-muted/70 transition-colors"
                     >
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-3 min-w-0">
                         {getFileIcon(doc.type)}
-                        <div>
-                          <p className="font-medium text-sm">{doc.name}</p>
+                        <div className="min-w-0">
+                          <p className="font-medium text-sm truncate">{doc.name}</p>
                           <p className="text-xs text-muted-foreground">
-                            {doc.size} - Uploaded {doc.uploadedAt}
+                            {formatBytes(Number(doc.sizeBytes) || 0)} ·{" "}
+                            {doc.uploadedAt
+                              ? new Date(doc.uploadedAt).toLocaleString()
+                              : "—"}
+                            {doc.document_type_label ? ` · ${doc.document_type_label}` : ""}
                           </p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Button variant="outline" size="sm">
-                          <Eye className="h-4 w-4 mr-1" />
-                          Preview
-                        </Button>
-                        <Button variant="outline" size="sm">
+                      <div className="flex items-center gap-2 shrink-0">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          type="button"
+                          onClick={() => void downloadDocumentAuthorized(doc.id, doc.name)}
+                        >
                           <Download className="h-4 w-4 mr-1" />
                           Download
                         </Button>

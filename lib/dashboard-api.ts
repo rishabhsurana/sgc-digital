@@ -1,4 +1,11 @@
-import { apiDelete, apiGet, apiPut, type ApiResponse } from '@/lib/api-client'
+import {
+  apiDelete,
+  apiGet,
+  apiPost,
+  apiPut,
+  handleUnauthorizedResponse,
+  type ApiResponse,
+} from '@/lib/api-client'
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001'
 
@@ -226,6 +233,7 @@ export async function uploadSubmissionDocuments(
     body: formData,
   })
 
+  handleUnauthorizedResponse(res.status)
   const json = await res.json().catch(() => ({}))
   if (!res.ok) {
     throw new Error((json as { message?: string }).message || 'Upload failed')
@@ -240,6 +248,7 @@ export async function downloadDocumentAuthorized(
   const res = await fetch(`${API_BASE}/api/documents/${documentId}/download`, {
     headers: token ? { Authorization: `Bearer ${token}` } : {},
   })
+  handleUnauthorizedResponse(res.status)
   if (!res.ok) {
     throw new Error('Download failed')
   }
@@ -254,6 +263,125 @@ export async function downloadDocumentAuthorized(
   URL.revokeObjectURL(url)
 }
 
+export interface ReportsFilters {
+  dateRange?: 'last-7' | 'last-30' | 'last-90' | 'last-year' | 'all-time'
+  ministry?: string
+  from?: string
+  to?: string
+}
+
+export interface ReportsSummaryStats {
+  totalSubmissions: number
+  submissionsChange: number
+  pendingReview: number
+  pendingChange: number
+  avgProcessingDays: number
+  processingChange: number
+  completionRate: number
+  completionChange: number
+  totalCorrespondences: number
+  totalContracts: number
+}
+
+export interface ReportsCorrespondenceType {
+  type: string
+  count: number
+  percentage: number
+}
+
+export interface ReportsContractsNatureRow {
+  type: string
+  count: number
+  value: number
+  avgValue: number
+  maxValue: number
+}
+
+export interface ReportsContractsNaturePayload {
+  rows: ReportsContractsNatureRow[]
+  totalValue: number
+  totalCount: number
+  averageValue: number
+  largestValue: number
+}
+
+export interface ReportsMinistryRow {
+  name: string
+  submissions: number
+  percentage: number
+}
+
+export interface ReportsStatusOverviewSummary {
+  pending: number
+  inProgress: number
+  completed: number
+  requiresAction: number
+  approved: number
+  rejected: number
+}
+
+export interface ReportsStatusOverviewPayload {
+  correspondence: Array<{ status: string; count: string | number }>
+  contracts: Array<{ status: string; count: string | number }>
+  summary: ReportsStatusOverviewSummary
+}
+
+export interface ReportsMonthlyTrend {
+  ym: string
+  month: string
+  correspondence: number
+  contracts: number
+}
+
+function buildReportsQuery(filters?: ReportsFilters): string {
+  const q = new URLSearchParams()
+  const dateRange = filters?.dateRange || 'last-30'
+  q.set('date_range', dateRange)
+  if (filters?.ministry && filters.ministry !== 'all') q.set('ministry', filters.ministry)
+  if (filters?.from) q.set('from', filters.from)
+  if (filters?.to) q.set('to', filters.to)
+  const s = q.toString()
+  return s ? `?${s}` : ''
+}
+
+export function fetchReportsSummary(filters?: ReportsFilters): Promise<ApiResponse<ReportsSummaryStats>> {
+  return apiGet(`/api/reports/summary${buildReportsQuery(filters)}`)
+}
+
+export function fetchReportsCorrespondenceByType(
+  filters?: ReportsFilters
+): Promise<ApiResponse<ReportsCorrespondenceType[]>> {
+  return apiGet(`/api/reports/correspondence-by-type${buildReportsQuery(filters)}`)
+}
+
+export function fetchReportsContractsByNature(
+  filters?: ReportsFilters
+): Promise<ApiResponse<ReportsContractsNaturePayload>> {
+  return apiGet(`/api/reports/contracts-by-nature${buildReportsQuery(filters)}`)
+}
+
+export function fetchReportsTopMinistries(
+  filters?: ReportsFilters
+): Promise<ApiResponse<ReportsMinistryRow[]>> {
+  return apiGet(`/api/reports/top-ministries${buildReportsQuery(filters)}`)
+}
+
+export function fetchReportsStatusOverview(
+  filters?: ReportsFilters
+): Promise<ApiResponse<ReportsStatusOverviewPayload>> {
+  return apiGet(`/api/reports/status-overview${buildReportsQuery(filters)}`)
+}
+
+export function fetchReportsMonthlyTrends(
+  filters?: ReportsFilters
+): Promise<ApiResponse<ReportsMonthlyTrend[]>> {
+  return apiGet(`/api/reports/monthly-trends${buildReportsQuery(filters)}`)
+}
+
+export function fetchReportsMinistries(filters?: ReportsFilters): Promise<ApiResponse<string[]>> {
+  return apiGet(`/api/reports/ministries${buildReportsQuery(filters)}`)
+}
+
 export function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
@@ -263,4 +391,72 @@ export function formatBytes(bytes: number): string {
 export function formatYmd(iso: string | undefined | null): string {
   if (!iso) return '—'
   return iso.slice(0, 10)
+}
+
+export interface ManagementMdaItem {
+  id: number
+  code: string
+  name: string
+  type: 'Ministry' | 'Department' | 'Agency'
+  status: 'active' | 'inactive'
+  correspondenceCount: number
+  contractsCount: number
+  usersCount: number
+  createdDate: string | null
+}
+
+export interface ManagementMdaListParams {
+  page?: number
+  limit?: number
+  search?: string
+  status?: 'all' | 'active' | 'inactive'
+  type?: 'all' | 'Ministry' | 'Department' | 'Agency'
+}
+
+export interface ManagementMdaListResponse extends ApiResponse<ManagementMdaItem[]> {
+  pagination?: {
+    page: number
+    limit: number
+    total: number
+    totalPages: number
+  }
+}
+
+export interface UpsertManagementMdaPayload {
+  code: string
+  name: string
+  type: 'Ministry' | 'Department' | 'Agency'
+  status?: 'active' | 'inactive'
+}
+
+function buildMdaQuery(params: ManagementMdaListParams): string {
+  const query = new URLSearchParams()
+  if (params.page) query.set('page', String(params.page))
+  if (params.limit) query.set('limit', String(params.limit))
+  if (params.search?.trim()) query.set('search', params.search.trim())
+  if (params.status && params.status !== 'all') query.set('status', params.status)
+  if (params.type && params.type !== 'all') query.set('type', params.type)
+  const value = query.toString()
+  return value ? `?${value}` : ''
+}
+
+export function fetchManagementMdas(
+  params: ManagementMdaListParams = {}
+): Promise<ManagementMdaListResponse> {
+  return apiGet<ManagementMdaItem[]>(`/api/management/mda${buildMdaQuery(params)}`) as Promise<ManagementMdaListResponse>
+}
+
+export function createManagementMda(payload: UpsertManagementMdaPayload): Promise<ApiResponse<ManagementMdaItem>> {
+  return apiPost<ManagementMdaItem>('/api/management/mda', payload)
+}
+
+export function updateManagementMda(
+  id: number,
+  payload: Partial<UpsertManagementMdaPayload>
+): Promise<ApiResponse<ManagementMdaItem>> {
+  return apiPut<ManagementMdaItem>(`/api/management/mda/${id}`, payload)
+}
+
+export function deleteManagementMda(id: number): Promise<ApiResponse<null>> {
+  return apiDelete<null>(`/api/management/mda/${id}`)
 }

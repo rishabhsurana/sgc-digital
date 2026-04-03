@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -20,7 +20,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog"
 import {
   DropdownMenu,
@@ -36,40 +35,126 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Building2, Plus, Search, MoreHorizontal, Edit, Trash2, Users, FileText, FileSignature } from "lucide-react"
-import { MINISTRIES_DEPARTMENTS_AGENCIES } from "@/lib/constants"
-
-// Sample MDA data with stats
-const MDA_DATA = MINISTRIES_DEPARTMENTS_AGENCIES.map((mda, index) => ({
-  id: index + 1,
-  code: mda.value,
-  name: mda.label,
-  type: mda.label.toLowerCase().includes("ministry") ? "Ministry" : 
-        mda.label.toLowerCase().includes("department") ? "Department" : "Agency",
-  status: index % 7 === 0 ? "inactive" : "active",
-  correspondenceCount: Math.floor(Math.random() * 50) + 5,
-  contractsCount: Math.floor(Math.random() * 20) + 1,
-  usersCount: Math.floor(Math.random() * 15) + 2,
-  createdDate: "2024-01-15"
-}))
+import {
+  createManagementMda,
+  deleteManagementMda,
+  fetchManagementMdas,
+  type ManagementMdaItem,
+  updateManagementMda,
+} from "@/lib/dashboard-api"
+import { ManagementPaginationBar } from "@/components/management/management-pagination-bar"
 
 export default function MDAManagementPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [typeFilter, setTypeFilter] = useState("all")
   const [statusFilter, setStatusFilter] = useState("all")
+  const [rows, setRows] = useState<ManagementMdaItem[]>([])
+  const [page, setPage] = useState(1)
+  const [limit, setLimit] = useState(20)
+  const [total, setTotal] = useState(0)
+  const [totalPages, setTotalPages] = useState(1)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState("")
 
-  const filteredData = MDA_DATA.filter(item => {
-    const matchesSearch = 
-      item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.code.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesType = typeFilter === "all" || item.type === typeFilter
-    const matchesStatus = statusFilter === "all" || item.status === statusFilter
-    return matchesSearch && matchesType && matchesStatus
-  })
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const [editing, setEditing] = useState<ManagementMdaItem | null>(null)
+  const [formCode, setFormCode] = useState("")
+  const [formName, setFormName] = useState("")
+  const [formType, setFormType] = useState<"Ministry" | "Department" | "Agency">("Ministry")
+  const [formStatus, setFormStatus] = useState<"active" | "inactive">("active")
+  const [submitting, setSubmitting] = useState(false)
 
-  const totalMDAs = MDA_DATA.length
-  const activeMDAs = MDA_DATA.filter(m => m.status === "active").length
-  const ministries = MDA_DATA.filter(m => m.type === "Ministry").length
-  const departments = MDA_DATA.filter(m => m.type === "Department").length
+  const loadMdas = useCallback(async (targetPage: number, targetLimit?: number) => {
+    setLoading(true)
+    setError("")
+    const res = await fetchManagementMdas({
+      page: targetPage,
+      limit: targetLimit ?? limit,
+      search: searchQuery,
+      status: statusFilter as "all" | "active" | "inactive",
+      type: typeFilter as "all" | "Ministry" | "Department" | "Agency",
+    })
+    if (res.success && Array.isArray(res.data)) {
+      setRows(res.data)
+      setTotal(res.pagination?.total ?? res.data.length)
+      setTotalPages(res.pagination?.totalPages ?? 1)
+      setPage(res.pagination?.page ?? targetPage)
+    } else {
+      setRows([])
+      setTotal(0)
+      setTotalPages(1)
+      setError(res.error || "Failed to load MDAs.")
+    }
+    setLoading(false)
+  }, [limit, searchQuery, statusFilter, typeFilter])
+
+  useEffect(() => {
+    void loadMdas(page, limit)
+  }, [page, limit, loadMdas])
+
+  const totalMDAs = total
+  const activeMDAs = useMemo(() => rows.filter((m) => m.status === "active").length, [rows])
+  const ministries = useMemo(() => rows.filter((m) => m.type === "Ministry").length, [rows])
+  const departments = useMemo(() => rows.filter((m) => m.type === "Department").length, [rows])
+
+  const openCreate = () => {
+    setEditing(null)
+    setFormCode("")
+    setFormName("")
+    setFormType("Ministry")
+    setFormStatus("active")
+    setDialogOpen(true)
+  }
+
+  const openEdit = (item: ManagementMdaItem) => {
+    setEditing(item)
+    setFormCode(item.code)
+    setFormName(item.name)
+    setFormType(item.type)
+    setFormStatus(item.status)
+    setDialogOpen(true)
+  }
+
+  const submitForm = async () => {
+    if (!formCode.trim() || !formName.trim()) {
+      setError("Code and name are required.")
+      return
+    }
+    setSubmitting(true)
+    setError("")
+    const payload = {
+      code: formCode.trim(),
+      name: formName.trim(),
+      type: formType,
+      status: formStatus,
+    }
+    const res = editing
+      ? await updateManagementMda(editing.id, payload)
+      : await createManagementMda(payload)
+    setSubmitting(false)
+    if (!res.success) {
+      setError(res.error || "Failed to save MDA.")
+      return
+    }
+    setDialogOpen(false)
+    void loadMdas(page, limit)
+  }
+
+  const onDelete = async (item: ManagementMdaItem) => {
+    const confirmed = window.confirm(`Delete ${item.name}?`)
+    if (!confirmed) return
+    setLoading(true)
+    const res = await deleteManagementMda(item.id)
+    if (!res.success) {
+      setError(res.error || "Failed to delete MDA.")
+      setLoading(false)
+      return
+    }
+    const isLastItemOnPage = rows.length === 1 && page > 1
+    const nextPage = isLastItemOnPage ? page - 1 : page
+    setPage(nextPage)
+    await loadMdas(nextPage, limit)
+  }
 
   return (
     <div className="space-y-6">
@@ -79,30 +164,30 @@ export default function MDAManagementPage() {
           <h1 className="text-2xl font-bold text-foreground">MDA Management</h1>
           <p className="text-muted-foreground">Manage Ministries, Departments, and Agencies</p>
         </div>
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button className="bg-primary">
-              <Plus className="mr-2 h-4 w-4" />
-              Add MDA
-            </Button>
-          </DialogTrigger>
+        <Button className="bg-primary" onClick={openCreate}>
+          <Plus className="mr-2 h-4 w-4" />
+          Add MDA
+        </Button>
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Add New MDA</DialogTitle>
-              <DialogDescription>Add a new Ministry, Department, or Agency to the system.</DialogDescription>
+              <DialogTitle>{editing ? "Edit MDA" : "Add New MDA"}</DialogTitle>
+              <DialogDescription>
+                {editing ? "Update ministry, department, or agency details." : "Add a new Ministry, Department, or Agency to the system."}
+              </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
                 <Label htmlFor="mdaCode">MDA Code</Label>
-                <Input id="mdaCode" placeholder="e.g., MOF" />
+                <Input id="mdaCode" placeholder="e.g., MOF" value={formCode} onChange={(e) => setFormCode(e.target.value)} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="mdaName">MDA Name</Label>
-                <Input id="mdaName" placeholder="e.g., Ministry of Finance" />
+                <Input id="mdaName" placeholder="e.g., Ministry of Finance" value={formName} onChange={(e) => setFormName(e.target.value)} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="mdaType">Type</Label>
-                <Select>
+                <Select value={formType} onValueChange={(v) => setFormType(v as "Ministry" | "Department" | "Agency")}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select type" />
                   </SelectTrigger>
@@ -113,7 +198,21 @@ export default function MDAManagementPage() {
                   </SelectContent>
                 </Select>
               </div>
-              <Button className="w-full">Add MDA</Button>
+              <div className="space-y-2">
+                <Label htmlFor="mdaStatus">Status</Label>
+                <Select value={formStatus} onValueChange={(v) => setFormStatus(v as "active" | "inactive")}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="inactive">Inactive</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button className="w-full" onClick={() => void submitForm()} disabled={submitting}>
+                {submitting ? "Saving..." : editing ? "Save Changes" : "Add MDA"}
+              </Button>
             </div>
           </DialogContent>
         </Dialog>
@@ -176,11 +275,17 @@ export default function MDAManagementPage() {
               <Input
                 placeholder="Search by name or code..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value)
+                  setPage(1)
+                }}
                 className="pl-10"
               />
             </div>
-            <Select value={typeFilter} onValueChange={setTypeFilter}>
+            <Select value={typeFilter} onValueChange={(v) => {
+              setTypeFilter(v)
+              setPage(1)
+            }}>
               <SelectTrigger className="w-[150px]">
                 <SelectValue placeholder="Type" />
               </SelectTrigger>
@@ -191,7 +296,10 @@ export default function MDAManagementPage() {
                 <SelectItem value="Agency">Agency</SelectItem>
               </SelectContent>
             </Select>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <Select value={statusFilter} onValueChange={(v) => {
+              setStatusFilter(v)
+              setPage(1)
+            }}>
               <SelectTrigger className="w-[150px]">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
@@ -202,6 +310,7 @@ export default function MDAManagementPage() {
               </SelectContent>
             </Select>
           </div>
+          {error ? <p className="mb-4 text-sm text-destructive">{error}</p> : null}
 
           <div className="rounded-md border overflow-x-auto">
             <Table>
@@ -218,7 +327,7 @@ export default function MDAManagementPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredData.slice(0, 15).map((item) => (
+                {rows.map((item) => (
                   <TableRow key={item.id} className="hover:bg-muted/30">
                     <TableCell className="font-mono text-sm font-medium">{item.code}</TableCell>
                     <TableCell className="max-w-[250px] truncate" title={item.name}>{item.name}</TableCell>
@@ -262,11 +371,11 @@ export default function MDAManagementPage() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => openEdit(item)}>
                             <Edit className="mr-2 h-4 w-4" />
                             Edit
                           </DropdownMenuItem>
-                          <DropdownMenuItem className="text-destructive">
+                          <DropdownMenuItem className="text-destructive" onClick={() => void onDelete(item)}>
                             <Trash2 className="mr-2 h-4 w-4" />
                             Delete
                           </DropdownMenuItem>
@@ -275,13 +384,29 @@ export default function MDAManagementPage() {
                     </TableCell>
                   </TableRow>
                 ))}
+                {!loading && rows.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={8} className="py-8 text-center text-muted-foreground">
+                      No MDAs found.
+                    </TableCell>
+                  </TableRow>
+                ) : null}
               </TableBody>
             </Table>
           </div>
 
-          <div className="mt-4 text-sm text-muted-foreground">
-            Showing {Math.min(15, filteredData.length)} of {filteredData.length} MDAs
-          </div>
+          <ManagementPaginationBar
+            page={page}
+            totalPages={totalPages}
+            total={total}
+            limit={limit}
+            loading={loading}
+            onPageChange={(nextPage) => setPage(nextPage)}
+            onLimitChange={(nextLimit) => {
+              setLimit(nextLimit)
+              setPage(1)
+            }}
+          />
         </CardContent>
       </Card>
     </div>

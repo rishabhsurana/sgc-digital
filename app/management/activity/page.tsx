@@ -1,8 +1,10 @@
 "use client"
 
+import { useCallback, useEffect, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { apiGet } from "@/lib/api-client"
 import {
   Clock,
   AlertTriangle,
@@ -67,9 +69,19 @@ const pendingActions = [
   },
 ]
 
-const recentActivity = [
+type ActivityItem = {
+  id: string
+  action: "approved" | "rejected" | "submitted" | "reviewed"
+  type: "correspondence" | "contract"
+  reference: string
+  subject: string
+  performedBy: string
+  timestamp: string
+}
+
+const RECENT_ACTIVITY_FALLBACK: ActivityItem[] = [
   {
-    id: 1,
+    id: "1",
     action: "approved",
     type: "correspondence",
     reference: "COR-2026-0157",
@@ -78,7 +90,7 @@ const recentActivity = [
     timestamp: "Today at 2:45 PM",
   },
   {
-    id: 2,
+    id: "2",
     action: "submitted",
     type: "contract",
     reference: "CON-2026-0089",
@@ -87,7 +99,7 @@ const recentActivity = [
     timestamp: "Today at 11:30 AM",
   },
   {
-    id: 3,
+    id: "3",
     action: "approved",
     type: "contract",
     reference: "CON-2026-0085",
@@ -96,7 +108,7 @@ const recentActivity = [
     timestamp: "Yesterday at 4:15 PM",
   },
   {
-    id: 4,
+    id: "4",
     action: "reviewed",
     type: "correspondence",
     reference: "COR-2026-0159",
@@ -105,7 +117,7 @@ const recentActivity = [
     timestamp: "Yesterday at 2:00 PM",
   },
   {
-    id: 5,
+    id: "5",
     action: "submitted",
     type: "correspondence",
     reference: "COR-2026-0161",
@@ -114,7 +126,7 @@ const recentActivity = [
     timestamp: "Yesterday at 10:45 AM",
   },
   {
-    id: 6,
+    id: "6",
     action: "rejected",
     type: "contract",
     reference: "CON-2026-0082",
@@ -123,7 +135,7 @@ const recentActivity = [
     timestamp: "Mar 3, 2026 at 3:30 PM",
   },
   {
-    id: 7,
+    id: "7",
     action: "approved",
     type: "correspondence",
     reference: "COR-2026-0155",
@@ -132,7 +144,7 @@ const recentActivity = [
     timestamp: "Mar 3, 2026 at 11:00 AM",
   },
   {
-    id: 8,
+    id: "8",
     action: "submitted",
     type: "contract",
     reference: "CON-2026-0088",
@@ -142,7 +154,68 @@ const recentActivity = [
   },
 ]
 
+function normalizeAction(action: string): ActivityItem["action"] {
+  const value = (action || "").toLowerCase()
+  if (value.includes("approv")) return "approved"
+  if (value.includes("reject")) return "rejected"
+  if (value.includes("submit") || value.includes("resubmit")) return "submitted"
+  return "reviewed"
+}
+
+function formatTimestamp(input?: string): string {
+  if (!input) return "Unknown time"
+  const date = new Date(input)
+  if (Number.isNaN(date.getTime())) return "Unknown time"
+  return date.toLocaleString()
+}
+
 export default function ActivityMonitorPage() {
+  const [recentActivity, setRecentActivity] = useState<ActivityItem[]>(RECENT_ACTIVITY_FALLBACK)
+  const [recentLoading, setRecentLoading] = useState(false)
+  const [recentError, setRecentError] = useState<string | null>(null)
+
+  const loadRecentActivity = useCallback(async () => {
+    setRecentLoading(true)
+    setRecentError(null)
+
+    const res = await apiGet<any[]>("/api/activity/recent")
+    if (res.success && Array.isArray(res.data)) {
+      const mapped: ActivityItem[] = res.data.map((event, index) => {
+        const submissionType =
+          String(event?.submission_type || "").toLowerCase() === "correspondence"
+            ? "correspondence"
+            : "contract"
+        const createdAtRaw =
+          event?.created_at
+          ?? event?.createdAt
+          ?? event?.timestamp
+          ?? ""
+        const rawId = String(event?.submission_id || "")
+        const prefix = submissionType === "correspondence" ? "COR" : "CON"
+        return {
+          id: String(event?.id || `${rawId}-${index}`),
+          action: normalizeAction(String(event?.action || "")),
+          type: submissionType,
+          reference: rawId ? `${prefix}-${rawId.slice(0, 8).toUpperCase()}` : `${prefix}-UNKNOWN`,
+          subject:
+            String(event?.note || "").trim()
+            || `${submissionType === "correspondence" ? "Correspondence" : "Contract"} activity update`,
+          performedBy: String(event?.performer?.full_name || "System"),
+          timestamp: formatTimestamp(String(createdAtRaw)),
+        }
+      })
+      setRecentActivity(mapped.length > 0 ? mapped : RECENT_ACTIVITY_FALLBACK)
+    } else {
+      setRecentActivity(RECENT_ACTIVITY_FALLBACK)
+      setRecentError(res.error || "Failed to load recent activity.")
+    }
+    setRecentLoading(false)
+  }, [])
+
+  useEffect(() => {
+    void loadRecentActivity()
+  }, [loadRecentActivity])
+
   return (
     <div className="space-y-8">
       {/* Hero Banner */}
@@ -157,8 +230,14 @@ export default function ActivityMonitorPage() {
               <p className="mt-1 text-white/80">Track pending actions and recent system activity</p>
             </div>
           </div>
-          <Button variant="outline" size="sm" className="border-white/30 text-white hover:bg-white/10">
-            <RefreshCw className="mr-2 h-4 w-4" />
+          <Button
+            variant="outline"
+            size="sm"
+            className="border-white/30 text-white hover:bg-white/10"
+            onClick={() => void loadRecentActivity()}
+            disabled={recentLoading}
+          >
+            <RefreshCw className={`mr-2 h-4 w-4 ${recentLoading ? "animate-spin" : ""}`} />
             Refresh
           </Button>
         </div>
@@ -241,9 +320,13 @@ export default function ActivityMonitorPage() {
               Recent Activity
             </CardTitle>
             <CardDescription>Latest actions performed in the system</CardDescription>
+            {recentError ? <p className="text-xs text-destructive">{recentError}</p> : null}
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
+              {recentLoading && recentActivity.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Loading recent activity...</p>
+              ) : null}
               {recentActivity.map((activity) => (
                 <div 
                   key={activity.id} 

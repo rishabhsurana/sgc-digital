@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -11,42 +12,79 @@ import {
   Clock,
   CheckCircle,
   AlertCircle,
-  TrendingUp
+  TrendingUp,
 } from "lucide-react"
+import { apiGet } from "@/lib/api-client"
 
-const REGISTER_STATS = {
-  correspondence: {
-    total: 1247,
-    pending: 47,
-    inProgress: 89,
-    completed: 1111,
-    thisWeek: 34,
-    trend: "+12%"
-  },
-  contracts: {
-    total: 456,
-    pending: 23,
-    inProgress: 45,
-    completed: 388,
-    thisWeek: 12,
-    trend: "+8%"
-  }
+type RegisterStatsBlock = {
+  total: number
+  pending: number
+  inProgress: number
+  completed: number
+  thisWeek: number
+  trend: string
+}
+
+const emptyStats: RegisterStatsBlock = {
+  total: 0,
+  pending: 0,
+  inProgress: 0,
+  completed: 0,
+  thisWeek: 0,
+  trend: "0%",
 }
 
 export default function RegistersPage() {
+  const [correspondence, setCorrespondence] = useState<RegisterStatsBlock>(emptyStats)
+  const [contracts, setContracts] = useState<RegisterStatsBlock>(emptyStats)
+  const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState<string | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      setLoading(true)
+      setLoadError(null)
+      const res = await apiGet<{
+        correspondence: RegisterStatsBlock
+        contracts: RegisterStatsBlock
+      }>("/api/registers/summary")
+      if (cancelled) return
+      if (
+        res.success
+        && res.data
+        && typeof res.data.correspondence === "object"
+        && typeof res.data.contracts === "object"
+      ) {
+        setCorrespondence({ ...emptyStats, ...res.data.correspondence })
+        setContracts({ ...emptyStats, ...res.data.contracts })
+      } else {
+        setCorrespondence(emptyStats)
+        setContracts(emptyStats)
+        setLoadError(res.error || res.message || "Could not load register statistics.")
+      }
+      setLoading(false)
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
   return (
     <div className="p-6 lg:p-8">
-      {/* Page Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-foreground">Registers</h1>
         <p className="mt-1 text-muted-foreground">
           Access and manage correspondence and contract registers.
         </p>
+        {loadError ? (
+          <p className="mt-2 text-sm text-destructive" role="alert">
+            {loadError}
+          </p>
+        ) : null}
       </div>
 
-      {/* Register Cards */}
       <div className="grid gap-6 lg:grid-cols-2">
-        {/* Correspondence Register Card */}
         <Card className="border-blue-200 hover:shadow-lg transition-shadow">
           <CardHeader className="bg-gradient-to-r from-blue-50 to-blue-100/50 border-b border-blue-100">
             <div className="flex items-center justify-between">
@@ -61,53 +99,65 @@ export default function RegistersPage() {
               </div>
               <Badge variant="outline" className="bg-blue-100 text-blue-700 border-blue-200">
                 <TrendingUp className="h-3 w-3 mr-1" />
-                {REGISTER_STATS.correspondence.trend} this month
+                {loading ? "…" : `${correspondence.trend} this month`}
               </Badge>
             </div>
           </CardHeader>
           <CardContent className="pt-6">
-            {/* Stats Grid */}
             <div className="grid grid-cols-4 gap-4 mb-6">
               <div className="text-center">
-                <p className="text-2xl font-bold text-foreground">{REGISTER_STATS.correspondence.total.toLocaleString()}</p>
+                <p className="text-2xl font-bold text-foreground">
+                  {loading ? "—" : correspondence.total.toLocaleString()}
+                </p>
                 <p className="text-xs text-muted-foreground">Total</p>
               </div>
               <div className="text-center">
-                <p className="text-2xl font-bold text-amber-600">{REGISTER_STATS.correspondence.pending}</p>
+                <p className="text-2xl font-bold text-amber-600">
+                  {loading ? "—" : correspondence.pending}
+                </p>
                 <p className="text-xs text-muted-foreground">Pending</p>
               </div>
               <div className="text-center">
-                <p className="text-2xl font-bold text-blue-600">{REGISTER_STATS.correspondence.inProgress}</p>
+                <p className="text-2xl font-bold text-blue-600">
+                  {loading ? "—" : correspondence.inProgress}
+                </p>
                 <p className="text-xs text-muted-foreground">In Progress</p>
               </div>
               <div className="text-center">
-                <p className="text-2xl font-bold text-green-600">{REGISTER_STATS.correspondence.completed.toLocaleString()}</p>
+                <p className="text-2xl font-bold text-green-600">
+                  {loading ? "—" : correspondence.completed.toLocaleString()}
+                </p>
                 <p className="text-xs text-muted-foreground">Completed</p>
               </div>
             </div>
 
-            {/* Status Breakdown */}
             <div className="space-y-3 mb-6">
               <div className="flex items-center justify-between p-3 rounded-lg bg-amber-50 border border-amber-100">
                 <div className="flex items-center gap-2">
                   <Clock className="h-4 w-4 text-amber-600" />
                   <span className="text-sm font-medium text-amber-800">Pending Review</span>
                 </div>
-                <span className="font-bold text-amber-700">{REGISTER_STATS.correspondence.pending}</span>
+                <span className="font-bold text-amber-700">
+                  {loading ? "—" : correspondence.pending}
+                </span>
               </div>
               <div className="flex items-center justify-between p-3 rounded-lg bg-blue-50 border border-blue-100">
                 <div className="flex items-center gap-2">
                   <AlertCircle className="h-4 w-4 text-blue-600" />
                   <span className="text-sm font-medium text-blue-800">In Progress</span>
                 </div>
-                <span className="font-bold text-blue-700">{REGISTER_STATS.correspondence.inProgress}</span>
+                <span className="font-bold text-blue-700">
+                  {loading ? "—" : correspondence.inProgress}
+                </span>
               </div>
               <div className="flex items-center justify-between p-3 rounded-lg bg-green-50 border border-green-100">
                 <div className="flex items-center gap-2">
                   <CheckCircle className="h-4 w-4 text-green-600" />
                   <span className="text-sm font-medium text-green-800">Completed This Week</span>
                 </div>
-                <span className="font-bold text-green-700">{REGISTER_STATS.correspondence.thisWeek}</span>
+                <span className="font-bold text-green-700">
+                  {loading ? "—" : correspondence.thisWeek}
+                </span>
               </div>
             </div>
 
@@ -120,7 +170,6 @@ export default function RegistersPage() {
           </CardContent>
         </Card>
 
-        {/* Contracts Register Card */}
         <Card className="border-purple-200 hover:shadow-lg transition-shadow">
           <CardHeader className="bg-gradient-to-r from-purple-50 to-purple-100/50 border-b border-purple-100">
             <div className="flex items-center justify-between">
@@ -135,53 +184,65 @@ export default function RegistersPage() {
               </div>
               <Badge variant="outline" className="bg-purple-100 text-purple-700 border-purple-200">
                 <TrendingUp className="h-3 w-3 mr-1" />
-                {REGISTER_STATS.contracts.trend} this month
+                {loading ? "…" : `${contracts.trend} this month`}
               </Badge>
             </div>
           </CardHeader>
           <CardContent className="pt-6">
-            {/* Stats Grid */}
             <div className="grid grid-cols-4 gap-4 mb-6">
               <div className="text-center">
-                <p className="text-2xl font-bold text-foreground">{REGISTER_STATS.contracts.total}</p>
+                <p className="text-2xl font-bold text-foreground">
+                  {loading ? "—" : contracts.total}
+                </p>
                 <p className="text-xs text-muted-foreground">Total</p>
               </div>
               <div className="text-center">
-                <p className="text-2xl font-bold text-amber-600">{REGISTER_STATS.contracts.pending}</p>
+                <p className="text-2xl font-bold text-amber-600">
+                  {loading ? "—" : contracts.pending}
+                </p>
                 <p className="text-xs text-muted-foreground">Pending</p>
               </div>
               <div className="text-center">
-                <p className="text-2xl font-bold text-purple-600">{REGISTER_STATS.contracts.inProgress}</p>
+                <p className="text-2xl font-bold text-purple-600">
+                  {loading ? "—" : contracts.inProgress}
+                </p>
                 <p className="text-xs text-muted-foreground">In Progress</p>
               </div>
               <div className="text-center">
-                <p className="text-2xl font-bold text-green-600">{REGISTER_STATS.contracts.completed}</p>
+                <p className="text-2xl font-bold text-green-600">
+                  {loading ? "—" : contracts.completed}
+                </p>
                 <p className="text-xs text-muted-foreground">Completed</p>
               </div>
             </div>
 
-            {/* Status Breakdown */}
             <div className="space-y-3 mb-6">
               <div className="flex items-center justify-between p-3 rounded-lg bg-amber-50 border border-amber-100">
                 <div className="flex items-center gap-2">
                   <Clock className="h-4 w-4 text-amber-600" />
                   <span className="text-sm font-medium text-amber-800">Pending Review</span>
                 </div>
-                <span className="font-bold text-amber-700">{REGISTER_STATS.contracts.pending}</span>
+                <span className="font-bold text-amber-700">
+                  {loading ? "—" : contracts.pending}
+                </span>
               </div>
               <div className="flex items-center justify-between p-3 rounded-lg bg-purple-50 border border-purple-100">
                 <div className="flex items-center gap-2">
                   <AlertCircle className="h-4 w-4 text-purple-600" />
                   <span className="text-sm font-medium text-purple-800">In Progress</span>
                 </div>
-                <span className="font-bold text-purple-700">{REGISTER_STATS.contracts.inProgress}</span>
+                <span className="font-bold text-purple-700">
+                  {loading ? "—" : contracts.inProgress}
+                </span>
               </div>
               <div className="flex items-center justify-between p-3 rounded-lg bg-green-50 border border-green-100">
                 <div className="flex items-center gap-2">
                   <CheckCircle className="h-4 w-4 text-green-600" />
                   <span className="text-sm font-medium text-green-800">Completed This Week</span>
                 </div>
-                <span className="font-bold text-green-700">{REGISTER_STATS.contracts.thisWeek}</span>
+                <span className="font-bold text-green-700">
+                  {loading ? "—" : contracts.thisWeek}
+                </span>
               </div>
             </div>
 

@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -43,13 +43,12 @@ import {
   CheckCircle,
   Clock,
   XCircle,
-  ChevronLeft,
-  ChevronRight,
   RefreshCw,
   DollarSign,
   X
 } from "lucide-react"
 import { apiGet } from "@/lib/api-client"
+import { ManagementPaginationBar } from "@/components/management/management-pagination-bar"
 
 // Contract Categories per requirements
 const CONTRACT_CATEGORIES = {
@@ -254,32 +253,40 @@ export default function ContractsRegisterPage() {
   const [total, setTotal] = useState(0)
   const [totalPages, setTotalPages] = useState(1)
   const [loading, setLoading] = useState(false)
-  const limit = 20
+  const [limit, setLimit] = useState(20)
+  const searchRef = useRef(searchQuery)
+  searchRef.current = searchQuery
 
-  const loadRegisters = async (targetPage = page) => {
-    setLoading(true)
-    const q = new URLSearchParams({ page: String(targetPage), limit: String(limit) })
-    if (searchQuery.trim()) q.set("search", searchQuery.trim())
-    if (statusFilter !== "all") q.set("status", statusFilter)
+  const loadRegisters = useCallback(
+    async (targetPage: number, pageLimit?: number, overrideStatus?: string) => {
+      setLoading(true)
+      const lim = pageLimit ?? limit
+      const q = new URLSearchParams({ page: String(targetPage), limit: String(lim) })
+      const s = searchRef.current.trim()
+      if (s) q.set("search", s)
+      const st = overrideStatus !== undefined ? overrideStatus : statusFilter
+      if (st !== "all") q.set("status", st)
 
-    const res = await apiGet<any>(`/api/registers/contracts?${q.toString()}`)
-    if (res.success && Array.isArray(res.data)) {
-      const pagination = (res as any).pagination ?? {}
-      setRows(res.data)
-      setTotal(pagination.total ?? res.data.length)
-      setTotalPages(pagination.totalPages ?? 1)
-    } else {
-      setRows([])
-      setTotal(0)
-      setTotalPages(1)
-    }
-    setLoading(false)
-  }
+      const res = await apiGet<any>(`/api/registers/contracts?${q.toString()}`)
+      if (res.success && Array.isArray(res.data)) {
+        const pagination = (res as any).pagination ?? {}
+        setRows(res.data)
+        setTotal(pagination.total ?? res.data.length)
+        setTotalPages(pagination.totalPages ?? 1)
+      } else {
+        setRows([])
+        setTotal(0)
+        setTotalPages(1)
+      }
+      setLoading(false)
+    },
+    [limit, statusFilter]
+  )
 
   useEffect(() => {
-    void loadRegisters(1)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [statusFilter])
+    void loadRegisters(1, limit)
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- initial load only
+  }, [])
 
   const filteredData = useMemo(
     () =>
@@ -327,7 +334,7 @@ export default function ContractsRegisterPage() {
               variant="outline"
               size="sm"
               className="border-white/30 text-white hover:bg-white/10"
-              onClick={() => void loadRegisters(page)}
+              onClick={() => void loadRegisters(page, limit)}
             >
               <RefreshCw className="mr-2 h-4 w-4" />
               Refresh
@@ -354,7 +361,7 @@ export default function ContractsRegisterPage() {
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
                       setPage(1)
-                      void loadRegisters(1)
+                      void loadRegisters(1, limit)
                     }
                   }}
                   className="pl-10 pr-10"
@@ -370,7 +377,14 @@ export default function ContractsRegisterPage() {
               </div>
             </div>
             <div className="flex gap-2">
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <Select
+                value={statusFilter}
+                onValueChange={(v) => {
+                  setStatusFilter(v)
+                  setPage(1)
+                  void loadRegisters(1, limit, v)
+                }}
+              >
                 <SelectTrigger className="w-[150px]">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
@@ -424,12 +438,13 @@ export default function ContractsRegisterPage() {
                 variant="ghost"
                 size="sm"
                 onClick={() => {
-                  setSearchQuery('')
-                  setStatusFilter('all')
-                  setNatureFilter('all')
-                  setContractTypeFilter('all')
+                  setSearchQuery("")
+                  searchRef.current = ""
+                  setStatusFilter("all")
+                  setNatureFilter("all")
+                  setContractTypeFilter("all")
                   setPage(1)
-                  void loadRegisters(1)
+                  void loadRegisters(1, limit, "all")
                 }}
                 className="text-muted-foreground hover:text-foreground"
               >
@@ -591,40 +606,22 @@ export default function ContractsRegisterPage() {
             </Table>
           </div>
 
-          {/* Pagination */}
-          <div className="flex items-center justify-between px-4 py-4 border-t">
-            <p className="text-sm text-muted-foreground">
-              Showing {filteredData.length} of {total} entries
-            </p>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={page <= 1 || loading}
-                onClick={() => {
-                  const nextPage = page - 1
-                  setPage(nextPage)
-                  void loadRegisters(nextPage)
-                }}
-              >
-                <ChevronLeft className="h-4 w-4" />
-                Previous
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={page >= totalPages || loading}
-                onClick={() => {
-                  const nextPage = page + 1
-                  setPage(nextPage)
-                  void loadRegisters(nextPage)
-                }}
-              >
-                Next
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
+          <ManagementPaginationBar
+            page={page}
+            totalPages={totalPages}
+            total={total}
+            limit={limit}
+            loading={loading}
+            onPageChange={(p) => {
+              setPage(p)
+              void loadRegisters(p, limit)
+            }}
+            onLimitChange={(n) => {
+              setLimit(n)
+              setPage(1)
+              void loadRegisters(1, n)
+            }}
+          />
         </CardContent>
       </Card>
 
