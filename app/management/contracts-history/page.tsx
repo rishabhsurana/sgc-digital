@@ -231,7 +231,7 @@ export default function ContractsHistoryPage() {
               </p>
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button
               variant="outline"
               size="sm"
@@ -248,7 +248,7 @@ export default function ContractsHistoryPage() {
 
       <Card className="border-primary/20">
         <CardContent className="pt-6">
-          <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex flex-col lg:flex-row gap-4">
             <div className="flex-1">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -269,9 +269,9 @@ export default function ContractsHistoryPage() {
                 )}
               </div>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2 lg:justify-end">
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-[150px]">
+                <SelectTrigger className="w-full sm:w-[150px]">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -283,7 +283,7 @@ export default function ContractsHistoryPage() {
                 </SelectContent>
               </Select>
               <Select value={typeFilter} onValueChange={setTypeFilter}>
-                <SelectTrigger className="w-[150px]">
+                <SelectTrigger className="w-full sm:w-[150px]">
                   <SelectValue placeholder="Contract Type" />
                 </SelectTrigger>
                 <SelectContent>
@@ -303,7 +303,7 @@ export default function ContractsHistoryPage() {
           ) : null}
 
           {isFiltered && (
-            <div className="mt-4 pt-4 border-t flex items-center justify-between">
+            <div className="mt-4 pt-4 border-t flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <span className="text-sm text-muted-foreground">
                 {pagination.total} record{pagination.total === 1 ? "" : "s"} match your filters
               </span>

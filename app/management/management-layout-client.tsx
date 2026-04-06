@@ -337,7 +337,7 @@ export function ManagementLayoutClient({
       </Sheet>
 
       {/* Main Content */}
-      <div className="flex flex-1 flex-col lg:pl-64">
+      <div className="flex min-w-0 flex-1 flex-col lg:pl-64">
         {/* Mobile Header */}
         <header className="sticky top-0 z-40 flex h-14 items-center gap-4 border-b border-primary/10 bg-card px-4 lg:hidden">
           <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
@@ -360,10 +360,11 @@ export function ManagementLayoutClient({
         </header>
 
         {/* Page Content */}
-        <main className="flex-1">
+        <main className="min-w-0 flex-1">
           {/* Breadcrumbs */}
           <div className="border-b border-primary/10 bg-card px-6 py-3">
-            <div className="flex items-center justify-between gap-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="min-w-0 flex-1 overflow-x-auto">
               <Breadcrumb>
                 <BreadcrumbList>
                   <BreadcrumbItem>
@@ -395,11 +396,12 @@ export function ManagementLayoutClient({
                   ))}
                 </BreadcrumbList>
               </Breadcrumb>
+              </div>
 
               <Button
                 variant="outline"
                 size="sm"
-                className="text-destructive hover:text-destructive"
+                className="shrink-0 text-destructive hover:text-destructive"
                 onClick={handleSignOut}
               >
                 <LogOut className="mr-2 h-4 w-4" />
@@ -408,7 +410,7 @@ export function ManagementLayoutClient({
             </div>
           </div>
           
-          <div className="p-6">
+          <div className="min-w-0 p-6">
             {children}
           </div>
         </main>

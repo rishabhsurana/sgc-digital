@@ -168,7 +168,7 @@ export default function CorrespondenceRegisterPage() {
               <p className="mt-1 text-white/80">View and manage all correspondence submissions.</p>
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button
               variant="outline"
               size="sm"
@@ -189,7 +189,7 @@ export default function CorrespondenceRegisterPage() {
       {/* Filters */}
       <Card className="mb-6 border-primary/20">
         <CardContent className="pt-6">
-          <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex flex-col lg:flex-row gap-4">
             <div className="flex-1">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -215,7 +215,7 @@ export default function CorrespondenceRegisterPage() {
                 )}
               </div>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2 lg:justify-end">
               <Select
                 value={statusFilter}
                 onValueChange={(v) => {
@@ -224,7 +224,7 @@ export default function CorrespondenceRegisterPage() {
                   void loadRegisters(1, limit, v)
                 }}
               >
-                <SelectTrigger className="w-[150px]">
+                <SelectTrigger className="w-full sm:w-[150px]">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -236,7 +236,7 @@ export default function CorrespondenceRegisterPage() {
                 </SelectContent>
               </Select>
               <Select value={typeFilter} onValueChange={setTypeFilter}>
-                <SelectTrigger className="w-[150px]">
+                <SelectTrigger className="w-full sm:w-[150px]">
                   <SelectValue placeholder="Type" />
                 </SelectTrigger>
                 <SelectContent>
@@ -253,8 +253,8 @@ export default function CorrespondenceRegisterPage() {
           
           {/* Search Results Feedback */}
           {isFiltered && (
-            <div className="mt-4 pt-4 border-t flex items-center justify-between">
-              <div className="flex items-center gap-2 text-sm">
+            <div className="mt-4 pt-4 border-t flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-wrap items-center gap-2 text-sm">
                 <span className="text-muted-foreground">
                   Showing <span className="font-semibold text-foreground">{filteredData.length}</span> of {total} records
                 </span>
