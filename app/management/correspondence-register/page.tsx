@@ -89,6 +89,17 @@ const PRIORITY_CONFIG = {
   low: { label: "Low", color: "bg-gray-100 text-gray-700" },
 }
 
+const CORRESPONDENCE_REGISTER_COLUMNS = [
+  { id: "reference_number", label: "Reference" },
+  { id: "correspondence_type", label: "Type" },
+  { id: "subject", label: "Subject" },
+  { id: "originating_mda", label: "Ministry/MDA" },
+  { id: "submitter_name", label: "Submitter" },
+  { id: "date_received", label: "Date" },
+  { id: "priority_level", label: "Priority" },
+  { id: "current_status_code", label: "Status" },
+] as const
+
 export default function CorrespondenceRegisterPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
@@ -162,6 +173,7 @@ export default function CorrespondenceRegisterPage() {
       const s = searchRef.current.trim()
       if (s) q.set("search", s)
       if (statusFilter !== "all") q.set("status", statusFilter)
+      q.set("columns", CORRESPONDENCE_REGISTER_COLUMNS.map((c) => c.id).join(","))
       await apiDownloadFile(
         `/api/registers/correspondence/export?${q.toString()}`,
         `correspondence-register-${new Date().toISOString().slice(0, 10)}.xlsx`
@@ -365,14 +377,11 @@ export default function CorrespondenceRegisterPage() {
             <Table>
               <TableHeader>
                 <TableRow className="bg-muted/50">
-                  <TableHead className="font-semibold">Reference</TableHead>
-                  <TableHead className="font-semibold">Type</TableHead>
-                  <TableHead className="font-semibold">Subject</TableHead>
-                  <TableHead className="font-semibold">Ministry/MDA</TableHead>
-                  <TableHead className="font-semibold">Submitter</TableHead>
-                  <TableHead className="font-semibold">Date</TableHead>
-                  <TableHead className="font-semibold">Priority</TableHead>
-                  <TableHead className="font-semibold">Status</TableHead>
+                  {CORRESPONDENCE_REGISTER_COLUMNS.map((column) => (
+                    <TableHead key={column.id} className="font-semibold">
+                      {column.label}
+                    </TableHead>
+                  ))}
                   <TableHead className="font-semibold w-[50px]">Actions</TableHead>
                 </TableRow>
               </TableHeader>
