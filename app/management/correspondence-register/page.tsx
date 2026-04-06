@@ -50,7 +50,7 @@ import {
   CheckCircle,
   X,
 } from "lucide-react"
-import { apiGet } from "@/lib/api-client"
+import { apiDownloadFile, apiGet } from "@/lib/api-client"
 import { ManagementPaginationBar } from "@/components/management/management-pagination-bar"
 
 import {
@@ -99,6 +99,7 @@ export default function CorrespondenceRegisterPage() {
   const [total, setTotal] = useState(0)
   const [totalPages, setTotalPages] = useState(1)
   const [loading, setLoading] = useState(false)
+  const [exporting, setExporting] = useState(false)
   const [limit, setLimit] = useState(20)
   const searchRef = useRef(searchQuery)
   searchRef.current = searchQuery
@@ -154,6 +155,25 @@ export default function CorrespondenceRegisterPage() {
 
   const isFiltered = searchQuery.trim() !== '' || statusFilter !== 'all' || typeFilter !== 'all'
 
+  const handleExport = useCallback(async () => {
+    setExporting(true)
+    try {
+      const q = new URLSearchParams()
+      const s = searchRef.current.trim()
+      if (s) q.set("search", s)
+      if (statusFilter !== "all") q.set("status", statusFilter)
+      await apiDownloadFile(
+        `/api/registers/correspondence/export?${q.toString()}`,
+        `correspondence-register-${new Date().toISOString().slice(0, 10)}.xlsx`
+      )
+    } catch (error) {
+      console.error("Failed to export correspondence register:", error)
+      window.alert("Failed to export correspondence register. Please try again.")
+    } finally {
+      setExporting(false)
+    }
+  }, [statusFilter])
+
   return (
     <div className="p-6 lg:p-8">
       {/* Hero Banner */}
@@ -172,15 +192,20 @@ export default function CorrespondenceRegisterPage() {
             <Button
               variant="outline"
               size="sm"
-              className="border-white/30 text-white hover:bg-white/10"
+              className="border-white/40 bg-transparent text-white hover:bg-white/20 hover:text-white"
               onClick={() => void loadRegisters(page, limit)}
             >
               <RefreshCw className="mr-2 h-4 w-4" />
               Refresh
             </Button>
-            <Button size="sm" className="bg-white/20 hover:bg-white/30 text-white">
+            <Button
+              size="sm"
+              className="bg-white/20 hover:bg-white/30 text-white"
+              onClick={() => void handleExport()}
+              disabled={exporting}
+            >
               <Download className="mr-2 h-4 w-4" />
-              Export
+              {exporting ? "Exporting..." : "Export"}
             </Button>
           </div>
         </div>

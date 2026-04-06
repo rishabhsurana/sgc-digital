@@ -233,7 +233,7 @@ export default function ActivityMonitorPage() {
           <Button
             variant="outline"
             size="sm"
-            className="border-white/30 text-white hover:bg-white/10"
+            className="border-white/40 bg-transparent text-white hover:bg-white/20 hover:text-white"
             onClick={() => void loadRecentActivity()}
             disabled={recentLoading}
           >

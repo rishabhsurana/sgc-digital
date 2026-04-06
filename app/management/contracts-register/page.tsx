@@ -333,7 +333,7 @@ export default function ContractsRegisterPage() {
             <Button
               variant="outline"
               size="sm"
-              className="border-white/30 text-white hover:bg-white/10"
+              className="border-white/40 bg-transparent text-white hover:bg-white/20 hover:text-white"
               onClick={() => void loadRegisters(page, limit)}
             >
               <RefreshCw className="mr-2 h-4 w-4" />
