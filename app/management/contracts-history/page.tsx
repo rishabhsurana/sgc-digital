@@ -44,7 +44,7 @@ import {
   DollarSign,
   X,
 } from "lucide-react"
-import { apiGet } from "@/lib/api-client"
+import { apiDownloadFile, apiGet } from "@/lib/api-client"
 import { downloadDocumentAuthorized, formatBytes } from "@/lib/dashboard-api"
 import { ManagementPaginationBar } from "@/components/management/management-pagination-bar"
 
@@ -111,6 +111,17 @@ const CONTRACT_TYPE_CONFIG: Record<string, string> = {
   Supplemental: "bg-purple-100 text-purple-700 border-purple-200",
 }
 
+const CONTRACT_HISTORY_COLUMNS = [
+  { id: "date_received", label: "Date" },
+  { id: "contract_number", label: "Contract #" },
+  { id: "subject", label: "Subject" },
+  { id: "ministry", label: "Ministry/MDA" },
+  { id: "submitter", label: "Submitter" },
+  { id: "contract_value", label: "Value" },
+  { id: "status", label: "Status" },
+  { id: "document_count", label: "Documents" },
+] as const
+
 const getFileIcon = (type: string) => {
   switch (type) {
     case "pdf":
@@ -147,6 +158,7 @@ export default function ContractsHistoryPage() {
   const [detail, setDetail] = useState<DetailData | null>(null)
   const [detailLoading, setDetailLoading] = useState(false)
   const [detailError, setDetailError] = useState<string | null>(null)
+  const [exporting, setExporting] = useState(false)
 
   const [limit, setLimit] = useState(20)
 
@@ -216,6 +228,26 @@ export default function ContractsHistoryPage() {
 
   const isFiltered = searchInput.trim() !== "" || statusFilter !== "all" || typeFilter !== "all"
 
+  const handleExport = useCallback(async () => {
+    setExporting(true)
+    try {
+      const q = new URLSearchParams()
+      if (debouncedSearch) q.set("search", debouncedSearch)
+      if (statusFilter !== "all") q.set("status", statusFilter)
+      if (typeFilter !== "all") q.set("contract_type", typeFilter)
+      q.set("columns", CONTRACT_HISTORY_COLUMNS.map((c) => c.id).join(","))
+      await apiDownloadFile(
+        `/api/management/history/contracts/export?${q.toString()}`,
+        `contracts-history-${new Date().toISOString().slice(0, 10)}.xlsx`
+      )
+    } catch (error) {
+      console.error("Failed to export contracts history:", error)
+      window.alert("Failed to export contracts history. Please try again.")
+    } finally {
+      setExporting(false)
+    }
+  }, [debouncedSearch, statusFilter, typeFilter])
+
   return (
     <div className="space-y-6">
       <div className="rounded-xl bg-gradient-to-r from-indigo-600 via-indigo-700 to-slate-800 p-6 mb-6 text-white">
@@ -241,6 +273,15 @@ export default function ContractsHistoryPage() {
             >
               <RefreshCw className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`} />
               Refresh
+            </Button>
+            <Button
+              size="sm"
+              className="bg-white/20 hover:bg-white/30 text-white"
+              onClick={() => void handleExport()}
+              disabled={exporting}
+            >
+              <Download className="mr-2 h-4 w-4" />
+              {exporting ? "Exporting..." : "Export"}
             </Button>
           </div>
         </div>
@@ -386,14 +427,11 @@ export default function ContractsHistoryPage() {
             <Table>
               <TableHeader>
                 <TableRow className="bg-muted/50">
-                  <TableHead className="font-semibold">Date</TableHead>
-                  <TableHead className="font-semibold">Contract #</TableHead>
-                  <TableHead className="font-semibold">Subject</TableHead>
-                  <TableHead className="font-semibold">Ministry/MDA</TableHead>
-                  <TableHead className="font-semibold">Submitter</TableHead>
-                  <TableHead className="font-semibold">Value</TableHead>
-                  <TableHead className="font-semibold">Status</TableHead>
-                  <TableHead className="font-semibold">Documents</TableHead>
+                  {CONTRACT_HISTORY_COLUMNS.map((column) => (
+                    <TableHead key={column.id} className="font-semibold">
+                      {column.label}
+                    </TableHead>
+                  ))}
                   <TableHead className="font-semibold w-[80px]">View</TableHead>
                 </TableRow>
               </TableHeader>

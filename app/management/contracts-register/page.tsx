@@ -47,7 +47,7 @@ import {
   DollarSign,
   X
 } from "lucide-react"
-import { apiGet } from "@/lib/api-client"
+import { apiDownloadFile, apiGet } from "@/lib/api-client"
 import { ManagementPaginationBar } from "@/components/management/management-pagination-bar"
 
 // Contract Categories per requirements
@@ -242,6 +242,18 @@ const PRIORITY_CONFIG = {
   low: { label: "Low", color: "bg-gray-100 text-gray-700" },
 }
 
+const CONTRACT_REGISTER_COLUMNS = [
+  { id: "date_received", label: "Date Received" },
+  { id: "originating_mda", label: "Originating MDA" },
+  { id: "subject", label: "Subject" },
+  { id: "nature_of_contract", label: "Nature of Contract" },
+  { id: "category", label: "Category" },
+  { id: "contract_number", label: "Contract #" },
+  { id: "contract_type", label: "Contract Type" },
+  { id: "current_status_code", label: "Status/Stage" },
+  { id: "date_completed", label: "Date Completed" },
+] as const
+
 export default function ContractsRegisterPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
@@ -253,6 +265,7 @@ export default function ContractsRegisterPage() {
   const [total, setTotal] = useState(0)
   const [totalPages, setTotalPages] = useState(1)
   const [loading, setLoading] = useState(false)
+  const [exporting, setExporting] = useState(false)
   const [limit, setLimit] = useState(20)
   const searchRef = useRef(searchQuery)
   searchRef.current = searchQuery
@@ -315,6 +328,28 @@ export default function ContractsRegisterPage() {
   const isFiltered = searchQuery.trim() !== '' || statusFilter !== 'all' || natureFilter !== 'all' || contractTypeFilter !== 'all'
   const totalValue = filteredData.reduce((sum, item) => sum + item.value, 0)
 
+  const handleExport = useCallback(async () => {
+    setExporting(true)
+    try {
+      const q = new URLSearchParams()
+      const s = searchRef.current.trim()
+      if (s) q.set("search", s)
+      if (statusFilter !== "all") q.set("status", statusFilter)
+      if (natureFilter !== "all") q.set("nature_of_contract", natureFilter)
+      if (contractTypeFilter !== "all") q.set("contract_type", contractTypeFilter)
+      q.set("columns", CONTRACT_REGISTER_COLUMNS.map((c) => c.id).join(","))
+      await apiDownloadFile(
+        `/api/registers/contracts/export?${q.toString()}`,
+        `contracts-register-${new Date().toISOString().slice(0, 10)}.xlsx`
+      )
+    } catch (error) {
+      console.error("Failed to export contracts register:", error)
+      window.alert("Failed to export contracts register. Please try again.")
+    } finally {
+      setExporting(false)
+    }
+  }, [statusFilter, natureFilter, contractTypeFilter])
+
   return (
     <div className="p-6 lg:p-8">
       {/* Hero Banner */}
@@ -339,9 +374,14 @@ export default function ContractsRegisterPage() {
               <RefreshCw className="mr-2 h-4 w-4" />
               Refresh
             </Button>
-            <Button size="sm" className="bg-white/20 hover:bg-white/30 text-white">
+            <Button
+              size="sm"
+              className="bg-white/20 hover:bg-white/30 text-white"
+              onClick={() => void handleExport()}
+              disabled={exporting}
+            >
               <Download className="mr-2 h-4 w-4" />
-              Export
+              {exporting ? "Exporting..." : "Export"}
             </Button>
           </div>
         </div>
@@ -522,15 +562,11 @@ export default function ContractsRegisterPage() {
             <Table>
               <TableHeader>
                 <TableRow className="bg-muted/50">
-                  <TableHead className="font-semibold">Date Received</TableHead>
-                  <TableHead className="font-semibold">Originating MDA</TableHead>
-                  <TableHead className="font-semibold">Subject</TableHead>
-                  <TableHead className="font-semibold">Nature of Contract</TableHead>
-                  <TableHead className="font-semibold">Category</TableHead>
-                  <TableHead className="font-semibold">Contract #</TableHead>
-                  <TableHead className="font-semibold">Contract Type</TableHead>
-                  <TableHead className="font-semibold">Status/Stage</TableHead>
-                  <TableHead className="font-semibold">Date Completed</TableHead>
+                  {CONTRACT_REGISTER_COLUMNS.map((column) => (
+                    <TableHead key={column.id} className="font-semibold">
+                      {column.label}
+                    </TableHead>
+                  ))}
                   <TableHead className="font-semibold w-[50px]">Actions</TableHead>
                 </TableRow>
               </TableHeader>

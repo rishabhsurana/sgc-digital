@@ -42,7 +42,7 @@ import {
   Paperclip,
   X,
 } from "lucide-react"
-import { apiGet } from "@/lib/api-client"
+import { apiDownloadFile, apiGet } from "@/lib/api-client"
 import { downloadDocumentAuthorized, formatBytes } from "@/lib/dashboard-api"
 import { ManagementPaginationBar } from "@/components/management/management-pagination-bar"
 
@@ -97,6 +97,16 @@ const STATUS_CONFIG: Record<string, string> = {
   Rejected: "bg-red-100 text-red-700 border-red-200",
 }
 
+const CORRESPONDENCE_HISTORY_COLUMNS = [
+  { id: "date_received", label: "Date" },
+  { id: "reference_number", label: "Reference #" },
+  { id: "subject", label: "Subject" },
+  { id: "ministry", label: "Ministry/MDA" },
+  { id: "submitter", label: "Submitter" },
+  { id: "status", label: "Status" },
+  { id: "document_count", label: "Documents" },
+] as const
+
 const getFileIcon = (type: string) => {
   switch (type) {
     case "pdf":
@@ -133,6 +143,7 @@ export default function CorrespondenceHistoryPage() {
   const [detail, setDetail] = useState<DetailData | null>(null)
   const [detailLoading, setDetailLoading] = useState(false)
   const [detailError, setDetailError] = useState<string | null>(null)
+  const [exporting, setExporting] = useState(false)
 
   const [limit, setLimit] = useState(20)
 
@@ -203,6 +214,26 @@ export default function CorrespondenceHistoryPage() {
   const isFiltered =
     searchInput.trim() !== "" || statusFilter !== "all" || dateFilter !== "all"
 
+  const handleExport = useCallback(async () => {
+    setExporting(true)
+    try {
+      const q = new URLSearchParams()
+      if (debouncedSearch) q.set("search", debouncedSearch)
+      if (statusFilter !== "all") q.set("status", statusFilter)
+      if (dateFilter !== "all") q.set("date_range", dateFilter)
+      q.set("columns", CORRESPONDENCE_HISTORY_COLUMNS.map((c) => c.id).join(","))
+      await apiDownloadFile(
+        `/api/management/history/correspondences/export?${q.toString()}`,
+        `correspondence-history-${new Date().toISOString().slice(0, 10)}.xlsx`
+      )
+    } catch (error) {
+      console.error("Failed to export correspondence history:", error)
+      window.alert("Failed to export correspondence history. Please try again.")
+    } finally {
+      setExporting(false)
+    }
+  }, [debouncedSearch, statusFilter, dateFilter])
+
   return (
     <div className="space-y-6">
       <div className="rounded-xl bg-gradient-to-r from-teal-600 via-teal-700 to-slate-800 p-6 mb-6 text-white">
@@ -228,6 +259,15 @@ export default function CorrespondenceHistoryPage() {
             >
               <RefreshCw className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`} />
               Refresh
+            </Button>
+            <Button
+              size="sm"
+              className="bg-white/20 hover:bg-white/30 text-white"
+              onClick={() => void handleExport()}
+              disabled={exporting}
+            >
+              <Download className="mr-2 h-4 w-4" />
+              {exporting ? "Exporting..." : "Export"}
             </Button>
           </div>
         </div>
@@ -380,13 +420,11 @@ export default function CorrespondenceHistoryPage() {
             <Table>
               <TableHeader>
                 <TableRow className="bg-muted/50">
-                  <TableHead className="font-semibold">Date</TableHead>
-                  <TableHead className="font-semibold">Reference #</TableHead>
-                  <TableHead className="font-semibold">Subject</TableHead>
-                  <TableHead className="font-semibold">Ministry/MDA</TableHead>
-                  <TableHead className="font-semibold">Submitter</TableHead>
-                  <TableHead className="font-semibold">Status</TableHead>
-                  <TableHead className="font-semibold">Documents</TableHead>
+                  {CORRESPONDENCE_HISTORY_COLUMNS.map((column) => (
+                    <TableHead key={column.id} className="font-semibold">
+                      {column.label}
+                    </TableHead>
+                  ))}
                   <TableHead className="font-semibold w-[80px]">View</TableHead>
                 </TableRow>
               </TableHeader>
