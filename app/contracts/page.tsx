@@ -49,7 +49,7 @@ const CONTRACT_NATURES = [
     borderColor: "border-blue-600"
   },
   { 
-    value: "consultancy", 
+    value: "consultancy_services", 
     label: "Consultancy / Services", 
     description: "Professional services, consulting, and service contracts",
     icon: Briefcase,
@@ -70,18 +70,18 @@ const CONTRACT_CATEGORIES = {
   goods: [
     { value: "CAT_PROC", label: "Procurement of Goods & Services" },
     { value: "CAT_LEASE", label: "Lease / Property (Equipment Lease)" },
-    { value: "CAT_MOU", label: "Inter-Agency / MOU (Supply-related)" }
+    { value: "CAT_INTER", label: "Inter-Agency / MOU (Supply-related)" }
   ],
-  consultancy: [
+  consultancy_services: [
     { value: "CAT_CONS", label: "Consultancy / Professional Services" },
     { value: "CAT_PROC", label: "Procurement of Goods & Services" },
     { value: "CAT_EMP", label: "Employment / Personnel" },
-    { value: "CAT_MOU", label: "Inter-Agency / MOU" }
+    { value: "CAT_INTER", label: "Inter-Agency / MOU" }
   ],
   works: [
     { value: "CAT_CONST", label: "Construction / Public Works" },
     { value: "CAT_PROC", label: "Procurement of Goods & Services" },
-    { value: "CAT_MOU", label: "Inter-Agency / MOU (Infrastructure-related)" },
+    { value: "CAT_INTER", label: "Inter-Agency / MOU (Infrastructure-related)" },
     { value: "CAT_OTHER", label: "Other (Requires justification)" }
   ]
 }
@@ -92,17 +92,16 @@ const CONTRACT_INSTRUMENTS = {
     { value: "UNI", label: "Uniforms" },
     { value: "OTHER", label: "Other" }
   ],
-  consultancy: [
+  consultancy_services: [
     { value: "CLEAN", label: "Cleaning Services" },
     { value: "CONS_CO", label: "Consultancy - Company" },
-    { value: "CONS_IND", label: "Consultant/Independent Contractor" },
-    { value: "CONS_INDV", label: "Individual Consultant" },
-    { value: "CONS_IDB", label: "Individual Consultant (IDB-funded)" },
+    { value: "IC", label: "Individual Consultant" },
+    { value: "IC_IDB", label: "Individual Consultant (IDB-funded)" },
     { value: "SVC", label: "Services" },
     { value: "OTHER", label: "Other" }
   ],
   works: [
-    { value: "WORKS", label: "Works" },
+    { value: "WKS", label: "Works" },
     { value: "OTHER", label: "Other" }
   ]
 }
@@ -160,65 +159,148 @@ const COUNTRIES = [
   { value: "Other", label: "Other" }
 ]
 
-// Document requirements based on nature + category
-const REQUIRED_DOCUMENTS = {
-  goods: {
-    always: [
-      { value: "FORM_ACCEPT", label: "Acceptance of Award" },
-      { value: "FORM_LOA", label: "Letter of Award" },
-      { value: "FORM_PAY_SCHED", label: "Payment Schedule" },
-      { value: "PROC_SPECS", label: "Specifications" },
-      { value: "PROC_TENDER", label: "Tender Documents" }
-    ],
-    optional: [
-      { value: "FORM_DRAFT", label: "Draft Contract" },
-      { value: "PROC_SSP_APPR", label: "Single Source Approval" },
-      { value: "PROC_SSP_REQ", label: "Single Source Request" }
-    ]
-  },
-  consultancy: {
-    always: [
-      { value: "FORM_ACCEPT", label: "Acceptance of Award" },
-      { value: "FORM_LOA", label: "Letter of Award" },
-      { value: "FORM_PAY_SCHED", label: "Payment Schedule" },
-      { value: "FORM_SCHED_DELIV", label: "Schedule of Deliverables" },
-      { value: "PROC_PROP", label: "Proposal" },
-      { value: "PROC_TENDER", label: "Tender Documents" },
-      { value: "PROC_TOR", label: "Terms of Reference" }
-    ],
-    optional: [
-      { value: "DUE_BUS_REG", label: "Business Registration" },
-      { value: "DUE_GS", label: "Certificate of Good Standing" },
-      { value: "DUE_INCORP", label: "Company Incorporation Documents" },
-      { value: "FIN_BOND", label: "Performance Bond" },
-      { value: "FIN_SURETY", label: "Proof of Surety" },
-      { value: "FORM_DRAFT", label: "Draft Contract" },
-      { value: "FORM_LOE", label: "Letter of Engagement" },
-      { value: "PROC_CAB_APPR", label: "Cabinet Approval" },
-      { value: "PROC_CAB_PAPER", label: "Cabinet Paper" },
-      { value: "PROC_SSP_APPR", label: "Single Source Approval" },
-      { value: "PROC_SSP_REQ", label: "Single Source Request" }
-    ]
-  },
-  works: {
-    always: [
-      { value: "FORM_ACCEPT", label: "Acceptance of Award" },
-      { value: "FORM_LOA", label: "Letter of Award" },
-      { value: "FORM_PAY_SCHED", label: "Payment Schedule" },
-      { value: "PROC_BOQ", label: "Bill of Quantities" },
-      { value: "PROC_DRAWINGS", label: "Drawings/Plans" },
-      { value: "PROC_TENDER", label: "Tender Documents" }
-    ],
-    optional: [
-      { value: "FIN_BOND", label: "Performance Bond" },
-      { value: "FIN_SURETY", label: "Proof of Surety" },
-      { value: "FORM_DRAFT", label: "Draft Contract" },
-      { value: "PROC_CAB_APPR", label: "Cabinet Approval" },
-      { value: "PROC_CAB_PAPER", label: "Cabinet Paper" },
-      { value: "PROC_SSP_APPR", label: "Single Source Approval" },
-      { value: "PROC_SSP_REQ", label: "Single Source Request" }
-    ]
+type DocumentChecklistItem = {
+  value: string
+  label: string
+  condition: "always" | "if_applicable"
+}
+
+type DocumentChecklistRequirement = {
+  always: Array<{ value: string; label: string }>
+  optional: Array<{ value: string; label: string }>
+}
+
+type DocumentChecklistApiRule = {
+  document_type_code: string
+  document_type_label: string
+  condition: "always" | "if_applicable"
+}
+
+const FALLBACK_DOCUMENT_CHECKLIST_CONFIG: Record<string, DocumentChecklistItem[]> = {
+  "goods|CAT_PROC|GDS": [
+    { value: "FORM_ACCEPT", label: "Acceptance of Award", condition: "always" },
+    { value: "FORM_DRAFT", label: "Draft Contract", condition: "if_applicable" },
+    { value: "FORM_LOA", label: "Letter of Award", condition: "always" },
+    { value: "FORM_PAY_SCHED", label: "Payment Schedule", condition: "always" },
+    { value: "PROC_SPECS", label: "Specifications", condition: "always" },
+    { value: "PROC_SSP_APPR", label: "Single Source Approval", condition: "if_applicable" },
+    { value: "PROC_SSP_REQ", label: "Single Source Procurement Request", condition: "if_applicable" },
+    { value: "PROC_TENDER", label: "Tender Documents", condition: "always" },
+  ],
+  "goods|CAT_PROC|UNI": [
+    { value: "FORM_ACCEPT", label: "Acceptance of Award", condition: "always" },
+    { value: "FORM_DRAFT", label: "Draft Contract", condition: "if_applicable" },
+    { value: "FORM_LOA", label: "Letter of Award", condition: "always" },
+    { value: "FORM_PAY_SCHED", label: "Payment Schedule", condition: "always" },
+    { value: "PROC_SPECS", label: "Specifications", condition: "always" },
+    { value: "PROC_SSP_APPR", label: "Single Source Approval", condition: "if_applicable" },
+    { value: "PROC_SSP_REQ", label: "Single Source Procurement Request", condition: "if_applicable" },
+    { value: "PROC_TENDER", label: "Tender Documents", condition: "always" },
+  ],
+  "consultancy_services|CAT_PROC|CLEAN": [
+    { value: "FORM_ACCEPT", label: "Acceptance of Award", condition: "always" },
+    { value: "FORM_DRAFT", label: "Draft Contract", condition: "if_applicable" },
+    { value: "FORM_LOA", label: "Letter of Award", condition: "always" },
+    { value: "FORM_LOE", label: "Letter of Engagement", condition: "if_applicable" },
+    { value: "FORM_PAY_SCHED", label: "Payment Schedule", condition: "always" },
+    { value: "FORM_SCHED_DELIV", label: "Schedule of Deliverables", condition: "always" },
+    { value: "PROC_PROP", label: "Proposal", condition: "always" },
+    { value: "PROC_TENDER", label: "Tender Documents", condition: "always" },
+    { value: "PROC_TOR", label: "Terms of Reference", condition: "always" },
+    { value: "DUE_BUS_REG", label: "Business Registration", condition: "if_applicable" },
+    { value: "DUE_GS", label: "Certificate of Good Standing", condition: "if_applicable" },
+    { value: "DUE_INCORP", label: "Company Incorporation Documents", condition: "if_applicable" },
+    { value: "FIN_BOND", label: "Performance Bond", condition: "if_applicable" },
+    { value: "FIN_SURETY", label: "Proof of Surety", condition: "if_applicable" },
+    { value: "PROC_CAB_APPR", label: "Cabinet Approval", condition: "if_applicable" },
+    { value: "PROC_CAB_PAPER", label: "Cabinet Paper", condition: "if_applicable" },
+    { value: "PROC_SSP_APPR", label: "Single Source Approval", condition: "if_applicable" },
+    { value: "PROC_SSP_REQ", label: "Single Source Procurement Request", condition: "if_applicable" },
+  ],
+  "consultancy_services|CAT_PROC|SVC": [
+    { value: "FORM_ACCEPT", label: "Acceptance of Award", condition: "always" },
+    { value: "FORM_DRAFT", label: "Draft Contract", condition: "if_applicable" },
+    { value: "FORM_LOA", label: "Letter of Award", condition: "always" },
+    { value: "FORM_LOE", label: "Letter of Engagement", condition: "if_applicable" },
+    { value: "FORM_PAY_SCHED", label: "Payment Schedule", condition: "always" },
+    { value: "FORM_SCHED_DELIV", label: "Schedule of Deliverables", condition: "always" },
+    { value: "PROC_PROP", label: "Proposal", condition: "always" },
+    { value: "PROC_TENDER", label: "Tender Documents", condition: "always" },
+    { value: "PROC_TOR", label: "Terms of Reference", condition: "always" },
+    { value: "DUE_BUS_REG", label: "Business Registration", condition: "if_applicable" },
+    { value: "DUE_GS", label: "Certificate of Good Standing", condition: "if_applicable" },
+    { value: "DUE_INCORP", label: "Company Incorporation Documents", condition: "if_applicable" },
+    { value: "FIN_BOND", label: "Performance Bond", condition: "if_applicable" },
+    { value: "FIN_SURETY", label: "Proof of Surety", condition: "if_applicable" },
+    { value: "PROC_CAB_APPR", label: "Cabinet Approval", condition: "if_applicable" },
+    { value: "PROC_CAB_PAPER", label: "Cabinet Paper", condition: "if_applicable" },
+    { value: "PROC_SSP_APPR", label: "Single Source Approval", condition: "if_applicable" },
+    { value: "PROC_SSP_REQ", label: "Single Source Procurement Request", condition: "if_applicable" },
+  ],
+  "consultancy_services|CAT_CONS|CONS_CO": [
+    { value: "FORM_ACCEPT", label: "Acceptance of Award", condition: "always" },
+    { value: "FORM_LOA", label: "Letter of Award", condition: "always" },
+    { value: "FORM_PAY_SCHED", label: "Payment Schedule", condition: "always" },
+    { value: "PROC_PROP", label: "Proposal", condition: "always" },
+    { value: "PROC_TOR", label: "Terms of Reference", condition: "always" },
+    { value: "PROC_TENDER", label: "Tender Documents", condition: "always" },
+    { value: "DUE_BUS_REG", label: "Business Registration", condition: "if_applicable" },
+    { value: "DUE_GS", label: "Certificate of Good Standing", condition: "if_applicable" },
+    { value: "DUE_INCORP", label: "Company Incorporation Documents", condition: "if_applicable" },
+  ],
+  "consultancy_services|CAT_CONS|IC": [
+    { value: "FORM_ACCEPT", label: "Acceptance of Award", condition: "always" },
+    { value: "FORM_LOA", label: "Letter of Award", condition: "always" },
+    { value: "FORM_PAY_SCHED", label: "Payment Schedule", condition: "always" },
+    { value: "PROC_PROP", label: "Proposal", condition: "always" },
+    { value: "PROC_TOR", label: "Terms of Reference", condition: "always" },
+    { value: "PROC_TENDER", label: "Tender Documents", condition: "always" },
+  ],
+  "consultancy_services|CAT_CONS|IC_IDB": [
+    { value: "FORM_ACCEPT", label: "Acceptance of Award", condition: "always" },
+    { value: "FORM_LOA", label: "Letter of Award", condition: "always" },
+    { value: "FORM_PAY_SCHED", label: "Payment Schedule", condition: "always" },
+    { value: "PROC_PROP", label: "Proposal", condition: "always" },
+    { value: "PROC_TOR", label: "Terms of Reference", condition: "always" },
+    { value: "PROC_TENDER", label: "Tender Documents", condition: "always" },
+  ],
+  "works|CAT_CONST|WKS": [
+    { value: "FORM_ACCEPT", label: "Acceptance of Award", condition: "always" },
+    { value: "FORM_DRAFT", label: "Draft Contract", condition: "if_applicable" },
+    { value: "FORM_LOA", label: "Letter of Award", condition: "always" },
+    { value: "FORM_PAY_SCHED", label: "Payment Schedule", condition: "always" },
+    { value: "FORM_SCHED_WORKS", label: "Schedule of Works/Completion Schedule", condition: "always" },
+    { value: "PROC_PROP", label: "Proposal", condition: "always" },
+    { value: "PROC_SCOPE", label: "Scope of Works", condition: "always" },
+    { value: "PROC_TENDER", label: "Tender Documents", condition: "always" },
+    { value: "DUE_BUS_REG", label: "Business Registration", condition: "always" },
+    { value: "DUE_GS", label: "Certificate of Good Standing", condition: "always" },
+    { value: "DUE_INCORP", label: "Company Incorporation Documents", condition: "always" },
+    { value: "FIN_BOND", label: "Performance Bond", condition: "if_applicable" },
+    { value: "FIN_SURETY", label: "Proof of Surety", condition: "if_applicable" },
+    { value: "PROC_CAB_APPR", label: "Cabinet Approval", condition: "if_applicable" },
+    { value: "PROC_CAB_PAPER", label: "Cabinet Paper", condition: "if_applicable" },
+    { value: "PROC_SSP_APPR", label: "Single Source Approval", condition: "if_applicable" },
+    { value: "PROC_SSP_REQ", label: "Single Source Procurement Request", condition: "if_applicable" },
+  ],
+}
+
+function toChecklistRequirement(rules: DocumentChecklistItem[]): DocumentChecklistRequirement {
+  const always = rules.filter((rule) => rule.condition === "always").map((rule) => ({ value: rule.value, label: rule.label }))
+  const optional = rules.filter((rule) => rule.condition !== "always").map((rule) => ({ value: rule.value, label: rule.label }))
+  return { always, optional }
+}
+
+function normalizeClassificationField(field: string, value: string | boolean): string | boolean {
+  if (typeof value !== "string") return value
+  if (field === "contractNature" && value === "consultancy") return "consultancy_services"
+  if (field === "contractCategory" && value === "CAT_MOU") return "CAT_INTER"
+  if (field === "contractInstrument") {
+    if (value === "WORKS") return "WKS"
+    if (value === "CONS_INDV" || value === "CONS_IND") return "IC"
+    if (value === "CONS_IDB") return "IC_IDB"
   }
+  return value
 }
 
 function ContractsPageContent() {
@@ -291,6 +373,8 @@ function ContractsPageContent() {
   const [lastSaved, setLastSaved] = useState<Date | null>(null)
   const [submissionError, setSubmissionError] = useState<string | null>(null)
   const [isLoadingDraft, setIsLoadingDraft] = useState(false)
+  const [documentRequirements, setDocumentRequirements] = useState<DocumentChecklistRequirement>({ always: [], optional: [] })
+  const [isChecklistLoading, setIsChecklistLoading] = useState(false)
   
   // Contract validation state for renewals/supplementals
   const [isValidatingContract, setIsValidatingContract] = useState(false)
@@ -454,7 +538,8 @@ function ContractsPageContent() {
 
   const updateFormData = (field: string, value: string | boolean) => {
     setFormData(prev => {
-      const newData = { ...prev, [field]: value }
+      const normalizedValue = normalizeClassificationField(field, value)
+      const newData = { ...prev, [field]: normalizedValue }
       
       // Auto-calculate duration when start or end date changes
       if ((field === "contractStartDate" || field === "contractEndDate") && 
@@ -500,11 +585,46 @@ function ContractsPageContent() {
     return CONTRACT_INSTRUMENTS[formData.contractNature as keyof typeof CONTRACT_INSTRUMENTS] || []
   }, [formData.contractNature])
 
-  // Get required and optional documents based on nature
-  const documentRequirements = useMemo(() => {
-    if (!formData.contractNature) return { always: [], optional: [] }
-    return REQUIRED_DOCUMENTS[formData.contractNature as keyof typeof REQUIRED_DOCUMENTS] || { always: [], optional: [] }
-  }, [formData.contractNature])
+  useEffect(() => {
+    const nature = formData.contractNature
+    const category = formData.contractCategory
+    const instrument = formData.contractInstrument
+
+    if (!nature || !category || !instrument || instrument === "OTHER") {
+      setDocumentRequirements({ always: [], optional: [] })
+      return
+    }
+
+    const fallbackKey = `${nature}|${category}|${instrument}`
+    const fallback = toChecklistRequirement(FALLBACK_DOCUMENT_CHECKLIST_CONFIG[fallbackKey] || [])
+
+    const fetchChecklist = async () => {
+      setIsChecklistLoading(true)
+      try {
+        const response = await apiGet<DocumentChecklistApiRule[]>(
+          `/api/constants/document-checklist?nature=${encodeURIComponent(nature)}&category=${encodeURIComponent(category)}&instrument=${encodeURIComponent(instrument)}`
+        )
+
+        if (response.success && Array.isArray(response.data) && response.data.length > 0) {
+          const mapped: DocumentChecklistItem[] = response.data.map((row) => ({
+            value: row.document_type_code,
+            label: row.document_type_label,
+            condition: row.condition === "always" ? "always" : "if_applicable",
+          }))
+          setDocumentRequirements(toChecklistRequirement(mapped))
+          return
+        }
+      } catch (error) {
+        console.error("Checklist API failed, using fallback config", error)
+      } finally {
+        setIsChecklistLoading(false)
+      }
+
+      setDocumentRequirements(fallback)
+    }
+
+    fetchChecklist()
+  }, [formData.contractNature, formData.contractCategory, formData.contractInstrument])
 
   // Get all document types for file upload
   const allDocumentTypes = useMemo(() => {
@@ -1531,10 +1651,13 @@ function ContractsPageContent() {
                         {documentRequirements.always.length - missingRequiredDocs.length} / {documentRequirements.always.length} uploaded
                       </Badge>
                     </div>
-                    <Progress 
-                      value={((documentRequirements.always.length - missingRequiredDocs.length) / documentRequirements.always.length) * 100} 
+                    <Progress
+                      value={documentRequirements.always.length > 0 ? ((documentRequirements.always.length - missingRequiredDocs.length) / documentRequirements.always.length) * 100 : 0}
                       className="h-2 mb-4"
                     />
+                    {isChecklistLoading && (
+                      <p className="text-xs text-muted-foreground mb-2">Loading checklist from server...</p>
+                    )}
                     <div className="grid gap-2 sm:grid-cols-2">
                       {documentRequirements.always.map((doc) => {
                         const isUploaded = files.some(f => f.documentType === doc.value)

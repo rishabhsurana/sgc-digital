@@ -172,7 +172,7 @@ export default function CorrespondenceRegisterPage() {
             <Button
               variant="outline"
               size="sm"
-              className="border-white/30 text-white hover:bg-white/10"
+             className="bg-white/20 hover:bg-white/30 text-white"
               onClick={() => void loadRegisters(page, limit)}
             >
               <RefreshCw className="mr-2 h-4 w-4" />
@@ -388,10 +388,10 @@ export default function CorrespondenceRegisterPage() {
                               <Eye className="mr-2 h-4 w-4" />
                               View Details
                             </DropdownMenuItem>
-                            <DropdownMenuItem>
+                            {/* <DropdownMenuItem>
                               <CheckCircle className="mr-2 h-4 w-4" />
                               Mark Complete
-                            </DropdownMenuItem>
+                            </DropdownMenuItem> */}
                             <DropdownMenuItem>
                               <Download className="mr-2 h-4 w-4" />
                               Download
@@ -481,10 +481,10 @@ export default function CorrespondenceRegisterPage() {
                 <p className="font-medium">{selectedItem.subject}</p>
               </div>
               <div className="flex gap-2 pt-4">
-                <Button className="flex-1">
+                {/* <Button className="flex-1">
                   <CheckCircle className="mr-2 h-4 w-4" />
                   Mark Complete
-                </Button>
+                </Button> */}
                 <Button variant="outline">
                   <Download className="mr-2 h-4 w-4" />
                   Download
