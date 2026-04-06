@@ -34,6 +34,7 @@ import {
   DollarSign,
   Activity,
 } from "lucide-react"
+import { apiDownloadFile } from "@/lib/api-client"
 import {
   fetchReportsContractsByNature,
   fetchReportsCorrespondenceByType,
@@ -130,6 +131,7 @@ export default function ManagementReportsPage() {
   const [statusOverview, setStatusOverview] = useState<ReportsStatusOverviewPayload>(EMPTY_STATUS)
   const [monthlyTrends, setMonthlyTrends] = useState<ReportsMonthlyTrend[]>([])
   const [loading, setLoading] = useState(true)
+  const [exporting, setExporting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const filters = useMemo(
@@ -184,6 +186,25 @@ export default function ManagementReportsPage() {
 
   const maxMonthlyValue = Math.max(1, ...monthlyTrends.flatMap((m) => [m.correspondence, m.contracts]))
 
+  const handleExport = useCallback(async () => {
+    setExporting(true)
+    try {
+      const q = new URLSearchParams()
+      q.set("date_range", dateRange)
+      if (ministry !== "all") q.set("ministry", ministry)
+      if (fromDate) q.set("from", fromDate)
+      if (toDate) q.set("to", toDate)
+      await apiDownloadFile(
+        `/api/reports/export?${q.toString()}`,
+        `management-reports-${new Date().toISOString().slice(0, 10)}.xlsx`
+      )
+    } catch (err) {
+      setError(errorToText(err))
+    } finally {
+      setExporting(false)
+    }
+  }, [dateRange, ministry, fromDate, toDate])
+
   return (
     <div className="p-6 lg:p-8">
       <div className="rounded-xl bg-gradient-to-r from-amber-600 via-orange-600 to-slate-800 p-6 mb-8 text-white">
@@ -197,9 +218,14 @@ export default function ManagementReportsPage() {
               <p className="mt-1 text-white/80">Comprehensive insights into SGC Digital submissions and processing metrics.</p>
             </div>
           </div>
-          <Button size="sm" className="bg-white/20 hover:bg-white/30 text-white" disabled>
+          <Button
+            size="sm"
+            className="bg-white/20 hover:bg-white/30 text-white"
+            onClick={() => void handleExport()}
+            disabled={exporting}
+          >
             <Download className="mr-2 h-4 w-4" />
-            Export Report
+            {exporting ? "Exporting..." : "Export Report"}
           </Button>
         </div>
       </div>
