@@ -972,10 +972,10 @@ export default function UserManagementPage() {
                             <DropdownMenuContent align="end">
                               <DropdownMenuLabel>Actions</DropdownMenuLabel>
                               <DropdownMenuSeparator />
-                              <DropdownMenuItem onClick={() => openEditPortalUser(user)}>
+                              {/* <DropdownMenuItem onClick={() => openEditPortalUser(user)}>
                                 <Edit className="h-4 w-4 mr-2" />
                                 Edit User
-                              </DropdownMenuItem>
+                              </DropdownMenuItem> */}
                               {user.status !== "active" && (
                                 <DropdownMenuItem
                                   className="text-green-600"

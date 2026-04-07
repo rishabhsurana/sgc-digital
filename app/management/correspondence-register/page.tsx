@@ -422,10 +422,10 @@ export default function CorrespondenceRegisterPage() {
                               <Eye className="mr-2 h-4 w-4" />
                               View Details
                             </DropdownMenuItem>
-                            <DropdownMenuItem>
+                            {/* <DropdownMenuItem>
                               <CheckCircle className="mr-2 h-4 w-4" />
                               Mark Complete
-                            </DropdownMenuItem>
+                            </DropdownMenuItem> */}
                             <DropdownMenuItem>
                               <Download className="mr-2 h-4 w-4" />
                               Download
@@ -515,10 +515,10 @@ export default function CorrespondenceRegisterPage() {
                 <p className="font-medium">{selectedItem.subject}</p>
               </div>
               <div className="flex gap-2 pt-4">
-                <Button className="flex-1">
+                {/* <Button className="flex-1">
                   <CheckCircle className="mr-2 h-4 w-4" />
                   Mark Complete
-                </Button>
+                </Button> */}
                 <Button variant="outline">
                   <Download className="mr-2 h-4 w-4" />
                   Download
