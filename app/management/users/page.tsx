@@ -174,6 +174,12 @@ function currentManagementJwtRole(): string | null {
   }
 }
 
+function formatDateSafe(value: Date | string | null | undefined, fallback = "—"): string {
+  if (!value) return fallback
+  const date = value instanceof Date ? value : new Date(String(value))
+  return Number.isNaN(date.getTime()) ? fallback : date.toLocaleDateString()
+}
+
 export default function UserManagementPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [roleFilter, setRoleFilter] = useState("all")
@@ -271,7 +277,8 @@ export default function UserManagementPage() {
     }
   }
 
-  const portalRoleValues = Array.from(new Set(portalUsers.map((u) => u.role))).sort()
+  const submitterTypeLabel = (value: string) =>
+    SUBMITTER_TYPES.find((t) => t.value === value)?.label || value || "—"
 
   const filteredPortalUsers = portalUsers.filter((user) => {
     const searchLower = searchQuery.toLowerCase().trim()
@@ -281,7 +288,7 @@ export default function UserManagementPage() {
       fullName.includes(searchLower) ||
       user.email.toLowerCase().includes(searchLower) ||
       user.organizationLabel.toLowerCase().includes(searchLower)
-    const matchesRole = roleFilter === "all" || user.role === roleFilter
+    const matchesRole = roleFilter === "all" || user.submitterType === roleFilter
     const matchesStatus = statusFilter === "all" || user.status === statusFilter
     return matchesSearch && matchesRole && matchesStatus
   })
@@ -301,7 +308,7 @@ export default function UserManagementPage() {
     )
   }
 
-  const getPortalRoleBadge = (role: string) => {
+  const getPortalRoleBadge = (role: string, submitterType?: string) => {
     const r = String(role || "").toLowerCase()
     if (r === "super_admin" || r === "admin") {
       return (
@@ -320,7 +327,7 @@ export default function UserManagementPage() {
       )
     }
     if (r === "submitter") {
-      return <Badge className="bg-slate-100 text-slate-800">{role}</Badge>
+      return <Badge className="bg-slate-100 text-slate-800">{submitterTypeLabel(String(submitterType || ""))}</Badge>
     }
     return <Badge variant="outline">{role || "—"}</Badge>
   }
@@ -846,13 +853,13 @@ export default function UserManagementPage() {
                 <Select value={roleFilter} onValueChange={setRoleFilter}>
                   <SelectTrigger className="w-full sm:w-[150px]">
                     <Filter className="h-4 w-4 mr-2" />
-                    <SelectValue placeholder="Role" />
+                    <SelectValue placeholder="Submitter type" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Roles</SelectItem>
-                    {portalRoleValues.map((role) => (
-                      <SelectItem key={role} value={role}>
-                        {role}
+                    <SelectItem value="all">All Submitter Types</SelectItem>
+                    {SUBMITTER_TYPES.map((type) => (
+                      <SelectItem key={type.value} value={type.value}>
+                        {type.label}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -949,17 +956,17 @@ export default function UserManagementPage() {
                             <span className="truncate max-w-[200px]">{user.organizationLabel}</span>
                           </div>
                         </TableCell>
-                        <TableCell>{getPortalRoleBadge(user.role)}</TableCell>
+                        <TableCell>{getPortalRoleBadge(user.role, user.submitterType)}</TableCell>
                         <TableCell>{getPortalStatusBadge(user.status)}</TableCell>
                         <TableCell>
                           <div className="flex items-center gap-1 text-sm text-muted-foreground">
                             <Calendar className="h-3 w-3" />
-                            {new Date(user.createdAt).toLocaleDateString()}
+                            {formatDateSafe(user.createdAt)}
                           </div>
                         </TableCell>
                         <TableCell>
                           <span className="text-sm text-muted-foreground">
-                            {user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleDateString() : "Never"}
+                            {formatDateSafe(user.lastLoginAt, "Never")}
                           </span>
                         </TableCell>
                         <TableCell>
@@ -1063,7 +1070,7 @@ export default function UserManagementPage() {
                             )}
                           </TableCell>
                           <TableCell className="text-sm text-muted-foreground">
-                            {new Date(u.created_at).toLocaleDateString()}
+                            {formatDateSafe(u.created_at ?? (u as { createdAt?: string | null }).createdAt)}
                           </TableCell>
                           <TableCell>
                             <Button variant="ghost" size="icon" onClick={() => openEditMgmtUser(u)}>
