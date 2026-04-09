@@ -717,6 +717,7 @@ function ContractsPageContent() {
       // Always submit as a new contract submission; draft record stays as the same draft record.
       const result = await apiPost<{ transaction_number: string }>("/api/contracts", {
         ...formData,
+        ministryLabel: MINISTRIES.find((m) => m.value === formData.ministry)?.label || formData.ministry,
         status: "submitted",
       })
       if (!result.success) throw new Error(result.error || "Submission failed")
