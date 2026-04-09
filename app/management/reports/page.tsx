@@ -103,6 +103,13 @@ function formatChange(v: number): string {
   return `${rounded > 0 ? "+" : ""}${rounded}%`
 }
 
+function formatMinistryShortform(name: string): string {
+  const value = (name || "").trim()
+  // Codes like "mof", "mfa", "mtw" should render as uppercase.
+  if (value && !value.includes(" ")) return value.toUpperCase()
+  return value
+}
+
 function errorToText(value: unknown): string {
   if (typeof value === "string") return value
   if (value instanceof Error) return value.message
@@ -323,7 +330,7 @@ export default function ManagementReportsPage() {
                 <div className="space-y-4">
                   {topMinistries.map((m, index) => (
                     <div key={m.name} className="space-y-2">
-                      <div className="flex items-center justify-between text-sm"><div className="flex items-center gap-2"><span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">{index + 1}</span><span className="font-medium text-foreground">{m.name}</span></div><span className="text-muted-foreground">{m.submissions}</span></div>
+                      <div className="flex items-center justify-between text-sm"><div className="flex items-center gap-2"><span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">{index + 1}</span><span className="font-medium text-foreground">{formatMinistryShortform(m.name)}</span></div><span className="text-muted-foreground">{m.submissions}</span></div>
                       <Progress value={m.percentage} className="h-2" />
                     </div>
                   ))}

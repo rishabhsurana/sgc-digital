@@ -137,6 +137,14 @@ const getFileIcon = (type: string) => {
   }
 }
 
+function formatMinistryDisplay(value: string): string {
+  const normalized = (value || "").trim()
+  if (!normalized) return "—"
+  // Show shortforms like "mof" in uppercase.
+  if (!normalized.includes(" ")) return normalized.toUpperCase()
+  return normalized
+}
+
 export default function ContractsHistoryPage() {
   const [searchInput, setSearchInput] = useState("")
   const [debouncedSearch, setDebouncedSearch] = useState("")
@@ -460,7 +468,7 @@ export default function ContractsHistoryPage() {
                       {item.subject}
                     </TableCell>
                     <TableCell className="text-sm max-w-[150px] truncate" title={item.ministry}>
-                      {item.ministry || "—"}
+                      {formatMinistryDisplay(item.ministry)}
                     </TableCell>
                     <TableCell className="text-sm">{item.submitter || "—"}</TableCell>
                     <TableCell className="text-sm font-medium">{item.contractValue}</TableCell>
@@ -563,7 +571,7 @@ export default function ContractsHistoryPage() {
                     </div>
                     <div className="space-y-1">
                       <p className="text-xs font-medium text-muted-foreground">Ministry/MDA</p>
-                      <p className="font-medium">{detail.ministry || "—"}</p>
+                      <p className="font-medium">{formatMinistryDisplay(detail.ministry)}</p>
                     </div>
                     <div className="space-y-1">
                       <p className="text-xs font-medium text-muted-foreground">Contract Value</p>

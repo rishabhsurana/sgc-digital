@@ -51,6 +51,7 @@ import {
 } from "lucide-react"
 import { apiDownloadFile, apiGet } from "@/lib/api-client"
 import { ManagementPaginationBar } from "@/components/management/management-pagination-bar"
+import { MINISTRIES_DEPARTMENTS_AGENCIES } from "@/lib/constants"
 
 const STATUS_CONFIG = {
   pending: { label: "Pending", color: "bg-amber-100 text-amber-700 border-amber-200", icon: Clock },
@@ -159,7 +160,15 @@ export default function ContractsRegisterPage() {
         id: item.register_id,
         dateReceived: item.date_received ? String(item.date_received).slice(0, 10) : "-",
         dateCompleted: item.date_completed ? String(item.date_completed).slice(0, 10) : "-",
-        originatingMDA: item.originating_mda ?? "-",
+        originatingMDA: (() => {
+          const raw = item.originating_mda ?? ""
+          const match = MINISTRIES_DEPARTMENTS_AGENCIES.find(
+            (mda) =>
+              mda.value.toLowerCase() === raw.toLowerCase() ||
+              mda.label.toLowerCase() === raw.toLowerCase()
+          )
+          return match?.label ?? (raw || "-")
+        })(),
         subject: item.subject ?? "-",
         nature: item.nature_of_contract ?? "-",
         category: item.category ?? "-",
@@ -442,7 +451,7 @@ export default function ContractsRegisterPage() {
                   return (
                     <TableRow key={item.id} className="hover:bg-muted/30">
                       <TableCell className="text-sm">{item.dateReceived}</TableCell>
-                      <TableCell className="text-sm max-w-[150px] truncate" title={item.originatingMDA}>{item.originatingMDA}</TableCell>
+                      <TableCell className="text-sm max-w-[280px] min-w-[220px] truncate" title={item.originatingMDA}>{item.originatingMDA}</TableCell>
                       <TableCell className="max-w-[180px] truncate" title={item.subject}>{item.subject}</TableCell>
                       <TableCell>
                         <Badge variant="outline" className={
