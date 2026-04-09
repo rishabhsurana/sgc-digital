@@ -141,7 +141,7 @@ function CorrespondencePageContent() {
     registryFileNumber: "",
     courtFileNumber: "",
     ministryFileReference: "",
-    urgency: "standard",
+    urgency: "Normal",
     urgentReason: "",
     confidentiality: "standard",
     subject: "",
@@ -202,8 +202,29 @@ function CorrespondencePageContent() {
 
   useEffect(() => {
     const loggedInUser = getUser()
-    const userOrg = (loggedInUser?.organization || "").trim()
-    if (!userOrg) return
+    if (!loggedInUser) return
+
+    const normalizedSubmitterType = String(loggedInUser.submitter_type || "").toLowerCase()
+    const submitterTypeMap: Record<string, string> = {
+      ministry: "ministry",
+      mda: "ministry",
+      mda_staff: "ministry",
+      statutory: "statutory",
+      statutory_body: "statutory",
+      court: "court",
+      attorney: "attorney",
+      attorney_at_law: "attorney",
+      public: "public",
+      individual: "public",
+      member_of_public: "public",
+    }
+    const mappedSubmitterType =
+      submitterTypeMap[normalizedSubmitterType] ||
+      (["ministry", "statutory", "court", "attorney", "public", "other"].includes(normalizedSubmitterType)
+        ? normalizedSubmitterType
+        : "")
+
+    const userOrg = (loggedInUser.organization || "").trim()
 
     const match = MINISTRIES_DEPARTMENTS_AGENCIES.find((mda) => {
       const label = mda.label.toLowerCase()
@@ -211,12 +232,11 @@ function CorrespondencePageContent() {
       const probe = userOrg.toLowerCase()
       return probe === label || probe === value
     })
-    if (!match) return
 
     setFormData((prev) => ({
       ...prev,
-      submitterType: prev.submitterType || "ministry",
-      organizationName: prev.organizationName || match.label,
+      submitterType: prev.submitterType || mappedSubmitterType || "other",
+      organizationName: prev.organizationName || match?.label || "",
     }))
   }, [])
 
@@ -284,7 +304,7 @@ function CorrespondencePageContent() {
           formData.submitterEmail !== "" &&
           formData.subject !== "" &&
           formData.description !== "" &&
-          (formData.urgency !== "urgent" || formData.urgentReason !== "")
+          (formData.urgency !== "Urgent" || formData.urgentReason !== "")
         )
       case 2:
         return files.length === 0 || files.every(f => f.documentType !== "")
@@ -722,7 +742,7 @@ function CorrespondencePageContent() {
                         </Select>
                       </div>
                     </div>
-                    {formData.urgency === "urgent" && (
+                    {formData.urgency === "Urgent" && (
                       <div className="space-y-2">
                         <Label htmlFor="urgentReason">Reason for Urgency <span className="text-destructive">*</span></Label>
                         <Textarea
@@ -823,7 +843,7 @@ function CorrespondencePageContent() {
                       <h4 className="text-sm font-medium text-muted-foreground mb-2">Priority</h4>
                       <div className="flex gap-4">
                         <span className="text-foreground">
-                          Urgency: <span className="font-medium">{formData.urgency === "urgent" ? "Urgent" : "Standard"}</span>
+                          Urgency: <span className="font-medium">{formData.urgency === "Urgent" ? "Urgent" : "Standard"}</span>
                         </span>
                         <span className="text-foreground">
                           Confidentiality: <span className="font-medium">{CONFIDENTIALITY_LEVELS.find(l => l.value === formData.confidentiality)?.label}</span>
