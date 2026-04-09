@@ -43,6 +43,7 @@ import {
   getDashboardSummary,
   getTransactionHistory
 } from './mock-data'
+import { generateUUID } from '../uuid'
 
 // =============================================
 // Configuration
@@ -197,7 +198,7 @@ export async function getUserByEmail(email: string): Promise<UserProfile | null>
 
 export async function createUser(userData: Partial<UserProfile>): Promise<UserProfile> {
   if (USE_MOCK_DATA) {
-    const userId = crypto.randomUUID()
+    const userId = generateUUID()
     const newUser: UserProfile = {
       userId,
       email: userData.email || '',
@@ -290,7 +291,7 @@ export async function createStaffRequest(requestData: Partial<StaffRegistrationR
   if (USE_MOCK_DATA) {
     const requestNumber = `REQ-${new Date().getFullYear()}-${String(MOCK_STAFF_REQUESTS.length + 1).padStart(3, '0')}`
     const newRequest: StaffRegistrationRequest = {
-      requestId: crypto.randomUUID(),
+      requestId: generateUUID(),
       requestNumber,
       firstName: requestData.firstName || '',
       lastName: requestData.lastName || '',
@@ -405,7 +406,7 @@ export async function createCorrespondence(data: Partial<Correspondence>): Promi
   if (USE_MOCK_DATA) {
     const referenceNumber = `COR-${new Date().getFullYear()}-${String(MOCK_CORRESPONDENCE.length + 1).padStart(4, '0')}`
     const newCorrespondence: Correspondence = {
-      correspondenceId: crypto.randomUUID(),
+      correspondenceId: generateUUID(),
       referenceNumber,
       applicantUserId: data.applicantUserId || '',
       applicantName: data.applicantName || '',
@@ -487,7 +488,7 @@ export async function createContract(data: Partial<Contract>): Promise<Contract>
   if (USE_MOCK_DATA) {
     const referenceNumber = `CON-${new Date().getFullYear()}-${String(MOCK_CONTRACTS.length + 1).padStart(4, '0')}`
     const newContract: Contract = {
-      contractId: crypto.randomUUID(),
+      contractId: generateUUID(),
       referenceNumber,
       requestingUserId: data.requestingUserId || '',
       requestingDepartmentId: data.requestingDepartmentId || 1,
@@ -558,7 +559,7 @@ export async function getActivityLog(limit?: number): Promise<ActivityLog[]> {
 export async function logActivity(activity: Partial<ActivityLog>): Promise<ActivityLog> {
   if (USE_MOCK_DATA) {
     const newActivity: ActivityLog = {
-      activityId: crypto.randomUUID(),
+      activityId: generateUUID(),
       userId: activity.userId || null,
       userName: activity.userName || null,
       userRole: activity.userRole || null,
@@ -724,7 +725,7 @@ export async function createContractRenewal(
     }
     
     const newRenewal: ContractRenewal = {
-      renewalId: crypto.randomUUID(),
+      renewalId: generateUUID(),
       renewalReferenceNumber: `REN-${new Date().getFullYear()}-${String(MOCK_CONTRACT_RENEWALS.length + 1).padStart(4, '0')}`,
       renewalSequence: 1,
       isValidRenewal: false,
@@ -871,7 +872,7 @@ export async function createEntityRegistration(
 ): Promise<{ success: boolean; registration?: EntityRegistrationHistory; error?: string }> {
   if (USE_MOCK_DATA) {
     const newRegistration: EntityRegistrationHistory = {
-      historyId: crypto.randomUUID(),
+      historyId: generateUUID(),
       actionType: 'REGISTRATION',
       registrationStatusId: 1, // Pending
       emailVerified: false,

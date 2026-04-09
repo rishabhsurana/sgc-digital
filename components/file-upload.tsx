@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from "react"
 import { cn } from "@/lib/utils"
+import { generateUUID } from "@/lib/uuid"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
@@ -69,7 +70,7 @@ export function FileUpload({
         return
       }
       validFiles.push({
-        id: crypto.randomUUID(),
+        id: generateUUID(),
         file,
         documentType: "",
         description: ""

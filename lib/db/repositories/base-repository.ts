@@ -1,5 +1,6 @@
 import { query, sql, withTransaction } from '../connection'
 import type { IResult } from 'mssql'
+import { generateUUID } from '../../uuid'
 
 export interface PaginationOptions {
   page?: number
@@ -187,6 +188,6 @@ export abstract class BaseRepository<T> {
    * Generate a new UUID
    */
   protected generateId(): string {
-    return crypto.randomUUID()
+    return generateUUID()
   }
 }
