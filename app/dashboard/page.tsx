@@ -68,6 +68,13 @@ function mapApiItemToSubmission(item: DashboardSubmissionItem): Submission {
   }
 }
 
+function formatMinistryDisplay(value?: string): string {
+  const normalized = (value || "").trim()
+  if (!normalized) return ""
+  if (!normalized.includes(" ")) return normalized.toUpperCase()
+  return normalized
+}
+
 function SubmissionCard({
   submission,
   onRefresh,
@@ -111,7 +118,7 @@ function SubmissionCard({
                 {submission.ministry && (
                   <span className="flex items-center gap-1">
                     <Building2 className="h-3 w-3" />
-                    {submission.ministry}
+                    {formatMinistryDisplay(submission.ministry)}
                   </span>
                 )}
               </div>
