@@ -31,6 +31,7 @@ import { apiGet, apiPost, apiPostFormData, apiPut } from "@/lib/api-client"
 import { validateOriginalContract, type OriginalContractData, type ValidationResult } from "@/lib/actions/contract-validation-actions"
 import { ContractsSubmitGuard } from "@/components/contracts-submit-guard"
 import { RequireAuthGuard } from "@/components/require-auth-guard"
+import { getUser } from "@/lib/auth"
 
 const STEPS = [
   { id: "nature", title: "Contract Nature", description: "Select contract type" },
@@ -451,6 +452,22 @@ function ContractsPageContent() {
     loadDraft()
   }, [searchParams])
 
+  useEffect(() => {
+    const loggedInUser = getUser()
+    const userOrg = (loggedInUser?.organization || "").trim()
+    if (!userOrg) return
+
+    const match = MINISTRIES.find((ministry) => {
+      const label = ministry.label.toLowerCase()
+      const value = ministry.value.toLowerCase()
+      const probe = userOrg.toLowerCase()
+      return probe === label || probe === value
+    })
+    if (!match) return
+
+    setFormData((prev) => (prev.ministry ? prev : { ...prev, ministry: match.value }))
+  }, [])
+
   const upsertDraft = useCallback(async (): Promise<string | null> => {
     const payload = buildDraftPayload()
     if (draftId) {
@@ -507,7 +524,7 @@ function ContractsPageContent() {
     try {
       // TODO: Get actual entity ID from user session
       const entityId = 'ENT-MOF-001' // Demo entity ID
-      const contractType = formData.contractType as 'renewal' | 'supplemental'
+      const contractType = formData.contractType as 'REN' | 'SUP'
       
       const result = await validateOriginalContract(
         formData.parentContractNumber,
@@ -539,7 +556,7 @@ function ContractsPageContent() {
           taxIdentificationNumber: result.contractData!.taxIdentificationNumber || prev.taxIdentificationNumber,
           
           // Contract Details
-          contractTitle: contractType === 'renewal' 
+          contractTitle: contractType === 'REN' 
             ? `Renewal: ${result.contractData!.contractTitle}`
             : `Supplemental: ${result.contractData!.contractTitle}`,
           contractDescription: result.contractData!.contractDescription || prev.contractDescription,
@@ -1104,7 +1121,7 @@ function ContractsPageContent() {
                   </div>
 
                   {/* Parent Contract Reference */}
-                  {(formData.contractType === "renewal" || formData.contractType === "supplemental") && (
+                  {(formData.contractType === "REN" || formData.contractType === "SUP") && (
                     <div className="space-y-4">
                       <div className="space-y-2">
                         <Label htmlFor="parentContractNumber">
@@ -1738,7 +1755,7 @@ function ContractsPageContent() {
                       </Alert>
                     )}
                     
-                    {(formData.contractType === "renewal") && (
+                    {(formData.contractType === "REN") && (
                       <div className="space-y-2">
                         <Label htmlFor="renewalTerm" className="flex items-center gap-2">
                           <RefreshCw className="h-3.5 w-3.5 text-muted-foreground" />

@@ -76,7 +76,7 @@ export interface ValidationResult {
 export async function validateOriginalContract(
   contractNumber: string,
   requestingEntityId: string,
-  contractType: 'renewal' | 'supplemental'
+  contractType: 'REN' | 'SUP'
 ): Promise<ValidationResult> {
   const errors: string[] = []
   const warnings: string[] = []
@@ -126,16 +126,16 @@ export async function validateOriginalContract(
   const validStatusesForRenewal = ['ACTIVE', 'EXECUTED', 'APPROVED', 'EXPIRING_SOON']
   const validStatusesForSupplemental = ['ACTIVE', 'EXECUTED', 'APPROVED']
   
-  const validStatuses = contractType === 'renewal' 
+  const validStatuses = contractType === 'REN' 
     ? validStatusesForRenewal 
     : validStatusesForSupplemental
   
-  if (!validStatuses.includes(contract.status)) {
+  if (!validStatuses.includes(contract.status || '')) {
     return {
       isValid: false,
       contractData: null,
       errors: [
-        `This contract cannot be ${contractType === 'renewal' ? 'renewed' : 'supplemented'} ` +
+        `This contract cannot be ${contractType === 'REN' ? 'renewed' : 'supplemented'} ` +
         `because its current status is "${contract.status}". ` +
         `Only contracts with status ${validStatuses.join(', ')} can be processed.`
       ],
@@ -144,11 +144,11 @@ export async function validateOriginalContract(
   }
   
   // Check if contract has expired (for renewals)
-  const expiryDate = new Date(contract.expiryDate || contract.contractEndDate)
+  const expiryDate = new Date(contract.expiryDate || contract.contractEndDate || new Date())
   const today = new Date()
   const daysUntilExpiry = Math.ceil((expiryDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
   
-  if (contractType === 'renewal') {
+  if (contractType === 'REN') {
     // Allow renewals up to 30 days after expiry
     if (daysUntilExpiry < -30) {
       errors.push(
@@ -168,7 +168,7 @@ export async function validateOriginalContract(
     
     // Check maximum renewal limit
     const maxRenewals = contract.maxRenewals || 3
-    if (contract.renewalCount >= maxRenewals) {
+    if (contract.renewalCount && contract.renewalCount >= maxRenewals) {
       errors.push(
         `This contract has reached the maximum number of renewals (${maxRenewals}). ` +
         `A new procurement process must be initiated.`
@@ -177,14 +177,14 @@ export async function validateOriginalContract(
   }
   
   // Check for pending renewals/supplementals
-  if (contract.hasPendingRenewal && contractType === 'renewal') {
+  if (contract.hasPendingRenewal && contractType === 'REN') {
     errors.push(
       `There is already a pending renewal request for this contract. ` +
       `Please check your dashboard or contact the assigned officer.`
     )
   }
   
-  if (contract.hasPendingSupplemental && contractType === 'supplemental') {
+  if (contract.hasPendingSupplemental && contractType === 'SUP') {
     warnings.push(
       `There is already a pending supplemental request for this contract. ` +
       `Please verify this is not a duplicate submission.`
@@ -199,8 +199,8 @@ export async function validateOriginalContract(
     contractDescription: contract.description || '',
     scopeOfWork: contract.scopeOfWork || '',
     
-    ministry: contract.ministry,
-    department: contract.department,
+    ministry: contract.ministry || '',
+    department: contract.department || '',
     
     contractorType: contract.contractorType || 'company',
     contractorName: contract.counterpartyName,
@@ -231,10 +231,10 @@ export async function validateOriginalContract(
     supplementalCount: contract.supplementalCount || 0,
     lastRenewalDate: contract.lastRenewalDate || null,
     
-    status: contract.status,
-    isActive: ['ACTIVE', 'EXECUTED', 'APPROVED'].includes(contract.status),
-    canBeRenewed: errors.length === 0 && contractType === 'renewal',
-    canHaveSupplemental: errors.length === 0 && contractType === 'supplemental',
+    status: contract.status || '',
+    isActive: ['ACTIVE', 'EXECUTED', 'APPROVED'].includes(contract.status || ''),
+    canBeRenewed: errors.length === 0 && contractType === 'REN',
+    canHaveSupplemental: errors.length === 0 && contractType === 'SUP',
     expiryDate: expiryDate.toISOString().split('T')[0],
     daysUntilExpiry
   }
@@ -257,12 +257,12 @@ export async function getEntityContractsForRenewal(
   const eligibleContracts = MOCK_CONTRACTS
     .filter(c => {
       if (c.requestingEntityId !== entityId) return false
-      if (!['ACTIVE', 'EXECUTED', 'APPROVED', 'EXPIRING_SOON'].includes(c.status)) return false
-      if (c.renewalCount >= (c.maxRenewals || 3)) return false
+      if (!['ACTIVE', 'EXECUTED', 'APPROVED', 'EXPIRING_SOON'].includes(c.status || '')) return false
+      if (c.renewalCount && c.renewalCount >= (c.maxRenewals || 3)) return false
       return true
     })
     .map(c => {
-      const expiryDate = new Date(c.expiryDate || c.contractEndDate)
+      const expiryDate = new Date(c.expiryDate || c.contractEndDate || new Date())
       const daysUntilExpiry = Math.ceil((expiryDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
       return {
         value: c.referenceNumber,
@@ -285,7 +285,7 @@ export async function getEntityContractsForSupplemental(
   const eligibleContracts = MOCK_CONTRACTS
     .filter(c => {
       if (c.requestingEntityId !== entityId) return false
-      if (!['ACTIVE', 'EXECUTED', 'APPROVED'].includes(c.status)) return false
+      if (!['ACTIVE', 'EXECUTED', 'APPROVED'].includes(c.status || '')) return false
       return true
     })
     .map(c => ({

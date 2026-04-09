@@ -21,6 +21,7 @@ import Link from "next/link"
 import { MINISTRIES_DEPARTMENTS_AGENCIES } from "@/lib/constants"
 import { apiGet, apiPost, apiPostFormData, apiPut } from "@/lib/api-client"
 import { RequireAuthGuard } from "@/components/require-auth-guard"
+import { getUser } from "@/lib/auth"
 
 const STEPS = [
   { id: "type", title: "Type", description: "Select correspondence type" },
@@ -198,6 +199,26 @@ function CorrespondencePageContent() {
 
     loadDraft()
   }, [searchParams])
+
+  useEffect(() => {
+    const loggedInUser = getUser()
+    const userOrg = (loggedInUser?.organization || "").trim()
+    if (!userOrg) return
+
+    const match = MINISTRIES_DEPARTMENTS_AGENCIES.find((mda) => {
+      const label = mda.label.toLowerCase()
+      const value = mda.value.toLowerCase()
+      const probe = userOrg.toLowerCase()
+      return probe === label || probe === value
+    })
+    if (!match) return
+
+    setFormData((prev) => ({
+      ...prev,
+      submitterType: prev.submitterType || "ministry",
+      organizationName: prev.organizationName || match.label,
+    }))
+  }, [])
 
   const upsertDraft = useCallback(async (): Promise<string | null> => {
     const payload = buildDraftPayload()
