@@ -117,6 +117,34 @@ export function apiDelete<T = unknown>(path: string) {
   });
 }
 
+export async function apiPostFormData<T = unknown>(path: string, body: FormData): Promise<ApiResponse<T>> {
+  const token = getToken();
+  const headers: Record<string, string> = {};
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const res = await fetch(`${API_BASE}${path}`, {
+    method: 'POST',
+    headers,
+    body,
+  });
+
+  handleUnauthorizedResponse(res.status);
+  const json = await res.json().catch(() => ({} as Record<string, unknown>));
+
+  if (!res.ok) {
+    return {
+      success: false,
+      error: (json as { error?: string; message?: string }).error
+        || (json as { error?: string; message?: string }).message
+        || `Request failed (${res.status})`,
+    };
+  }
+
+  return json as ApiResponse<T>;
+}
+
 function extractFilenameFromDisposition(disposition: string | null): string | null {
   if (!disposition) return null;
   const utf8Match = disposition.match(/filename\*=UTF-8''([^;]+)/i);

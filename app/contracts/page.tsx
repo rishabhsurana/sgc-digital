@@ -27,7 +27,7 @@ import { Progress } from "@/components/ui/progress"
 import { AskRex } from "@/components/ask-rex"
 import Link from "next/link"
 import { MINISTRIES_DEPARTMENTS_AGENCIES } from "@/lib/constants"
-import { apiGet, apiPost, apiPut } from "@/lib/api-client"
+import { apiGet, apiPost, apiPostFormData, apiPut } from "@/lib/api-client"
 import { validateOriginalContract, type OriginalContractData, type ValidationResult } from "@/lib/actions/contract-validation-actions"
 import { ContractsSubmitGuard } from "@/components/contracts-submit-guard"
 import { RequireAuthGuard } from "@/components/require-auth-guard"
@@ -567,7 +567,33 @@ function ContractsPageContent() {
         status: "submitted",
       })
       if (!result.success) throw new Error(result.error || "Submission failed")
-      setTransactionNumber(result.data?.transaction_number || `CON-${Date.now().toString(36).toUpperCase()}`)
+      const contractData = (result.data || {}) as Record<string, unknown>
+      const contractId = typeof contractData.id === "string" ? contractData.id : null
+
+      if (contractId && files.length > 0) {
+        for (const uploaded of files) {
+          const form = new FormData()
+          form.append("files", uploaded.file)
+          form.append("submission_type", "contract")
+          form.append("submission_id", contractId)
+          form.append("document_type_code", uploaded.documentType || "OTHER")
+          form.append("document_type_label", allDocumentTypes.find((t) => t.value === uploaded.documentType)?.label || "Other Document")
+          form.append("condition", "if_applicable")
+          if (uploaded.description?.trim()) {
+            form.append("description", uploaded.description.trim())
+          }
+
+          const uploadResult = await apiPostFormData("/api/documents/upload", form)
+          if (!uploadResult.success) {
+            throw new Error(uploadResult.error || "Document upload failed")
+          }
+        }
+      }
+
+      setTransactionNumber(
+        (typeof contractData.transaction_number === "string" && contractData.transaction_number)
+          || `CON-${Date.now().toString(36).toUpperCase()}`
+      )
       setIsSubmitted(true)
     } catch (error) {
       console.error('[v0] Submission failed:', error)

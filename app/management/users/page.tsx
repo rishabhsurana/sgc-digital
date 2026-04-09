@@ -125,6 +125,12 @@ const MANAGEMENT_ROLE_OPTIONS = [
   { value: "super_admin", label: "Super Admin" },
 ]
 
+const STAFF_REQUEST_STATUSES = [
+  { value: "pending", label: "Pending" },
+  { value: "approved", label: "Approved" },
+  { value: "rejected", label: "Rejected" },
+]
+
 function mapStaffRequestFromApi(
   row: Record<string, unknown>,
   options: StaffRequestOptions | null
@@ -185,6 +191,8 @@ export default function UserManagementPage() {
   const [roleFilter, setRoleFilter] = useState("all")
   const [statusFilter, setStatusFilter] = useState("all")
   const [activeTab, setActiveTab] = useState("portal")
+  const [staffSearchQuery, setStaffSearchQuery] = useState("")
+  const [staffStatusFilter, setStaffStatusFilter] = useState("pending")
 
   const [portalUsers, setPortalUsers] = useState<PortalUserRow[]>([])
   const [managementUsers, setManagementUsers] = useState<ManagementUserApiRow[]>([])
@@ -298,6 +306,29 @@ export default function UserManagementPage() {
 
   // Filter pending requests
   const pendingRequests = staffRequests.filter(r => r.statusId === 1)
+  const requestStatusValue = (statusId: number) =>
+    statusId === 1 ? "pending" : statusId === 2 ? "approved" : statusId === 3 ? "rejected" : "other"
+
+  const filteredStaffRequests = staffRequests
+    .filter((request) => {
+      const q = staffSearchQuery.trim().toLowerCase()
+      const matchesSearch =
+        q === "" ||
+        request.requestNumber.toLowerCase().includes(q) ||
+        `${request.firstName} ${request.lastName}`.toLowerCase().includes(q) ||
+        request.email.toLowerCase().includes(q) ||
+        String(request.departmentName || "").toLowerCase().includes(q) ||
+        String(request.requestedRoleName || "").toLowerCase().includes(q)
+      const matchesStatus =
+        staffStatusFilter === "all" || staffStatusFilter === requestStatusValue(request.statusId)
+      return matchesSearch && matchesStatus
+    })
+    .sort((a, b) => {
+      const priority: Record<number, number> = { 1: 0, 2: 1, 3: 2 }
+      const statusDiff = (priority[a.statusId] ?? 9) - (priority[b.statusId] ?? 9)
+      if (statusDiff !== 0) return statusDiff
+      return (b.createdAt?.getTime?.() || 0) - (a.createdAt?.getTime?.() || 0)
+    })
 
   const getPortalStatusBadge = (status: string) => {
     const s = PORTAL_STATUSES.find((x) => x.value === status)
@@ -598,14 +629,14 @@ export default function UserManagementPage() {
                 Add User
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-md">
+            <DialogContent className="max-w-md max-h-[85vh] flex flex-col">
               <DialogHeader>
                 <DialogTitle>Add New User</DialogTitle>
                 <DialogDescription>
                   Create a new user account for the SGC Digital portal.
                 </DialogDescription>
               </DialogHeader>
-              <div className="space-y-4 py-4">
+              <div className="space-y-4 py-4 overflow-y-auto pr-1">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="firstName">First Name</Label>
@@ -731,7 +762,7 @@ export default function UserManagementPage() {
                   </Select>
                 </div>
               </div>
-              <DialogFooter>
+              <DialogFooter className="pt-2 border-t shrink-0">
                 <Button variant="outline" onClick={() => setIsAddUserOpen(false)}>
                   Cancel
                 </Button>
@@ -1097,10 +1128,44 @@ export default function UserManagementPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {staffRequests.length === 0 ? (
+              <div className="flex flex-col sm:flex-row gap-4 mb-4">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    placeholder="Search by request #, applicant, email, department, or role..."
+                    value={staffSearchQuery}
+                    onChange={(e) => setStaffSearchQuery(e.target.value)}
+                    className="pl-10 pr-10"
+                  />
+                  {staffSearchQuery && (
+                    <button
+                      onClick={() => setStaffSearchQuery("")}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
+                <Select value={staffStatusFilter} onValueChange={setStaffStatusFilter}>
+                  <SelectTrigger className="w-full sm:w-[180px]">
+                    <Filter className="h-4 w-4 mr-2" />
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Statuses</SelectItem>
+                    {STAFF_REQUEST_STATUSES.map((status) => (
+                      <SelectItem key={status.value} value={status.value}>
+                        {status.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {filteredStaffRequests.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
                   <ClipboardList className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>No staff registration requests</p>
+                  <p>No staff registration requests found</p>
                 </div>
               ) : (
                 <div className="overflow-x-auto">
@@ -1117,7 +1182,7 @@ export default function UserManagementPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {staffRequests.map((request) => (
+                      {filteredStaffRequests.map((request) => (
                         <TableRow key={request.requestId} className={request.statusId === 1 ? "bg-yellow-50/50" : ""}>
                           <TableCell className="font-mono text-sm">{request.requestNumber}</TableCell>
                           <TableCell>
@@ -1152,7 +1217,7 @@ export default function UserManagementPage() {
                           </TableCell>
                           <TableCell>
                             <div className="text-sm text-muted-foreground">
-                              {new Date(request.createdAt).toLocaleDateString()}
+                              {formatDateSafe(request.createdAt)}
                             </div>
                           </TableCell>
                           <TableCell>
