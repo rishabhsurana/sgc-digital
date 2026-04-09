@@ -42,6 +42,7 @@ const STEPS = [
 const CONTRACT_NATURES = [
   { 
     value: "goods", 
+    // value: "NAT_GDS",
     label: "Goods", 
     description: "Procurement of goods, supplies, and equipment",
     icon: Package,
@@ -50,6 +51,7 @@ const CONTRACT_NATURES = [
   },
   { 
     value: "consultancy_services", 
+    // value: "NAT_CSV",
     label: "Consultancy / Services", 
     description: "Professional services, consulting, and service contracts",
     icon: Briefcase,
@@ -58,6 +60,7 @@ const CONTRACT_NATURES = [
   },
   { 
     value: "works", 
+    // value: "NAT_WKS",
     label: "Works", 
     description: "Construction, infrastructure, and public works projects",
     icon: HardHat,
@@ -71,6 +74,7 @@ const CONTRACT_CATEGORIES = {
     { value: "CAT_PROC", label: "Procurement of Goods & Services" },
     { value: "CAT_LEASE", label: "Lease / Property (Equipment Lease)" },
     { value: "CAT_INTER", label: "Inter-Agency / MOU (Supply-related)" }
+
   ],
   consultancy_services: [
     { value: "CAT_CONS", label: "Consultancy / Professional Services" },
@@ -107,9 +111,9 @@ const CONTRACT_INSTRUMENTS = {
 }
 
 const CONTRACT_TYPES = [
-  { value: "new", label: "New Contract", icon: Plus },
-  { value: "renewal", label: "Renewal", icon: RefreshCw },
-  { value: "supplemental", label: "Supplemental", icon: Plus }
+  { value: "NEW", label: "New Contract", icon: Plus },
+  { value: "REN", label: "Renewal", icon: RefreshCw },
+  { value: "SUP", label: "Supplemental", icon: Plus }
 ]
 
 const MINISTRIES = MINISTRIES_DEPARTMENTS_AGENCIES
@@ -132,16 +136,38 @@ const FUNDING_SOURCES = [
 ]
 
 const PROCUREMENT_METHODS = [
-  { value: "open-tender", label: "Open Competitive Tender" },
-  { value: "selective-tender", label: "Selective / Limited Tender" },
-  { value: "single-source", label: "Single Source Procurement" },
+  { value: "TENDER", label: "Open Competitive Tender" },
+  { value: "RFQ", label: "Selective / Limited Tender" },
+  { value: "SSP", label: "Single Source Procurement" },
   { value: "framework", label: "Framework Agreement" },
-  { value: "direct", label: "Direct Procurement (Below Threshold)" },
+  { value: "DIRECT", label: "Direct Procurement (Below Threshold)" },
   { value: "emergency", label: "Emergency Procurement" }
 ]
 
+const URGENCY_LEVELS = [
+  { value: "Normal", label: "Standard" },
+  { value: "Urgent", label: "Urgent" }
+]
+
+const CONFIDENTIALITY_LEVELS = [
+  { value: "standard", label: "Standard" },
+  { value: "confidential", label: "Confidential" },
+  { value: "cabinet", label: "Cabinet-Level-Restricted" }
+]
+
+const CONTRACTING_PARTY_SCOPES = [
+  { value: "International", label: "International" },
+  { value: "Local", label: "Local" },
+  { value: "Regional", label: "Regional" }
+]
+
+const CPO_APPROVAL_OPTIONS = [
+  { value: "Yes", label: "Yes" },
+  { value: "No", label: "No" }
+]
+
 const CURRENCIES = [
-  { value: "BBD", label: "BBD - Barbados Dollar" },
+  { value: "BDS", label: "BBD - Barbados Dollar" },
   { value: "USD", label: "USD - US Dollar" },
   { value: "EUR", label: "EUR - Euro" },
   { value: "GBP", label: "GBP - British Pound" },
@@ -319,7 +345,7 @@ function ContractsPageContent() {
     contractCategory: "",
     contractInstrument: "",
     contractInstrumentOther: "",
-    contractType: "new",
+    contractType: "NEW",
     parentContractNumber: "",
     categoryOtherJustification: "",
     
@@ -347,11 +373,14 @@ function ContractsPageContent() {
     contractDescription: "",
     scopeOfWork: "",
     keyDeliverables: "",
-    contractCurrency: "BBD",
+    contractCurrency: "BDS",
     contractValue: "",
+    urgency: "Normal",
+    confidentiality: "standard",
+    contractingPartyScope: "",
     fundingSource: "budget",
-    procurementMethod: "open-tender",
-    isSingleSource: false,
+    procurementMethod: "TENDER",
+    cpoApproved: "",
     awardDate: "",
     contractStartDate: "",
     contractEndDate: "",
@@ -660,9 +689,13 @@ function ContractsPageContent() {
           formData.contractorName !== "" &&
           formData.contractTitle !== "" &&
           formData.contractValue !== "" &&
+          formData.contractingPartyScope !== "" &&
+          formData.urgency !== "" &&
+          formData.confidentiality !== "" &&
           formData.procurementMethod !== "" &&
+          (formData.procurementMethod !== "single-source" || formData.cpoApproved !== "") &&
           formData.fundingSource !== "" &&
-          (formData.contractType === "new" || formData.parentContractNumber !== "")
+          (formData.contractType === "NEW" || formData.parentContractNumber !== "")
         )
       case 2:
         return files.every(f => f.documentType !== "")
@@ -1525,7 +1558,9 @@ function ContractsPageContent() {
                           value={formData.procurementMethod}
                           onValueChange={(value) => {
                             updateFormData("procurementMethod", value)
-                            updateFormData("isSingleSource", value === "single-source")
+                            if (value !== "single-source") {
+                              updateFormData("cpoApproved", "")
+                            }
                           }}
                         >
                           <SelectTrigger id="procurementMethod">
@@ -1541,6 +1576,82 @@ function ContractsPageContent() {
                         </Select>
                       </div>
                     </div>
+                    <div className="grid gap-4 sm:grid-cols-3">
+                      <div className="space-y-2">
+                        <Label htmlFor="urgency">Urgency Indicator <span className="text-destructive">*</span></Label>
+                        <Select
+                          value={formData.urgency}
+                          onValueChange={(value) => updateFormData("urgency", value)}
+                        >
+                          <SelectTrigger id="urgency">
+                            <SelectValue placeholder="Select urgency" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {URGENCY_LEVELS.map((level) => (
+                              <SelectItem key={level.value} value={level.value}>
+                                {level.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="confidentiality">Confidentiality Indicator <span className="text-destructive">*</span></Label>
+                        <Select
+                          value={formData.confidentiality}
+                          onValueChange={(value) => updateFormData("confidentiality", value)}
+                        >
+                          <SelectTrigger id="confidentiality">
+                            <SelectValue placeholder="Select confidentiality" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {CONFIDENTIALITY_LEVELS.map((level) => (
+                              <SelectItem key={level.value} value={level.value}>
+                                {level.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="contractingPartyScope">Contracting Party Scope <span className="text-destructive">*</span></Label>
+                        <Select
+                          value={formData.contractingPartyScope}
+                          onValueChange={(value) => updateFormData("contractingPartyScope", value)}
+                        >
+                          <SelectTrigger id="contractingPartyScope">
+                            <SelectValue placeholder="Select scope" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {CONTRACTING_PARTY_SCOPES.map((scope) => (
+                              <SelectItem key={scope.value} value={scope.value}>
+                                {scope.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    {formData.procurementMethod === "single-source" && (
+                      <div className="space-y-2">
+                        <Label htmlFor="cpoApproved">CPO Approved <span className="text-destructive">*</span></Label>
+                        <Select
+                          value={formData.cpoApproved}
+                          onValueChange={(value) => updateFormData("cpoApproved", value)}
+                        >
+                          <SelectTrigger id="cpoApproved">
+                            <SelectValue placeholder="Select Yes or No" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {CPO_APPROVAL_OPTIONS.map((option) => (
+                              <SelectItem key={option.value} value={option.value}>
+                                {option.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
                     {formData.procurementMethod === "single-source" && (
                       <Alert className="bg-amber-50 border-amber-200">
                         <Info className="h-4 w-4 text-amber-600" />
@@ -1891,6 +2002,20 @@ function ContractsPageContent() {
                           <p className="text-sm text-muted-foreground">
                             {PROCUREMENT_METHODS.find(p => p.value === formData.procurementMethod)?.label}
                           </p>
+                          <p className="text-sm text-muted-foreground">
+                            Urgency: {URGENCY_LEVELS.find((u) => u.value === formData.urgency)?.label}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            Confidentiality: {CONFIDENTIALITY_LEVELS.find((c) => c.value === formData.confidentiality)?.label}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            Contracting Scope: {CONTRACTING_PARTY_SCOPES.find((s) => s.value === formData.contractingPartyScope)?.label}
+                          </p>
+                          {formData.procurementMethod === "single-source" && formData.cpoApproved && (
+                            <p className="text-sm text-muted-foreground">
+                              CPO Approved: {formData.cpoApproved}
+                            </p>
+                          )}
                         </div>
                         <div>
                           {formData.awardDate && (

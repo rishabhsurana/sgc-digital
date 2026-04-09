@@ -98,8 +98,8 @@ const SUBMITTER_TYPES = [
 ]
 
 const URGENCY_LEVELS = [
-  { value: "standard", label: "Standard" },
-  { value: "urgent", label: "Urgent" }
+  { value: "Normal", label: "Standard" },
+  { value: "Urgent", label: "Urgent" }
 ]
 
 const CONFIDENTIALITY_LEVELS = [
