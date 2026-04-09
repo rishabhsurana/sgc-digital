@@ -485,10 +485,10 @@ export default function ContractsRegisterPage() {
                               <Eye className="mr-2 h-4 w-4" />
                               View Details
                             </DropdownMenuItem>
-                            <DropdownMenuItem>
+                            {/* <DropdownMenuItem>
                               <CheckCircle className="mr-2 h-4 w-4" />
                               Approve
-                            </DropdownMenuItem>
+                            </DropdownMenuItem> */}
                             <DropdownMenuItem>
                               <Download className="mr-2 h-4 w-4" />
                               Download
@@ -627,10 +627,10 @@ export default function ContractsRegisterPage() {
               </div>
 
               <div className="flex gap-2 pt-4 border-t">
-                <Button className="flex-1 bg-green-600 hover:bg-green-700">
+                {/* <Button className="flex-1 bg-green-600 hover:bg-green-700">
                   <CheckCircle className="mr-2 h-4 w-4" />
                   Approve Contract
-                </Button>
+                </Button> */}
                 <Button variant="outline">
                   <Download className="mr-2 h-4 w-4" />
                   Download Package
