@@ -15,8 +15,10 @@ export type PortalUserApiRow = {
   department: string | null
   status: string
   last_login: string | null
-  created_at: string
-  updated_at?: string
+  created_at?: string | null
+  createdAt?: string | null
+  updated_at?: string | null
+  updatedAt?: string | null
   mda?: { id: number; name: string; code?: string } | null
   entity?: { entity_name?: string } | null
 }
@@ -28,8 +30,10 @@ export type ManagementUserApiRow = {
   role: string
   department: string | null
   is_active: boolean
-  created_at: string
-  updated_at: string
+  created_at?: string | null
+  createdAt?: string | null
+  updated_at?: string | null
+  updatedAt?: string | null
 }
 
 export type StaffRequestOptions = {
@@ -142,7 +146,7 @@ export type PortalUserRow = {
   submitterType: string
   department: string | null
   lastLoginAt: Date | null
-  createdAt: Date
+  createdAt: Date | null
 }
 
 export function mapPortalRow(row: PortalUserApiRow): PortalUserRow {
@@ -154,6 +158,9 @@ export function mapPortalRow(row: PortalUserApiRow): PortalUserRow {
       ? String((row.entity as { entity_name?: string }).entity_name || '')
       : '') ||
     null
+  const createdRaw = row.created_at ?? row.createdAt ?? ''
+  const createdDate = new Date(createdRaw)
+
   return {
     id: row.id,
     firstName,
@@ -166,6 +173,6 @@ export function mapPortalRow(row: PortalUserApiRow): PortalUserRow {
     submitterType: row.submitter_type,
     department: row.department,
     lastLoginAt: row.last_login ? new Date(row.last_login) : null,
-    createdAt: new Date(row.created_at),
+    createdAt: Number.isNaN(createdDate.getTime()) ? null : createdDate,
   }
 }

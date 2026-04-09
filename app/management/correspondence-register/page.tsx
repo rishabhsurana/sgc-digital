@@ -50,7 +50,7 @@ import {
   CheckCircle,
   X,
 } from "lucide-react"
-import { apiGet } from "@/lib/api-client"
+import { apiDownloadFile, apiGet } from "@/lib/api-client"
 import { ManagementPaginationBar } from "@/components/management/management-pagination-bar"
 
 import {
@@ -89,6 +89,17 @@ const PRIORITY_CONFIG = {
   low: { label: "Low", color: "bg-gray-100 text-gray-700" },
 }
 
+const CORRESPONDENCE_REGISTER_COLUMNS = [
+  { id: "reference_number", label: "Reference" },
+  { id: "correspondence_type", label: "Type" },
+  { id: "subject", label: "Subject" },
+  { id: "originating_mda", label: "Ministry/MDA" },
+  { id: "submitter_name", label: "Submitter" },
+  { id: "date_received", label: "Date" },
+  { id: "priority_level", label: "Priority" },
+  { id: "current_status_code", label: "Status" },
+] as const
+
 export default function CorrespondenceRegisterPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
@@ -99,6 +110,7 @@ export default function CorrespondenceRegisterPage() {
   const [total, setTotal] = useState(0)
   const [totalPages, setTotalPages] = useState(1)
   const [loading, setLoading] = useState(false)
+  const [exporting, setExporting] = useState(false)
   const [limit, setLimit] = useState(20)
   const searchRef = useRef(searchQuery)
   searchRef.current = searchQuery
@@ -154,6 +166,26 @@ export default function CorrespondenceRegisterPage() {
 
   const isFiltered = searchQuery.trim() !== '' || statusFilter !== 'all' || typeFilter !== 'all'
 
+  const handleExport = useCallback(async () => {
+    setExporting(true)
+    try {
+      const q = new URLSearchParams()
+      const s = searchRef.current.trim()
+      if (s) q.set("search", s)
+      if (statusFilter !== "all") q.set("status", statusFilter)
+      q.set("columns", CORRESPONDENCE_REGISTER_COLUMNS.map((c) => c.id).join(","))
+      await apiDownloadFile(
+        `/api/registers/correspondence/export?${q.toString()}`,
+        `correspondence-register-${new Date().toISOString().slice(0, 10)}.xlsx`
+      )
+    } catch (error) {
+      console.error("Failed to export correspondence register:", error)
+      window.alert("Failed to export correspondence register. Please try again.")
+    } finally {
+      setExporting(false)
+    }
+  }, [statusFilter])
+
   return (
     <div className="p-6 lg:p-8">
       {/* Hero Banner */}
@@ -168,19 +200,24 @@ export default function CorrespondenceRegisterPage() {
               <p className="mt-1 text-white/80">View and manage all correspondence submissions.</p>
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button
               variant="outline"
               size="sm"
-             className="bg-white/20 hover:bg-white/30 text-white"
+              className="border-white/40 bg-transparent text-white hover:bg-white/20 hover:text-white"
               onClick={() => void loadRegisters(page, limit)}
             >
               <RefreshCw className="mr-2 h-4 w-4" />
               Refresh
             </Button>
-            <Button size="sm" className="bg-white/20 hover:bg-white/30 text-white">
+            <Button
+              size="sm"
+              className="bg-white/20 hover:bg-white/30 text-white"
+              onClick={() => void handleExport()}
+              disabled={exporting}
+            >
               <Download className="mr-2 h-4 w-4" />
-              Export
+              {exporting ? "Exporting..." : "Export"}
             </Button>
           </div>
         </div>
@@ -189,7 +226,7 @@ export default function CorrespondenceRegisterPage() {
       {/* Filters */}
       <Card className="mb-6 border-primary/20">
         <CardContent className="pt-6">
-          <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex flex-col lg:flex-row gap-4">
             <div className="flex-1">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -215,7 +252,7 @@ export default function CorrespondenceRegisterPage() {
                 )}
               </div>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2 lg:justify-end">
               <Select
                 value={statusFilter}
                 onValueChange={(v) => {
@@ -224,7 +261,7 @@ export default function CorrespondenceRegisterPage() {
                   void loadRegisters(1, limit, v)
                 }}
               >
-                <SelectTrigger className="w-[150px]">
+                <SelectTrigger className="w-full sm:w-[150px]">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -236,7 +273,7 @@ export default function CorrespondenceRegisterPage() {
                 </SelectContent>
               </Select>
               <Select value={typeFilter} onValueChange={setTypeFilter}>
-                <SelectTrigger className="w-[150px]">
+                <SelectTrigger className="w-full sm:w-[150px]">
                   <SelectValue placeholder="Type" />
                 </SelectTrigger>
                 <SelectContent>
@@ -253,8 +290,8 @@ export default function CorrespondenceRegisterPage() {
           
           {/* Search Results Feedback */}
           {isFiltered && (
-            <div className="mt-4 pt-4 border-t flex items-center justify-between">
-              <div className="flex items-center gap-2 text-sm">
+            <div className="mt-4 pt-4 border-t flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-wrap items-center gap-2 text-sm">
                 <span className="text-muted-foreground">
                   Showing <span className="font-semibold text-foreground">{filteredData.length}</span> of {total} records
                 </span>
@@ -340,14 +377,11 @@ export default function CorrespondenceRegisterPage() {
             <Table>
               <TableHeader>
                 <TableRow className="bg-muted/50">
-                  <TableHead className="font-semibold">Reference</TableHead>
-                  <TableHead className="font-semibold">Type</TableHead>
-                  <TableHead className="font-semibold">Subject</TableHead>
-                  <TableHead className="font-semibold">Ministry/MDA</TableHead>
-                  <TableHead className="font-semibold">Submitter</TableHead>
-                  <TableHead className="font-semibold">Date</TableHead>
-                  <TableHead className="font-semibold">Priority</TableHead>
-                  <TableHead className="font-semibold">Status</TableHead>
+                  {CORRESPONDENCE_REGISTER_COLUMNS.map((column) => (
+                    <TableHead key={column.id} className="font-semibold">
+                      {column.label}
+                    </TableHead>
+                  ))}
                   <TableHead className="font-semibold w-[50px]">Actions</TableHead>
                 </TableRow>
               </TableHeader>

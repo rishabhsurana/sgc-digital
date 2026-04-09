@@ -116,3 +116,67 @@ export function apiDelete<T = unknown>(path: string) {
     method: 'DELETE',
   });
 }
+
+export async function apiPostFormData<T = unknown>(path: string, body: FormData): Promise<ApiResponse<T>> {
+  const token = getToken();
+  const headers: Record<string, string> = {};
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const res = await fetch(`${API_BASE}${path}`, {
+    method: 'POST',
+    headers,
+    body,
+  });
+
+  handleUnauthorizedResponse(res.status);
+  const json = await res.json().catch(() => ({} as Record<string, unknown>));
+
+  if (!res.ok) {
+    return {
+      success: false,
+      error: (json as { error?: string; message?: string }).error
+        || (json as { error?: string; message?: string }).message
+        || `Request failed (${res.status})`,
+    };
+  }
+
+  return json as ApiResponse<T>;
+}
+
+function extractFilenameFromDisposition(disposition: string | null): string | null {
+  if (!disposition) return null;
+  const utf8Match = disposition.match(/filename\*=UTF-8''([^;]+)/i);
+  if (utf8Match?.[1]) return decodeURIComponent(utf8Match[1]);
+  const simpleMatch = disposition.match(/filename="?([^"]+)"?/i);
+  return simpleMatch?.[1] ?? null;
+}
+
+export async function apiDownloadFile(path: string, fallbackFileName = 'download'): Promise<void> {
+  const token = getToken();
+  const headers: Record<string, string> = {};
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+
+  const res = await fetch(`${API_BASE}${path}`, {
+    method: 'GET',
+    headers,
+  });
+
+  handleUnauthorizedResponse(res.status);
+  if (!res.ok) {
+    throw new Error(`Download failed (${res.status})`);
+  }
+
+  const blob = await res.blob();
+  const disposition = res.headers.get('content-disposition');
+  const fileName = extractFilenameFromDisposition(disposition) || fallbackFileName;
+  const objectUrl = window.URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = objectUrl;
+  link.download = fileName;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.URL.revokeObjectURL(objectUrl);
+}

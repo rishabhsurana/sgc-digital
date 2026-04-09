@@ -44,7 +44,7 @@ import {
   DollarSign,
   X,
 } from "lucide-react"
-import { apiGet } from "@/lib/api-client"
+import { apiDownloadFile, apiGet } from "@/lib/api-client"
 import { downloadDocumentAuthorized, formatBytes } from "@/lib/dashboard-api"
 import { ManagementPaginationBar } from "@/components/management/management-pagination-bar"
 
@@ -111,6 +111,17 @@ const CONTRACT_TYPE_CONFIG: Record<string, string> = {
   Supplemental: "bg-purple-100 text-purple-700 border-purple-200",
 }
 
+const CONTRACT_HISTORY_COLUMNS = [
+  { id: "date_received", label: "Date" },
+  { id: "contract_number", label: "Contract #" },
+  { id: "subject", label: "Subject" },
+  { id: "ministry", label: "Ministry/MDA" },
+  { id: "submitter", label: "Submitter" },
+  { id: "contract_value", label: "Value" },
+  { id: "status", label: "Status" },
+  { id: "document_count", label: "Documents" },
+] as const
+
 const getFileIcon = (type: string) => {
   switch (type) {
     case "pdf":
@@ -147,6 +158,7 @@ export default function ContractsHistoryPage() {
   const [detail, setDetail] = useState<DetailData | null>(null)
   const [detailLoading, setDetailLoading] = useState(false)
   const [detailError, setDetailError] = useState<string | null>(null)
+  const [exporting, setExporting] = useState(false)
 
   const [limit, setLimit] = useState(20)
 
@@ -216,6 +228,26 @@ export default function ContractsHistoryPage() {
 
   const isFiltered = searchInput.trim() !== "" || statusFilter !== "all" || typeFilter !== "all"
 
+  const handleExport = useCallback(async () => {
+    setExporting(true)
+    try {
+      const q = new URLSearchParams()
+      if (debouncedSearch) q.set("search", debouncedSearch)
+      if (statusFilter !== "all") q.set("status", statusFilter)
+      if (typeFilter !== "all") q.set("contract_type", typeFilter)
+      q.set("columns", CONTRACT_HISTORY_COLUMNS.map((c) => c.id).join(","))
+      await apiDownloadFile(
+        `/api/management/history/contracts/export?${q.toString()}`,
+        `contracts-history-${new Date().toISOString().slice(0, 10)}.xlsx`
+      )
+    } catch (error) {
+      console.error("Failed to export contracts history:", error)
+      window.alert("Failed to export contracts history. Please try again.")
+    } finally {
+      setExporting(false)
+    }
+  }, [debouncedSearch, statusFilter, typeFilter])
+
   return (
     <div className="space-y-6">
       <div className="rounded-xl bg-gradient-to-r from-indigo-600 via-indigo-700 to-slate-800 p-6 mb-6 text-white">
@@ -231,16 +263,25 @@ export default function ContractsHistoryPage() {
               </p>
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button
               variant="outline"
               size="sm"
-              className="border-white/30 text-white hover:bg-white/10"
+              className="border-white/40 bg-transparent text-white hover:bg-white/20 hover:text-white"
               onClick={() => void loadList()}
               disabled={loading}
             >
               <RefreshCw className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`} />
               Refresh
+            </Button>
+            <Button
+              size="sm"
+              className="bg-white/20 hover:bg-white/30 text-white"
+              onClick={() => void handleExport()}
+              disabled={exporting}
+            >
+              <Download className="mr-2 h-4 w-4" />
+              {exporting ? "Exporting..." : "Export"}
             </Button>
           </div>
         </div>
@@ -248,7 +289,7 @@ export default function ContractsHistoryPage() {
 
       <Card className="border-primary/20">
         <CardContent className="pt-6">
-          <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex flex-col lg:flex-row gap-4">
             <div className="flex-1">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -269,9 +310,9 @@ export default function ContractsHistoryPage() {
                 )}
               </div>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2 lg:justify-end">
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-[150px]">
+                <SelectTrigger className="w-full sm:w-[150px]">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -283,7 +324,7 @@ export default function ContractsHistoryPage() {
                 </SelectContent>
               </Select>
               <Select value={typeFilter} onValueChange={setTypeFilter}>
-                <SelectTrigger className="w-[150px]">
+                <SelectTrigger className="w-full sm:w-[150px]">
                   <SelectValue placeholder="Contract Type" />
                 </SelectTrigger>
                 <SelectContent>
@@ -303,7 +344,7 @@ export default function ContractsHistoryPage() {
           ) : null}
 
           {isFiltered && (
-            <div className="mt-4 pt-4 border-t flex items-center justify-between">
+            <div className="mt-4 pt-4 border-t flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <span className="text-sm text-muted-foreground">
                 {pagination.total} record{pagination.total === 1 ? "" : "s"} match your filters
               </span>
@@ -386,14 +427,11 @@ export default function ContractsHistoryPage() {
             <Table>
               <TableHeader>
                 <TableRow className="bg-muted/50">
-                  <TableHead className="font-semibold">Date</TableHead>
-                  <TableHead className="font-semibold">Contract #</TableHead>
-                  <TableHead className="font-semibold">Subject</TableHead>
-                  <TableHead className="font-semibold">Ministry/MDA</TableHead>
-                  <TableHead className="font-semibold">Submitter</TableHead>
-                  <TableHead className="font-semibold">Value</TableHead>
-                  <TableHead className="font-semibold">Status</TableHead>
-                  <TableHead className="font-semibold">Documents</TableHead>
+                  {CONTRACT_HISTORY_COLUMNS.map((column) => (
+                    <TableHead key={column.id} className="font-semibold">
+                      {column.label}
+                    </TableHead>
+                  ))}
                   <TableHead className="font-semibold w-[80px]">View</TableHead>
                 </TableRow>
               </TableHeader>

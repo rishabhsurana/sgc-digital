@@ -19,7 +19,7 @@ import { ArrowLeft, ArrowRight, Save, Send, Info, FileText, Gavel, FileStack, He
 import { AskRex } from "@/components/ask-rex"
 import Link from "next/link"
 import { MINISTRIES_DEPARTMENTS_AGENCIES } from "@/lib/constants"
-import { apiGet, apiPost, apiPut } from "@/lib/api-client"
+import { apiGet, apiPost, apiPostFormData, apiPut } from "@/lib/api-client"
 import { RequireAuthGuard } from "@/components/require-auth-guard"
 
 const STEPS = [
@@ -287,7 +287,33 @@ function CorrespondencePageContent() {
         status: "submitted",
       })
       if (!result.success) throw new Error(result.error || "Submission failed")
-      setTransactionNumber(result.data?.transaction_number || `COR-${Date.now().toString(36).toUpperCase()}`)
+      const correspondenceData = (result.data || {}) as Record<string, unknown>
+      const correspondenceId = typeof correspondenceData.id === "string" ? correspondenceData.id : null
+
+      if (correspondenceId && files.length > 0) {
+        for (const uploaded of files) {
+          const form = new FormData()
+          form.append("files", uploaded.file)
+          form.append("submission_type", "correspondence")
+          form.append("submission_id", correspondenceId)
+          form.append("document_type_code", uploaded.documentType || "OTHER")
+          form.append("document_type_label", DOCUMENT_TYPES.find((t) => t.value === uploaded.documentType)?.label || "Other")
+          form.append("condition", "if_applicable")
+          if (uploaded.description?.trim()) {
+            form.append("description", uploaded.description.trim())
+          }
+
+          const uploadResult = await apiPostFormData("/api/documents/upload", form)
+          if (!uploadResult.success) {
+            throw new Error(uploadResult.error || "Document upload failed")
+          }
+        }
+      }
+
+      setTransactionNumber(
+        (typeof correspondenceData.transaction_number === "string" && correspondenceData.transaction_number)
+          || `COR-${Date.now().toString(36).toUpperCase()}`
+      )
       setIsSubmitted(true)
     } catch (error) {
       console.error('[v0] Submission failed:', error)
