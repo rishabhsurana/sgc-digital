@@ -15,7 +15,7 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select"
-import { Dialog, DialogTrigger } from "@/components/ui/dialog"
+import { Dialog } from "@/components/ui/dialog"
 import { 
   Search, 
   FileText, 
@@ -84,7 +84,19 @@ function SubmissionCard({
 }) {
   const status = STATUS_CONFIG[submission.status]
   const StatusIcon = status.icon
-  
+  const [dialogOpen, setDialogOpen] = React.useState(false)
+  const [dialogTab, setDialogTab] = React.useState<"details" | "documents" | "respond">("details")
+
+  const openDialog = (tab: "details" | "documents" | "respond") => {
+    setDialogTab(tab)
+    setDialogOpen(true)
+  }
+
+  const handleAfterRespond = () => {
+    setDialogOpen(false)
+    onRefresh()
+  }
+
   return (
     <Card className="bg-card border-border hover:shadow-md transition-shadow">
       <CardContent className="p-4">
@@ -124,56 +136,45 @@ function SubmissionCard({
               </div>
             </div>
           </div>
-          
+
           <div className="flex items-center gap-2 shrink-0">
             {submission.status === "clarification" && (
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button size="sm" variant="outline" className="text-orange-600 border-orange-200 hover:bg-orange-50">
-                    <MessageSquare className="h-4 w-4 mr-1" />
-                    Respond
-                  </Button>
-                </DialogTrigger>
-                <DashboardSubmissionDetailDialog
-                  submission={submission}
-                  status={status}
-                  defaultTab="respond"
-                  onAfterRespond={onRefresh}
-                />
-              </Dialog>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="text-orange-600 border-orange-200 hover:bg-orange-50"
+                onClick={() => openDialog("respond")}
+              >
+                <MessageSquare className="h-4 w-4 mr-1" />
+                Respond
+              </Button>
             )}
             {submission.status === "completed" && (
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button size="sm" variant="outline">
-                    <Download className="h-4 w-4 mr-1" />
-                    Download
-                  </Button>
-                </DialogTrigger>
-                <DashboardSubmissionDetailDialog
-                  submission={submission}
-                  status={status}
-                  defaultTab="documents"
-                  onAfterRespond={onRefresh}
-                />
-              </Dialog>
+              <Button type="button" size="sm" variant="outline" onClick={() => openDialog("documents")}>
+                <Download className="h-4 w-4 mr-1" />
+                Download
+              </Button>
             )}
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button size="sm" variant="ghost">
-                  <Eye className="h-4 w-4 mr-1" />
-                  Details
-                </Button>
-              </DialogTrigger>
-              <DashboardSubmissionDetailDialog
-                submission={submission}
-                status={status}
-                onAfterRespond={onRefresh}
-              />
-            </Dialog>
+            <Button type="button" size="sm" variant="ghost" onClick={() => openDialog("details")}>
+              <Eye className="h-4 w-4 mr-1" />
+              Details
+            </Button>
           </div>
         </div>
       </CardContent>
+
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        {dialogOpen ? (
+          <DashboardSubmissionDetailDialog
+            key={`${submission.id}-${dialogTab}`}
+            submission={submission}
+            status={status}
+            defaultTab={dialogTab}
+            onAfterRespond={handleAfterRespond}
+          />
+        ) : null}
+      </Dialog>
     </Card>
   )
 }
