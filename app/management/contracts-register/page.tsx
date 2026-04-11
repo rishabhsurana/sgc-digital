@@ -72,7 +72,7 @@ const CONTRACT_REGISTER_COLUMNS = [
   { id: "subject", label: "Subject" },
   { id: "nature_of_contract", label: "Nature of Contract" },
   { id: "category", label: "Category" },
-  { id: "contract_number", label: "Contract #" },
+  { id: "contract_number", label: "Transaction #" },
   { id: "contract_type", label: "Contract Type" },
   { id: "current_status_code", label: "Status/Stage" },
   { id: "date_completed", label: "Date Completed" },
@@ -447,7 +447,7 @@ export default function ContractsRegisterPage() {
               </TableHeader>
               <TableBody>
                 {filteredData.map((item) => {
-                  const statusConfig = STATUS_CONFIG[item.status as keyof typeof STATUS_CONFIG]
+                  const statusConfig = STATUS_CONFIG[item.status as keyof typeof STATUS_CONFIG] || { label: item.status, color: "bg-gray-100 text-gray-700 border-gray-200", icon: Clock }
                   return (
                     <TableRow key={item.id} className="hover:bg-muted/30">
                       <TableCell className="text-sm">{item.dateReceived}</TableCell>
@@ -474,7 +474,7 @@ export default function ContractsRegisterPage() {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <Badge className={statusConfig.color} variant="secondary">
+                        <Badge className={statusConfig?.color ?? 'bg-gray-100 text-gray-700 border-gray-200'} variant="secondary">
                           <statusConfig.icon className="mr-1 h-3 w-3" />
                           {statusConfig.label}
                         </Badge>

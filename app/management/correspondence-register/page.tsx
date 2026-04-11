@@ -90,7 +90,7 @@ const PRIORITY_CONFIG = {
 }
 
 const CORRESPONDENCE_REGISTER_COLUMNS = [
-  { id: "reference_number", label: "Reference" },
+  { id: "reference_number", label: "Transaction Number" },
   { id: "correspondence_type", label: "Type" },
   { id: "subject", label: "Subject" },
   { id: "originating_mda", label: "Ministry/MDA" },
@@ -405,7 +405,7 @@ export default function CorrespondenceRegisterPage() {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <Badge className={statusConfig.color} variant="secondary">
+                        <Badge className={statusConfig?.color} variant="secondary">
                           <statusConfig.icon className="mr-1 h-3 w-3" />
                           {statusConfig.label}
                         </Badge>
