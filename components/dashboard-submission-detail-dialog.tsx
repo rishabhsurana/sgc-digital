@@ -187,13 +187,13 @@ export function DashboardSubmissionDetailDialog({
         <DialogDescription>{display.title}</DialogDescription>
       </DialogHeader>
 
-      {detailError && <p className="text-sm text-destructive">{detailError}</p>}
+      {/* {detailError && <p className="text-sm text-destructive">{detailError}</p>}
       {detailLoading && (
         <div className="flex items-center gap-2 text-sm text-muted-foreground py-2">
           <RefreshCw className="h-4 w-4 animate-spin" />
           Loading details…
         </div>
-      )}
+      )} */}
 
       <Tabs defaultValue={defaultTab} className="flex-1 overflow-hidden flex flex-col">
         <TabsList className="grid w-full grid-cols-3">
@@ -237,7 +237,7 @@ export function DashboardSubmissionDetailDialog({
               <p className="text-sm text-muted-foreground">{display.stage}</p>
             </div>
 
-            <div>
+            {/* <div>
               <p className="text-sm font-medium text-foreground mb-3">History</p>
               {display.history.length === 0 ? (
                 <p className="text-sm text-muted-foreground">No history yet.</p>
@@ -268,7 +268,7 @@ export function DashboardSubmissionDetailDialog({
                   ))}
                 </div>
               )}
-            </div>
+            </div> */}
           </div>
         </TabsContent>
 

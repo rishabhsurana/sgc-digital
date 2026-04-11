@@ -75,6 +75,20 @@ function formatMinistryDisplay(value?: string): string {
   return normalized
 }
 
+const PROGRESS_STEPS: Record<"correspondence" | "contract", string[]> = {
+  correspondence: ["Submitted", "Under Review", "In Progress", "Completed"],
+  contract: ["Submitted", "Under Review", "Approved", "Completed"],
+}
+
+const STATUS_TO_STEP: Record<string, number> = {
+  pending: 0,
+  "in-review": 1,
+  clarification: 2,
+  approved: 2,
+  completed: 3,
+  rejected: -1,
+}
+
 function SubmissionCard({
   submission,
   onRefresh,
@@ -97,70 +111,140 @@ function SubmissionCard({
     onRefresh()
   }
 
+  const steps = PROGRESS_STEPS[submission.type]
+  const currentStep = STATUS_TO_STEP[submission.status] ?? 0
+  const isRejected = submission.status === "rejected"
+  const isClarification = submission.status === "clarification"
+
   return (
     <Card className="bg-card border-border hover:shadow-md transition-shadow">
-      <CardContent className="p-4">
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex items-start gap-3 min-w-0">
-            <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${
-              submission.type === "correspondence" ? "bg-primary/10 text-primary" : "bg-accent/20 text-accent-foreground"
+      <CardContent className="p-4 space-y-3">
+        {/* Row 1: Icon + Transaction number + Status badge + Actions */}
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${
+              submission.type === "correspondence" ? "bg-primary/10 text-primary" : "bg-emerald-100 text-emerald-700"
             }`}>
-              {submission.type === "correspondence" ? (
-                <FileText className="h-5 w-5" />
-              ) : (
-                <FileSignature className="h-5 w-5" />
-              )}
+              {submission.type === "correspondence"
+                ? <FileText className="h-3.5 w-3.5" />
+                : <FileSignature className="h-3.5 w-3.5" />}
             </div>
-            <div className="min-w-0">
-              <div className="flex items-center gap-2 mb-1">
-                <span className="font-mono text-sm text-muted-foreground">
-                  {submission.transactionNumber}
-                </span>
-                <Badge variant="outline" className={`text-xs ${status.color}`}>
-                  <StatusIcon className="h-3 w-3 mr-1" />
-                  {status.label}
-                </Badge>
-              </div>
-              <h3 className="font-medium text-foreground truncate">{submission.title}</h3>
-              <div className="flex items-center gap-4 mt-1 text-xs text-muted-foreground">
-                <span className="flex items-center gap-1">
-                  <Calendar className="h-3 w-3" />
-                  {submission.submittedDate}
-                </span>
-                {submission.ministry && (
-                  <span className="flex items-center gap-1">
-                    <Building2 className="h-3 w-3" />
-                    {formatMinistryDisplay(submission.ministry)}
-                  </span>
-                )}
-              </div>
-            </div>
+            <span className="font-mono text-sm font-semibold text-foreground shrink-0">
+              {submission.transactionNumber}
+            </span>
+            <Badge variant="outline" className={`text-xs shrink-0 ${status.color}`}>
+              <StatusIcon className="h-3 w-3 mr-1" />
+              {status.label}
+            </Badge>
           </div>
-
-          <div className="flex items-center gap-2 shrink-0">
-            {submission.status === "clarification" && (
+          <div className="flex items-center gap-1 shrink-0">
+            {isClarification && (
               <Button
                 type="button"
                 size="sm"
                 variant="outline"
-                className="text-orange-600 border-orange-200 hover:bg-orange-50"
+                className="h-7 px-2 text-xs text-orange-600 border-orange-200 hover:bg-orange-50"
                 onClick={() => openDialog("respond")}
               >
-                <MessageSquare className="h-4 w-4 mr-1" />
+                <MessageSquare className="h-3 w-3 mr-1" />
                 Respond
               </Button>
             )}
             {submission.status === "completed" && (
-              <Button type="button" size="sm" variant="outline" onClick={() => openDialog("documents")}>
-                <Download className="h-4 w-4 mr-1" />
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="h-7 px-2 text-xs"
+                onClick={() => openDialog("documents")}
+              >
+                <Download className="h-3 w-3 mr-1" />
                 Download
               </Button>
             )}
-            <Button type="button" size="sm" variant="ghost" onClick={() => openDialog("details")}>
-              <Eye className="h-4 w-4 mr-1" />
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              className="h-7 px-2 text-xs"
+              onClick={() => openDialog("details")}
+            >
+              <Eye className="h-3 w-3 mr-1" />
               Details
             </Button>
           </div>
+        </div>
+
+        {/* Row 2: Title */}
+        <p className="text-sm font-medium text-foreground truncate leading-snug">
+          {submission.title}
+        </p>
+
+        {/* Row 3: Horizontal progress tracker */}
+        <div className="flex items-start pt-1">
+          {steps.map((step, i) => {
+            const stepCompleted = !isRejected && currentStep > i
+            const stepActive = !isRejected && currentStep === i
+            const isLast = i === steps.length - 1
+
+            const dotClass = isRejected
+              ? "border-gray-200 bg-white"
+              : stepCompleted
+              ? "border-primary bg-primary"
+              : stepActive
+              ? isClarification
+                ? "border-orange-400 bg-orange-50"
+                : "border-primary bg-white ring-2 ring-primary/20"
+              : "border-gray-200 bg-white"
+
+            const labelClass = isRejected
+              ? "text-gray-300"
+              : stepCompleted
+              ? "text-primary"
+              : stepActive
+              ? isClarification
+                ? "text-orange-600 font-semibold"
+                : "text-primary font-semibold"
+              : "text-muted-foreground"
+
+            const lineClass = stepCompleted && !isRejected ? "bg-primary" : "bg-gray-200"
+
+            return (
+              <React.Fragment key={step}>
+                <div className="flex flex-col items-center gap-1.5 shrink-0">
+                  <div className={`h-5 w-5 rounded-full border-2 flex items-center justify-center ${dotClass}`}>
+                    {stepCompleted && <CheckCircle className="h-3 w-3 text-white" />}
+                    {stepActive && !isClarification && (
+                      <div className="h-2 w-2 rounded-full bg-primary" />
+                    )}
+                    {stepActive && isClarification && (
+                      <div className="h-2 w-2 rounded-full bg-orange-400" />
+                    )}
+                  </div>
+                  <span className={`text-[10px] leading-tight text-center max-w-[56px] whitespace-nowrap ${labelClass}`}>
+                    {step}
+                  </span>
+                </div>
+                {!isLast && (
+                  <div className={`h-0.5 flex-1 mx-1 mt-2.5 ${lineClass}`} />
+                )}
+              </React.Fragment>
+            )
+          })}
+        </div>
+
+        {/* Row 4: Date + Ministry */}
+        <div className="flex items-center gap-4 pt-2 border-t border-border/50 text-xs text-muted-foreground">
+          <span className="flex items-center gap-1">
+            <Calendar className="h-3 w-3" />
+            {submission.submittedDate}
+          </span>
+          {submission.ministry && (
+            <span className="flex items-center gap-1 truncate">
+              <Building2 className="h-3 w-3 shrink-0" />
+              <span className="truncate">{formatMinistryDisplay(submission.ministry)}</span>
+            </span>
+          )}
         </div>
       </CardContent>
 
