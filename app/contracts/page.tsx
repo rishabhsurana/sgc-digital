@@ -348,6 +348,7 @@ function ContractsPageContent() {
     contractInstrumentOther: "",
     contractType: "NEW",
     parentContractNumber: "",
+    originalTransactionNumber: "",
     categoryOtherJustification: "",
     
     // Ministry/MDA Information
@@ -406,10 +407,14 @@ function ContractsPageContent() {
   const [documentRequirements, setDocumentRequirements] = useState<DocumentChecklistRequirement>({ always: [], optional: [] })
   const [isChecklistLoading, setIsChecklistLoading] = useState(false)
   
-  // Contract validation state for renewals/supplementals
-  const [isValidatingContract, setIsValidatingContract] = useState(false)
-  const [validationResult, setValidationResult] = useState<ValidationResult | null>(null)
-  const [originalContractData, setOriginalContractData] = useState<OriginalContractData | null>(null)
+  // Validation state for Parent Contract Number field
+  const [isValidatingParentContract, setIsValidatingParentContract] = useState(false)
+  const [validationResultParent, setValidationResultParent] = useState<ValidationResult | null>(null)
+  const [originalContractDataParent, setOriginalContractDataParent] = useState<OriginalContractData | null>(null)
+  // Validation state for Original Transaction Number field
+  const [isValidatingOriginalTransaction, setIsValidatingOriginalTransaction] = useState(false)
+  const [validationResultOriginalTransaction, setValidationResultOriginalTransaction] = useState<ValidationResult | null>(null)
+  const [originalContractDataOriginalTransaction, setOriginalContractDataOriginalTransaction] = useState<OriginalContractData | null>(null)
   
   const searchParams = useSearchParams()
 
@@ -513,74 +518,90 @@ function ContractsPageContent() {
     }
   }, [upsertDraft])
   
-  // Validate parent contract for renewals/supplementals
+  // Shared prepopulate helper
+  const prepopulateFromContractData = useCallback((contractData: OriginalContractData, contractType: 'REN' | 'SUP') => {
+    setFormData(prev => ({
+      ...prev,
+      ministry: contractData.ministry || prev.ministry,
+      department: contractData.department || prev.department,
+      contractorType: contractData.contractorType || prev.contractorType,
+      contractorName: contractData.contractorName || prev.contractorName,
+      contractorAddress: contractData.contractorAddress || prev.contractorAddress,
+      contractorCity: contractData.contractorCity || prev.contractorCity,
+      contractorCountry: contractData.contractorCountry || prev.contractorCountry,
+      contractorEmail: contractData.contractorEmail || prev.contractorEmail,
+      contractorPhone: contractData.contractorPhone || prev.contractorPhone,
+      companyRegistrationNumber: contractData.companyRegistrationNumber || prev.companyRegistrationNumber,
+      taxIdentificationNumber: contractData.taxIdentificationNumber || prev.taxIdentificationNumber,
+      contractTitle: contractType === 'REN'
+        ? `Renewal: ${contractData.contractTitle}`
+        : `Supplemental: ${contractData.contractTitle}`,
+      contractDescription: contractData.contractDescription || prev.contractDescription,
+      scopeOfWork: contractData.scopeOfWork || prev.scopeOfWork,
+      contractNature: contractData.contractNature || prev.contractNature,
+      contractCategory: contractData.contractCategory || prev.contractCategory,
+      contractInstrument: contractData.contractInstrument || prev.contractInstrument,
+      contractCurrency: contractData.contractCurrency || prev.contractCurrency,
+      fundingSource: contractData.fundingSource || prev.fundingSource,
+      procurementMethod: contractData.procurementMethod || prev.procurementMethod,
+    }))
+  }, [])
+
+  // Validate Parent Contract Number
   const handleValidateParentContract = useCallback(async () => {
     if (!formData.parentContractNumber) return
-    
-    setIsValidatingContract(true)
-    setValidationResult(null)
-    setOriginalContractData(null)
-    
+    setIsValidatingParentContract(true)
+    setValidationResultParent(null)
+    setOriginalContractDataParent(null)
     try {
-      // TODO: Get actual entity ID from user session
-      const entityId = 'ENT-MOF-001' // Demo entity ID
+      const entityId = 'ENT-MOF-001'
       const contractType = formData.contractType as 'REN' | 'SUP'
-      
-      const result = await validateOriginalContract(
-        formData.parentContractNumber,
-        entityId,
-        contractType
-      )
-      
-      setValidationResult(result)
-      
+      const result = await validateOriginalContract(formData.parentContractNumber, entityId, contractType)
+      setValidationResultParent(result)
       if (result.isValid && result.contractData) {
-        setOriginalContractData(result.contractData)
-        
-        // Prepopulate form with original contract data
-        setFormData(prev => ({
-          ...prev,
-          // Ministry/MDA Information
-          ministry: result.contractData!.ministry || prev.ministry,
-          department: result.contractData!.department || prev.department,
-          
-          // Contractor Information
-          contractorType: result.contractData!.contractorType || prev.contractorType,
-          contractorName: result.contractData!.contractorName || prev.contractorName,
-          contractorAddress: result.contractData!.contractorAddress || prev.contractorAddress,
-          contractorCity: result.contractData!.contractorCity || prev.contractorCity,
-          contractorCountry: result.contractData!.contractorCountry || prev.contractorCountry,
-          contractorEmail: result.contractData!.contractorEmail || prev.contractorEmail,
-          contractorPhone: result.contractData!.contractorPhone || prev.contractorPhone,
-          companyRegistrationNumber: result.contractData!.companyRegistrationNumber || prev.companyRegistrationNumber,
-          taxIdentificationNumber: result.contractData!.taxIdentificationNumber || prev.taxIdentificationNumber,
-          
-          // Contract Details
-          contractTitle: contractType === 'REN' 
-            ? `Renewal: ${result.contractData!.contractTitle}`
-            : `Supplemental: ${result.contractData!.contractTitle}`,
-          contractDescription: result.contractData!.contractDescription || prev.contractDescription,
-          scopeOfWork: result.contractData!.scopeOfWork || prev.scopeOfWork,
-          contractNature: result.contractData!.contractNature || prev.contractNature,
-          contractCategory: result.contractData!.contractCategory || prev.contractCategory,
-          contractInstrument: result.contractData!.contractInstrument || prev.contractInstrument,
-          contractCurrency: result.contractData!.contractCurrency || prev.contractCurrency,
-          fundingSource: result.contractData!.fundingSource || prev.fundingSource,
-          procurementMethod: result.contractData!.procurementMethod || prev.procurementMethod,
-        }))
+        setOriginalContractDataParent(result.contractData)
+        prepopulateFromContractData(result.contractData, contractType)
       }
     } catch (error) {
       console.error('[v0] Contract validation error:', error)
-      setValidationResult({
+      setValidationResultParent({
         isValid: false,
         contractData: null,
         errors: ['An error occurred while validating the contract. Please try again.'],
         warnings: []
       })
     } finally {
-      setIsValidatingContract(false)
+      setIsValidatingParentContract(false)
     }
-  }, [formData.parentContractNumber, formData.contractType])
+  }, [formData.parentContractNumber, formData.contractType, prepopulateFromContractData])
+
+  // Validate Original Transaction Number
+  const handleValidateOriginalTransaction = useCallback(async () => {
+    if (!formData.originalTransactionNumber) return
+    setIsValidatingOriginalTransaction(true)
+    setValidationResultOriginalTransaction(null)
+    setOriginalContractDataOriginalTransaction(null)
+    try {
+      const entityId = 'ENT-MOF-001'
+      const contractType = formData.contractType as 'REN' | 'SUP'
+      const result = await validateOriginalContract(formData.originalTransactionNumber, entityId, contractType)
+      setValidationResultOriginalTransaction(result)
+      if (result.isValid && result.contractData) {
+        setOriginalContractDataOriginalTransaction(result.contractData)
+        prepopulateFromContractData(result.contractData, contractType)
+      }
+    } catch (error) {
+      console.error('[v0] Contract validation error:', error)
+      setValidationResultOriginalTransaction({
+        isValid: false,
+        contractData: null,
+        errors: ['An error occurred while validating the contract. Please try again.'],
+        warnings: []
+      })
+    } finally {
+      setIsValidatingOriginalTransaction(false)
+    }
+  }, [formData.originalTransactionNumber, formData.contractType, prepopulateFromContractData])
 
   const updateFormData = (field: string, value: string | boolean) => {
     setFormData(prev => {
@@ -712,7 +733,7 @@ function ContractsPageContent() {
           formData.procurementMethod !== "" &&
           (formData.procurementMethod !== "single-source" || formData.cpoApproved !== "") &&
           formData.fundingSource !== "" &&
-          (formData.contractType === "NEW" || formData.parentContractNumber !== "")
+          (formData.contractType === "NEW" || formData.parentContractNumber !== "" || formData.originalTransactionNumber !== "")
         )
       case 2:
         return files.every(f => f.documentType !== "")
@@ -1120,22 +1141,24 @@ function ContractsPageContent() {
                     </RadioGroup>
                   </div>
 
-                  {/* Parent Contract Reference */}
+                  {/* Parent Contract Reference - two fields */}
                   {(formData.contractType === "REN" || formData.contractType === "SUP") && (
-                    <div className="space-y-4">
+                    <div className="space-y-6">
+                      <p className="text-xs text-muted-foreground">
+                        Provide at least one of the following reference numbers. Use <strong>Validate &amp; Load</strong> to verify ownership and auto-fill contract details.
+                      </p>
+
+                      {/* Field 1: Parent Contract Number */}
                       <div className="space-y-2">
-                        <Label htmlFor="parentContractNumber">
-                          Original Contract/Transaction Number <span className="text-destructive">*</span>
-                        </Label>
+                        <Label htmlFor="parentContractNumber">Parent Contract Number</Label>
                         <div className="flex gap-2">
                           <Input
                             id="parentContractNumber"
                             value={formData.parentContractNumber}
                             onChange={(e) => {
                               updateFormData("parentContractNumber", e.target.value)
-                              // Reset validation when input changes
-                              setValidationResult(null)
-                              setOriginalContractData(null)
+                              setValidationResultParent(null)
+                              setOriginalContractDataParent(null)
                             }}
                             placeholder="e.g., CON-2024-0001"
                             className="flex-1"
@@ -1144,9 +1167,9 @@ function ContractsPageContent() {
                             type="button"
                             variant="outline"
                             onClick={handleValidateParentContract}
-                            disabled={!formData.parentContractNumber || isValidatingContract}
+                            disabled={!formData.parentContractNumber || isValidatingParentContract}
                           >
-                            {isValidatingContract ? (
+                            {isValidatingParentContract ? (
                               <>
                                 <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent mr-2" />
                                 Validating...
@@ -1154,94 +1177,150 @@ function ContractsPageContent() {
                             ) : (
                               <>
                                 <FileCheck className="h-4 w-4 mr-2" />
-                                Validate & Load
+                                Validate &amp; Load
                               </>
                             )}
                           </Button>
                         </div>
-                        <p className="text-xs text-muted-foreground">
-                          Enter the original contract number to validate ownership and auto-fill contract details
-                        </p>
+                        {validationResultParent && (
+                          <div className="space-y-2 mt-1">
+                            {validationResultParent.errors.length > 0 && (
+                              <Alert variant="destructive">
+                                <AlertCircle className="h-4 w-4" />
+                                <AlertDescription>
+                                  <ul className="list-disc list-inside space-y-1">
+                                    {validationResultParent.errors.map((error, idx) => (
+                                      <li key={idx}>{error}</li>
+                                    ))}
+                                  </ul>
+                                </AlertDescription>
+                              </Alert>
+                            )}
+                            {validationResultParent.warnings.length > 0 && (
+                              <Alert className="bg-amber-50 border-amber-200">
+                                <AlertTriangle className="h-4 w-4 text-amber-600" />
+                                <AlertDescription className="text-amber-800">
+                                  <ul className="list-disc list-inside space-y-1">
+                                    {validationResultParent.warnings.map((warning, idx) => (
+                                      <li key={idx}>{warning}</li>
+                                    ))}
+                                  </ul>
+                                </AlertDescription>
+                              </Alert>
+                            )}
+                            {validationResultParent.isValid && originalContractDataParent && (
+                              <Alert className="bg-emerald-50 border-emerald-200">
+                                <CheckCircle className="h-4 w-4 text-emerald-600" />
+                                <AlertDescription className="text-emerald-800">
+                                  <p className="font-medium mb-2">Contract validated successfully! Details have been loaded.</p>
+                                  <div className="grid grid-cols-2 gap-2 text-sm">
+                                    <div><span className="text-emerald-600">Original Contract:</span>{' '}{originalContractDataParent.referenceNumber}</div>
+                                    <div><span className="text-emerald-600">Title:</span>{' '}{originalContractDataParent.contractTitle}</div>
+                                    <div><span className="text-emerald-600">Contractor:</span>{' '}{originalContractDataParent.contractorName}</div>
+                                    <div><span className="text-emerald-600">Value:</span>{' '}{originalContractDataParent.contractCurrency} {Number(originalContractDataParent.contractValue).toLocaleString()}</div>
+                                    <div><span className="text-emerald-600">Start Date:</span>{' '}{originalContractDataParent.contractStartDate}</div>
+                                    <div><span className="text-emerald-600">End Date:</span>{' '}{originalContractDataParent.contractEndDate}</div>
+                                    <div><span className="text-emerald-600">Renewals:</span>{' '}{originalContractDataParent.renewalCount} of {3} used</div>
+                                    <div>
+                                      <span className="text-emerald-600">Days to Expiry:</span>{' '}
+                                      <Badge variant={originalContractDataParent.daysUntilExpiry <= 30 ? 'destructive' : originalContractDataParent.daysUntilExpiry <= 60 ? 'secondary' : 'outline'}>
+                                        {originalContractDataParent.daysUntilExpiry} days
+                                      </Badge>
+                                    </div>
+                                  </div>
+                                </AlertDescription>
+                              </Alert>
+                            )}
+                          </div>
+                        )}
                       </div>
-                      
-                      {/* Validation Results */}
-                      {validationResult && (
-                        <div className="space-y-3">
-                          {/* Errors */}
-                          {validationResult.errors.length > 0 && (
-                            <Alert variant="destructive">
-                              <AlertCircle className="h-4 w-4" />
-                              <AlertDescription>
-                                <ul className="list-disc list-inside space-y-1">
-                                  {validationResult.errors.map((error, idx) => (
-                                    <li key={idx}>{error}</li>
-                                  ))}
-                                </ul>
-                              </AlertDescription>
-                            </Alert>
-                          )}
-                          
-                          {/* Warnings */}
-                          {validationResult.warnings.length > 0 && (
-                            <Alert className="bg-amber-50 border-amber-200">
-                              <AlertTriangle className="h-4 w-4 text-amber-600" />
-                              <AlertDescription className="text-amber-800">
-                                <ul className="list-disc list-inside space-y-1">
-                                  {validationResult.warnings.map((warning, idx) => (
-                                    <li key={idx}>{warning}</li>
-                                  ))}
-                                </ul>
-                              </AlertDescription>
-                            </Alert>
-                          )}
-                          
-                          {/* Success - Show original contract summary */}
-                          {validationResult.isValid && originalContractData && (
-                            <Alert className="bg-emerald-50 border-emerald-200">
-                              <CheckCircle className="h-4 w-4 text-emerald-600" />
-                              <AlertDescription className="text-emerald-800">
-                                <p className="font-medium mb-2">Contract validated successfully! Details have been loaded.</p>
-                                <div className="grid grid-cols-2 gap-2 text-sm">
-                                  <div>
-                                    <span className="text-emerald-600">Original Contract:</span>{' '}
-                                    {originalContractData.referenceNumber}
-                                  </div>
-                                  <div>
-                                    <span className="text-emerald-600">Title:</span>{' '}
-                                    {originalContractData.contractTitle}
-                                  </div>
-                                  <div>
-                                    <span className="text-emerald-600">Contractor:</span>{' '}
-                                    {originalContractData.contractorName}
-                                  </div>
-                                  <div>
-                                    <span className="text-emerald-600">Value:</span>{' '}
-                                    {originalContractData.contractCurrency} {Number(originalContractData.contractValue).toLocaleString()}
-                                  </div>
-                                  <div>
-                                    <span className="text-emerald-600">Start Date:</span>{' '}
-                                    {originalContractData.contractStartDate}
-                                  </div>
-                                  <div>
-                                    <span className="text-emerald-600">End Date:</span>{' '}
-                                    {originalContractData.contractEndDate}
-                                  </div>
-                                  <div>
-                                    <span className="text-emerald-600">Renewals:</span>{' '}
-                                    {originalContractData.renewalCount} of {3} used
-                                  </div>
-                                  <div>
-                                    <span className="text-emerald-600">Days to Expiry:</span>{' '}
-                                    <Badge variant={originalContractData.daysUntilExpiry <= 30 ? 'destructive' : originalContractData.daysUntilExpiry <= 60 ? 'secondary' : 'outline'}>
-                                      {originalContractData.daysUntilExpiry} days
-                                    </Badge>
-                                  </div>
-                                </div>
-                              </AlertDescription>
-                            </Alert>
-                          )}
+
+                      {/* Field 2: Original Transaction Number */}
+                      <div className="space-y-2">
+                        <Label htmlFor="originalTransactionNumber">Original Transaction Number</Label>
+                        <div className="flex gap-2">
+                          <Input
+                            id="originalTransactionNumber"
+                            value={formData.originalTransactionNumber}
+                            onChange={(e) => {
+                              updateFormData("originalTransactionNumber", e.target.value)
+                              setValidationResultOriginalTransaction(null)
+                              setOriginalContractDataOriginalTransaction(null)
+                            }}
+                            placeholder="e.g., CON-2024-0001"
+                            className="flex-1"
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={handleValidateOriginalTransaction}
+                            disabled={!formData.originalTransactionNumber || isValidatingOriginalTransaction}
+                          >
+                            {isValidatingOriginalTransaction ? (
+                              <>
+                                <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent mr-2" />
+                                Validating...
+                              </>
+                            ) : (
+                              <>
+                                <FileCheck className="h-4 w-4 mr-2" />
+                                Validate &amp; Load
+                              </>
+                            )}
+                          </Button>
                         </div>
-                      )}
+                        {validationResultOriginalTransaction && (
+                          <div className="space-y-2 mt-1">
+                            {validationResultOriginalTransaction.errors.length > 0 && (
+                              <Alert variant="destructive">
+                                <AlertCircle className="h-4 w-4" />
+                                <AlertDescription>
+                                  <ul className="list-disc list-inside space-y-1">
+                                    {validationResultOriginalTransaction.errors.map((error, idx) => (
+                                      <li key={idx}>{error}</li>
+                                    ))}
+                                  </ul>
+                                </AlertDescription>
+                              </Alert>
+                            )}
+                            {validationResultOriginalTransaction.warnings.length > 0 && (
+                              <Alert className="bg-amber-50 border-amber-200">
+                                <AlertTriangle className="h-4 w-4 text-amber-600" />
+                                <AlertDescription className="text-amber-800">
+                                  <ul className="list-disc list-inside space-y-1">
+                                    {validationResultOriginalTransaction.warnings.map((warning, idx) => (
+                                      <li key={idx}>{warning}</li>
+                                    ))}
+                                  </ul>
+                                </AlertDescription>
+                              </Alert>
+                            )}
+                            {validationResultOriginalTransaction.isValid && originalContractDataOriginalTransaction && (
+                              <Alert className="bg-emerald-50 border-emerald-200">
+                                <CheckCircle className="h-4 w-4 text-emerald-600" />
+                                <AlertDescription className="text-emerald-800">
+                                  <p className="font-medium mb-2">Contract validated successfully! Details have been loaded.</p>
+                                  <div className="grid grid-cols-2 gap-2 text-sm">
+                                    <div><span className="text-emerald-600">Original Contract:</span>{' '}{originalContractDataOriginalTransaction.referenceNumber}</div>
+                                    <div><span className="text-emerald-600">Title:</span>{' '}{originalContractDataOriginalTransaction.contractTitle}</div>
+                                    <div><span className="text-emerald-600">Contractor:</span>{' '}{originalContractDataOriginalTransaction.contractorName}</div>
+                                    <div><span className="text-emerald-600">Value:</span>{' '}{originalContractDataOriginalTransaction.contractCurrency} {Number(originalContractDataOriginalTransaction.contractValue).toLocaleString()}</div>
+                                    <div><span className="text-emerald-600">Start Date:</span>{' '}{originalContractDataOriginalTransaction.contractStartDate}</div>
+                                    <div><span className="text-emerald-600">End Date:</span>{' '}{originalContractDataOriginalTransaction.contractEndDate}</div>
+                                    <div><span className="text-emerald-600">Renewals:</span>{' '}{originalContractDataOriginalTransaction.renewalCount} of {3} used</div>
+                                    <div>
+                                      <span className="text-emerald-600">Days to Expiry:</span>{' '}
+                                      <Badge variant={originalContractDataOriginalTransaction.daysUntilExpiry <= 30 ? 'destructive' : originalContractDataOriginalTransaction.daysUntilExpiry <= 60 ? 'secondary' : 'outline'}>
+                                        {originalContractDataOriginalTransaction.daysUntilExpiry} days
+                                      </Badge>
+                                    </div>
+                                  </div>
+                                </AlertDescription>
+                              </Alert>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )}
                 </CardContent>
@@ -1935,6 +2014,9 @@ function ContractsPageContent() {
                       </div>
                       {formData.parentContractNumber && (
                         <p className="text-sm text-muted-foreground mt-2">Parent Contract: {formData.parentContractNumber}</p>
+                      )}
+                      {formData.originalTransactionNumber && (
+                        <p className="text-sm text-muted-foreground mt-2">Original Transaction: {formData.originalTransactionNumber}</p>
                       )}
                     </div>
                     
