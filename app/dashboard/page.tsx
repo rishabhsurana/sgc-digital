@@ -51,6 +51,7 @@ import {
 import type { Submission } from "@/lib/dashboard-types"
 import { STATUS_CONFIG } from "@/lib/dashboard-types"
 import { DashboardSubmissionDetailDialog } from "@/components/dashboard-submission-detail-dialog"
+import { RegistersTab } from "@/components/dashboard/registers-tab"
 
 function mapApiItemToSubmission(item: DashboardSubmissionItem): Submission {
   return {
@@ -694,6 +695,9 @@ function DashboardPageInner() {
               <TabsTrigger value="completed">
                 Completed ({completedSubmissions.length})
               </TabsTrigger>
+              <TabsTrigger value="registers">
+                Registers
+              </TabsTrigger>
             </TabsList>
             
             <TabsContent value="active" className="space-y-4">
@@ -752,6 +756,10 @@ function DashboardPageInner() {
                   ))}
                 </div>
               )}
+            </TabsContent>
+
+            <TabsContent value="registers">
+              <RegistersTab />
             </TabsContent>
           </Tabs>
         </div>

@@ -462,3 +462,71 @@ export function updateManagementMda(
 export function deleteManagementMda(id: number): Promise<ApiResponse<null>> {
   return apiDelete<null>(`/api/management/mda/${id}`)
 }
+
+/* ---------- User-scoped register types & fetchers ---------- */
+
+export interface RegisterContractRow {
+  register_id: string
+  date_received: string | null
+  date_completed: string | null
+  originating_mda: string | null
+  subject: string | null
+  nature_of_contract: string | null
+  category: string | null
+  contract_number: string | null
+  contract_type: string | null
+  current_status_code: string | null
+  contract_value?: string | number | null
+  contract_currency?: string | null
+  contractor_name?: string | null
+  submitted_by_name?: string | null
+  submitted_by_email?: string | null
+}
+
+export interface RegisterCorrespondenceRow {
+  register_id: string
+  reference_number: string | null
+  correspondence_type: string | null
+  subject: string | null
+  originating_mda: string | null
+  submitter_name: string | null
+  date_received: string | null
+  priority_level: string | null
+  current_status_code: string | null
+}
+
+export interface RegisterFetchParams {
+  page?: number
+  limit?: number
+  search?: string
+  status?: string
+}
+
+export interface ContractRegisterFetchParams extends RegisterFetchParams {
+  contract_type?: string
+  nature_of_contract?: string
+}
+
+function buildRegisterQuery(params: ContractRegisterFetchParams): string {
+  const q = new URLSearchParams()
+  if (params.page) q.set('page', String(params.page))
+  if (params.limit) q.set('limit', String(params.limit))
+  if (params.search?.trim()) q.set('search', params.search.trim())
+  if (params.status && params.status !== 'all') q.set('status', params.status)
+  if (params.contract_type && params.contract_type !== 'all') q.set('contract_type', params.contract_type)
+  if (params.nature_of_contract && params.nature_of_contract !== 'all') q.set('nature_of_contract', params.nature_of_contract)
+  const qs = q.toString()
+  return qs ? `?${qs}` : ''
+}
+
+export function fetchUserContractRegister(
+  params: ContractRegisterFetchParams = {}
+): Promise<ApiResponse<RegisterContractRow[]>> {
+  return apiGet<RegisterContractRow[]>(`/api/dashboard/registers/contracts${buildRegisterQuery(params)}`)
+}
+
+export function fetchUserCorrespondenceRegister(
+  params: RegisterFetchParams = {}
+): Promise<ApiResponse<RegisterCorrespondenceRow[]>> {
+  return apiGet<RegisterCorrespondenceRow[]>(`/api/dashboard/registers/correspondence${buildRegisterQuery(params)}`)
+}

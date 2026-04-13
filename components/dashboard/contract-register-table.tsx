@@ -1,0 +1,512 @@
+"use client"
+
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { Card, CardContent } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Badge } from "@/components/ui/badge"
+import { Label } from "@/components/ui/label"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import {
+  FileSignature,
+  Search,
+  Eye,
+  MoreHorizontal,
+  CheckCircle,
+  Clock,
+  XCircle,
+  RefreshCw,
+  X,
+} from "lucide-react"
+import { ManagementPaginationBar } from "@/components/management/management-pagination-bar"
+import { MINISTRIES_DEPARTMENTS_AGENCIES } from "@/lib/constants"
+import {
+  fetchUserContractRegister,
+  type RegisterContractRow,
+  type ContractRegisterFetchParams,
+} from "@/lib/dashboard-api"
+
+const STATUS_CONFIG: Record<string, { label: string; color: string; icon: typeof Clock }> = {
+  pending: { label: "Pending", color: "bg-amber-100 text-amber-700 border-amber-200", icon: Clock },
+  "under-review": { label: "Under Review", color: "bg-blue-100 text-blue-700 border-blue-200", icon: Eye },
+  approved: { label: "Approved", color: "bg-green-100 text-green-700 border-green-200", icon: CheckCircle },
+  rejected: { label: "Rejected", color: "bg-red-100 text-red-700 border-red-200", icon: XCircle },
+}
+
+const COLUMNS = [
+  { id: "date_received", label: "Date Received" },
+  { id: "originating_mda", label: "Originating MDA" },
+  { id: "subject", label: "Subject" },
+  { id: "nature_of_contract", label: "Nature of Contract" },
+  { id: "category", label: "Category" },
+  { id: "contract_number", label: "Transaction #" },
+  { id: "contract_type", label: "Contract Type" },
+  { id: "current_status_code", label: "Status/Stage" },
+  { id: "date_completed", label: "Date Completed" },
+] as const
+
+export function ContractRegisterTable() {
+  const [searchQuery, setSearchQuery] = useState("")
+  const [statusFilter, setStatusFilter] = useState("all")
+  const [natureFilter, setNatureFilter] = useState("all")
+  const [contractTypeFilter, setContractTypeFilter] = useState("all")
+  const [selectedItem, setSelectedItem] = useState<any | null>(null)
+  const [rows, setRows] = useState<RegisterContractRow[]>([])
+  const [loading, setLoading] = useState(false)
+  const [page, setPage] = useState(1)
+  const [limit, setLimit] = useState(20)
+  const [total, setTotal] = useState(0)
+  const [totalPages, setTotalPages] = useState(1)
+  const searchRef = useRef(searchQuery)
+  searchRef.current = searchQuery
+
+  const loadRegisters = useCallback(
+    async (
+      targetPage: number,
+      pageLimit?: number,
+      overrideStatus?: string,
+      overrideNature?: string,
+      overrideContractType?: string
+    ) => {
+      setLoading(true)
+      try {
+        const params: ContractRegisterFetchParams = {
+          page: targetPage,
+          limit: pageLimit ?? limit,
+        }
+        const s = searchRef.current.trim()
+        if (s) params.search = s
+        const st = overrideStatus ?? statusFilter
+        const nature = overrideNature ?? natureFilter
+        const cType = overrideContractType ?? contractTypeFilter
+        if (st !== "all") params.status = st
+        if (nature !== "all") params.nature_of_contract = nature
+        if (cType !== "all") params.contract_type = cType
+
+        const res = await fetchUserContractRegister(params)
+        if (res.success && Array.isArray(res.data)) {
+          const pagination = (res as any).pagination ?? {}
+          setRows(res.data)
+          setTotal(pagination.total ?? res.data.length)
+          setTotalPages(pagination.totalPages ?? 1)
+        } else {
+          setRows([])
+          setTotal(0)
+          setTotalPages(1)
+        }
+      } finally {
+        setLoading(false)
+      }
+    },
+    [limit, statusFilter, natureFilter, contractTypeFilter]
+  )
+
+  useEffect(() => {
+    void loadRegisters(1, limit)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const filteredData = useMemo(
+    () =>
+      rows.map((item) => ({
+        id: item.register_id,
+        dateReceived: item.date_received ? String(item.date_received).slice(0, 10) : "-",
+        dateCompleted: item.date_completed ? String(item.date_completed).slice(0, 10) : "-",
+        originatingMDA: (() => {
+          const raw = item.originating_mda ?? ""
+          const match = MINISTRIES_DEPARTMENTS_AGENCIES.find(
+            (mda) =>
+              mda.value.toLowerCase() === raw.toLowerCase() ||
+              mda.label.toLowerCase() === raw.toLowerCase()
+          )
+          return match?.label ?? (raw || "-")
+        })(),
+        subject: item.subject ?? "-",
+        nature: item.nature_of_contract ?? "-",
+        category: item.category ?? "-",
+        ref: item.contract_number ?? "-",
+        contractType: item.contract_type ?? "-",
+        status: String(item.current_status_code ?? "pending").toLowerCase().replace(/_/g, "-"),
+        contractor: item.contractor_name ?? "-",
+        value: Number(item.contract_value ?? 0),
+        currency: item.contract_currency ?? "BBD",
+      })),
+    [rows]
+  )
+
+  const isFiltered =
+    searchQuery.trim() !== "" ||
+    statusFilter !== "all" ||
+    natureFilter !== "all" ||
+    contractTypeFilter !== "all"
+
+  return (
+    <div className="space-y-4">
+      {/* Filters */}
+      <Card className="border-primary/20">
+        <CardContent className="pt-6">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex-1">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder="Search by reference, title, ministry, or contractor..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      setPage(1)
+                      void loadRegisters(1, limit)
+                    }
+                  }}
+                  className="pl-10 pr-10"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => {
+                      setSearchQuery("")
+                      searchRef.current = ""
+                    }}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Select
+                value={statusFilter}
+                onValueChange={(v) => {
+                  setStatusFilter(v)
+                  setPage(1)
+                  void loadRegisters(1, limit, v)
+                }}
+              >
+                <SelectTrigger className="w-[150px]">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="under-review">Under Review</SelectItem>
+                  <SelectItem value="approved">Approved</SelectItem>
+                  <SelectItem value="rejected">Rejected</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select
+                value={natureFilter}
+                onValueChange={(v) => {
+                  setNatureFilter(v)
+                  setPage(1)
+                  void loadRegisters(1, limit, undefined, v)
+                }}
+              >
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Nature" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Natures</SelectItem>
+                  <SelectItem value="Goods">Goods</SelectItem>
+                  <SelectItem value="Works">Works</SelectItem>
+                  <SelectItem value="Consultancy/Services">Consultancy/Services</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select
+                value={contractTypeFilter}
+                onValueChange={(v) => {
+                  setContractTypeFilter(v)
+                  setPage(1)
+                  void loadRegisters(1, limit, undefined, undefined, v)
+                }}
+              >
+                <SelectTrigger className="w-[150px]">
+                  <SelectValue placeholder="Contract Type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Types</SelectItem>
+                  <SelectItem value="New">New</SelectItem>
+                  <SelectItem value="Renewal">Renewal</SelectItem>
+                  <SelectItem value="Supplemental">Supplemental</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-10"
+                onClick={() => void loadRegisters(page, limit)}
+                disabled={loading}
+              >
+                <RefreshCw className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+                Refresh
+              </Button>
+            </div>
+          </div>
+          {isFiltered && (
+            <div className="mt-4 pt-4 border-t flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-wrap items-center gap-2 text-sm">
+                <span className="text-muted-foreground">
+                  Showing <span className="font-semibold text-foreground">{filteredData.length}</span> of {total} records
+                </span>
+                {searchQuery && (
+                  <span className="text-muted-foreground">
+                    for &quot;<span className="font-medium text-primary">{searchQuery}</span>&quot;
+                  </span>
+                )}
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setSearchQuery("")
+                  searchRef.current = ""
+                  setStatusFilter("all")
+                  setNatureFilter("all")
+                  setContractTypeFilter("all")
+                  setPage(1)
+                  void loadRegisters(1, limit, "all", "all", "all")
+                }}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-3 w-3 mr-1" />
+                Clear filters
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Table */}
+      <Card className="border-primary/20">
+        <CardContent className="p-0">
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-muted/50">
+                  {COLUMNS.map((column) => (
+                    <TableHead key={column.id} className="font-semibold">
+                      {column.label}
+                    </TableHead>
+                  ))}
+                  <TableHead className="font-semibold w-[50px]">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {loading && filteredData.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={10} className="text-center text-muted-foreground py-8">
+                      <RefreshCw className="h-4 w-4 animate-spin inline mr-2" />
+                      Loading...
+                    </TableCell>
+                  </TableRow>
+                )}
+                {filteredData.map((item) => {
+                  const statusConfig = STATUS_CONFIG[item.status] ?? STATUS_CONFIG.pending
+                  const StatusIcon = statusConfig.icon
+                  return (
+                    <TableRow key={item.id} className="hover:bg-muted/30">
+                      <TableCell className="text-sm">{item.dateReceived}</TableCell>
+                      <TableCell className="text-sm max-w-[280px] min-w-[220px] truncate" title={item.originatingMDA}>{item.originatingMDA}</TableCell>
+                      <TableCell className="max-w-[180px] truncate" title={item.subject}>{item.subject}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className={
+                          item.nature === "Works" ? "border-orange-200 bg-orange-50 text-orange-700" :
+                          item.nature === "Goods" ? "border-blue-200 bg-blue-50 text-blue-700" :
+                          "border-purple-200 bg-purple-50 text-purple-700"
+                        }>
+                          {item.nature}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-xs max-w-[140px] truncate" title={item.category}>{item.category}</TableCell>
+                      <TableCell className="font-mono text-sm font-medium text-primary">{item.ref}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className={
+                          item.contractType === "New" ? "border-green-200 bg-green-50 text-green-700" :
+                          item.contractType === "Renewal" ? "border-blue-200 bg-blue-50 text-blue-700" :
+                          "border-amber-200 bg-amber-50 text-amber-700"
+                        }>
+                          {item.contractType}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={statusConfig.color} variant="secondary">
+                          <StatusIcon className="mr-1 h-3 w-3" />
+                          {statusConfig.label}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-sm">{item.dateCompleted || "-"}</TableCell>
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={() => setSelectedItem(item)}>
+                              <Eye className="mr-2 h-4 w-4" />
+                              View Details
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  )
+                })}
+                {!loading && filteredData.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={10} className="text-center text-muted-foreground py-8">
+                      No contracts found.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+
+          <ManagementPaginationBar
+            page={page}
+            totalPages={totalPages}
+            total={total}
+            limit={limit}
+            loading={loading}
+            onPageChange={(p) => {
+              setPage(p)
+              void loadRegisters(p, limit)
+            }}
+            onLimitChange={(n) => {
+              setLimit(n)
+              setPage(1)
+              void loadRegisters(1, n)
+            }}
+          />
+        </CardContent>
+      </Card>
+
+      {/* Detail Dialog */}
+      <Dialog open={!!selectedItem} onOpenChange={() => setSelectedItem(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileSignature className="h-5 w-5 text-purple-600" />
+              Contract Details
+            </DialogTitle>
+            <DialogDescription>
+              Reference: {selectedItem?.ref}
+            </DialogDescription>
+          </DialogHeader>
+          {selectedItem && (
+            <div className="space-y-6">
+              <div>
+                <h4 className="text-sm font-semibold text-foreground mb-3 border-b pb-2">Contract Classification</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Nature of Contract</Label>
+                    <Badge variant="outline" className={
+                      selectedItem.nature === "Works" ? "border-orange-200 bg-orange-50 text-orange-700" :
+                      selectedItem.nature === "Goods" ? "border-blue-200 bg-blue-50 text-blue-700" :
+                      "border-purple-200 bg-purple-50 text-purple-700"
+                    }>
+                      {selectedItem.nature}
+                    </Badge>
+                  </div>
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Category</Label>
+                    <p className="font-medium text-sm">{selectedItem.category}</p>
+                  </div>
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Contract Type</Label>
+                    <Badge variant="outline" className={
+                      selectedItem.contractType === "New" ? "border-green-200 bg-green-50 text-green-700" :
+                      selectedItem.contractType === "Renewal" ? "border-blue-200 bg-blue-50 text-blue-700" :
+                      "border-amber-200 bg-amber-50 text-amber-700"
+                    }>
+                      {selectedItem.contractType}
+                    </Badge>
+                  </div>
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Contract #</Label>
+                    <p className="font-mono text-sm font-medium text-primary">{selectedItem.ref}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h4 className="text-sm font-semibold text-foreground mb-3 border-b pb-2">Contract Details</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="col-span-2">
+                    <Label className="text-xs text-muted-foreground">Subject</Label>
+                    <p className="font-medium">{selectedItem.subject}</p>
+                  </div>
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Originating MDA</Label>
+                    <p className="font-medium text-sm">{selectedItem.originatingMDA}</p>
+                  </div>
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Contractor</Label>
+                    <p className="font-medium text-sm">{selectedItem.contractor}</p>
+                  </div>
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Contract Value</Label>
+                    <p className="font-medium font-mono">{selectedItem.currency} ${selectedItem.value.toLocaleString()}</p>
+                  </div>
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Status/Stage</Label>
+                    <Badge className={(STATUS_CONFIG[selectedItem.status] ?? STATUS_CONFIG.pending).color}>
+                      {(STATUS_CONFIG[selectedItem.status] ?? STATUS_CONFIG.pending).label}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h4 className="text-sm font-semibold text-foreground mb-3 border-b pb-2">Key Dates</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Date Received</Label>
+                    <p className="font-medium text-sm">{selectedItem.dateReceived}</p>
+                  </div>
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Date Completed</Label>
+                    <p className="font-medium text-sm">{selectedItem.dateCompleted || "Not completed"}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </div>
+  )
+}
