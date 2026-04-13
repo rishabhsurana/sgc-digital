@@ -63,7 +63,7 @@ function mapApiItemToSubmission(item: DashboardSubmissionItem): Submission {
     status: item.ui_status,
     ministry: item.ministry || undefined,
     stage: item.stage,
-    history: [],
+    history: (item.stage_history || []).map((h) => ({ date: h.date, stage: h.stage })),
     sgcDocuments: undefined,
   }
 }
@@ -77,7 +77,17 @@ function formatMinistryDisplay(value?: string): string {
 
 const PROGRESS_STEPS: Record<"correspondence" | "contract", string[]> = {
   correspondence: ["Submitted", "Under Review", "In Progress", "Completed"],
-  contract: ["Submitted", "Under Review", "Approved", "Completed"],
+  contract: [
+    "1: Contract Received",
+    "2: Contract Assigned",
+    "3: Drafting & Review",
+    "3A: Reviewed & Approved",
+    "3B: Reviewed & Rejected",
+    "3C: Returned to MDA for Additional Info",
+    "4: Contract Execution",
+    "5: Adjudicated",
+    "6: Delivered / Completed",
+  ],
 }
 
 const STATUS_TO_STEP: Record<string, number> = {
@@ -87,6 +97,33 @@ const STATUS_TO_STEP: Record<string, number> = {
   approved: 2,
   completed: 3,
   rejected: -1,
+}
+
+// Maps contract stage codes (from BPM or stageLabelFromStatus) to progress step index (0-based, 9 steps)
+const CONTRACT_STAGE_TO_STEP: Record<string, number> = {
+  "1: Contract Received": 0,
+  "2: Contract Assigned": 1,
+  "3: Drafting & Review": 2,
+  "3A: Reviewed & Approved": 3,
+  "3B: Reviewed & Rejected": 4,
+  "3C: Returned to MDA for Additional Info": 5,
+  "4: Contract Execution": 6,
+  "5: Adjudicated": 7,
+  "6: Delivered / Completed": 8,
+  // Legacy stage labels derived from status (before BPM sends a stage)
+  "Submitted": 0,
+  "Under review": 2,
+  "Returned for clarification": 5,
+  "Approved": 3,
+  "Completed": 8,
+  "Rejected": -1,
+  // Status code fallbacks
+  "pending": 0,
+  "in-review": 2,
+  "clarification": 5,
+  "approved": 3,
+  "completed": 8,
+  "rejected": -1,
 }
 
 function SubmissionCard({
@@ -112,9 +149,23 @@ function SubmissionCard({
   }
 
   const steps = PROGRESS_STEPS[submission.type]
-  const currentStep = STATUS_TO_STEP[submission.status] ?? 0
-  const isRejected = submission.status === "rejected"
-  const isClarification = submission.status === "clarification"
+  const stageDateMap = new Map(
+    (submission.history || []).map((h) => [h.stage, h.date])
+  )
+  // Use the last stage history entry as the effective current stage (most up-to-date BPM stage).
+  // Fall back to submission.stage (derived from DB status) if no history exists yet.
+  const history = submission.history || []
+  const effectiveStage = history.length > 0
+    ? history[history.length - 1].stage
+    : submission.stage
+  const currentStep =
+    submission.type === "contract"
+      ? (CONTRACT_STAGE_TO_STEP[effectiveStage] ?? CONTRACT_STAGE_TO_STEP[submission.status] ?? 0)
+      : (STATUS_TO_STEP[submission.status] ?? 0)
+  const isRejected = submission.status === "rejected" ||
+    (submission.type === "contract" && effectiveStage === "3B: Reviewed & Rejected")
+  const isClarification = submission.status === "clarification" ||
+    (submission.type === "contract" && effectiveStage === "3C: Returned to MDA for Additional Info")
 
   return (
     <Card className="bg-card border-border hover:shadow-md transition-shadow">
@@ -221,9 +272,16 @@ function SubmissionCard({
                       <div className="h-2 w-2 rounded-full bg-orange-400" />
                     )}
                   </div>
-                  <span className={`text-[10px] leading-tight text-center max-w-[56px] whitespace-nowrap ${labelClass}`}>
+                  <span className={`text-[10px] leading-tight text-center break-words ${
+                    steps.length > 4 ? "max-w-[48px]" : "max-w-[56px]"
+                  } ${labelClass}`}>
                     {step}
                   </span>
+                  {stageDateMap.get(step) && (
+                    <span className="text-[9px] leading-tight text-center text-muted-foreground/60 max-w-[56px]">
+                      {stageDateMap.get(step)}
+                    </span>
+                  )}
                 </div>
                 {!isLast && (
                   <div className={`h-0.5 flex-1 mx-1 mt-2.5 ${lineClass}`} />

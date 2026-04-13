@@ -28,6 +28,7 @@ export interface DashboardSubmissionItem {
   stage: string
   submitted_date: string | null
   last_updated: string
+  stage_history: { stage: string; date: string }[]
 }
 
 export interface DashboardStats {
@@ -162,12 +163,13 @@ export async function deleteDraftByType(
 }
 
 export interface HistoryEventRow {
-  id: string
-  action: string
-  stage: string | null
-  note: string | null
-  created_at: string
-  performer?: { full_name?: string } | null
+  case_stage_history_id: number
+  case_id: string
+  from_stage_code: string | null
+  to_stage_code: string
+  changed_at: string
+  notes: string | null
+  is_visible_to_applicant: boolean
 }
 
 export interface DocumentRow {

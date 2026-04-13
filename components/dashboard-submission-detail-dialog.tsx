@@ -71,9 +71,9 @@ export function DashboardSubmissionDetailDialog({
           const { correspondence, documents, history } = res.data
           const rec = correspondence as Record<string, unknown>
           const hist = (history || []).map((h) => ({
-            date: formatYmd(h.created_at),
-            stage: h.stage || h.action,
-            note: h.note || undefined,
+            date: formatYmd(h.changed_at),
+            stage: h.to_stage_code,
+            note: h.notes || undefined,
           }))
           const docs: SGCDocument[] = (documents || []).map((d) => ({
             id: d.id,
@@ -101,9 +101,9 @@ export function DashboardSubmissionDetailDialog({
           const { contract, documents, history } = res.data
           const rec = contract as Record<string, unknown>
           const hist = (history || []).map((h) => ({
-            date: formatYmd(h.created_at),
-            stage: h.stage || h.action,
-            note: h.note || undefined,
+            date: formatYmd(h.changed_at),
+            stage: h.to_stage_code,
+            note: h.notes || undefined,
           }))
           const docs: SGCDocument[] = (documents || []).map((d) => ({
             id: d.id,
