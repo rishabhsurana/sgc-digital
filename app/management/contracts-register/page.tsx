@@ -67,12 +67,13 @@ const PRIORITY_CONFIG = {
 }
 
 const CONTRACT_REGISTER_COLUMNS = [
+  { id: "transaction_number", label: "Transaction #" },
   { id: "date_received", label: "Date Received" },
   { id: "originating_mda", label: "Originating MDA" },
   { id: "subject", label: "Subject" },
   { id: "nature_of_contract", label: "Nature of Contract" },
   { id: "category", label: "Category" },
-  { id: "contract_number", label: "Transaction #" },
+  { id: "contract_number", label: "Contract #" },
   { id: "contract_type", label: "Contract Type" },
   { id: "current_status_code", label: "Status/Stage" },
   { id: "date_completed", label: "Date Completed" },
@@ -80,6 +81,7 @@ const CONTRACT_REGISTER_COLUMNS = [
 
 type RegisterRow = {
   register_id: string
+  transaction_number: string | null
   date_received: string | null
   date_completed: string | null
   originating_mda: string | null
@@ -158,6 +160,7 @@ export default function ContractsRegisterPage() {
     () =>
       rows.map((item) => ({
         id: item.register_id,
+        transactionNumber: item.transaction_number ?? "-",
         dateReceived: item.date_received ? String(item.date_received).slice(0, 10) : "-",
         dateCompleted: item.date_completed ? String(item.date_completed).slice(0, 10) : "-",
         originatingMDA: (() => {
@@ -181,6 +184,8 @@ export default function ContractsRegisterPage() {
       })),
     [rows]
   )
+
+  debugger
 
   const isFiltered =
     searchQuery.trim() !== "" ||
@@ -450,7 +455,8 @@ export default function ContractsRegisterPage() {
                   const statusConfig = STATUS_CONFIG[item.status as keyof typeof STATUS_CONFIG] || { label: item.status, color: "bg-gray-100 text-gray-700 border-gray-200", icon: Clock }
                   return (
                     <TableRow key={item.id} className="hover:bg-muted/30">
-                      <TableCell className="text-sm">{item.dateReceived}</TableCell>
+                      <TableCell className="font-mono text-sm font-semibold text-primary whitespace-nowrap">{item.transactionNumber}</TableCell>
+                      <TableCell className="text-sm whitespace-nowrap">{item.dateReceived}</TableCell>
                       <TableCell className="text-sm max-w-[280px] min-w-[220px] truncate" title={item.originatingMDA}>{item.originatingMDA}</TableCell>
                       <TableCell className="max-w-[180px] truncate" title={item.subject}>{item.subject}</TableCell>
                       <TableCell>
@@ -510,7 +516,7 @@ export default function ContractsRegisterPage() {
                 })}
                 {!loading && filteredData.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={10} className="text-center text-muted-foreground py-8">
+                    <TableCell colSpan={11} className="text-center text-muted-foreground py-8">
                       No contracts found.
                     </TableCell>
                   </TableRow>
@@ -579,6 +585,10 @@ export default function ContractsRegisterPage() {
                     }>
                       {selectedItem.contractType}
                     </Badge>
+                  </div>
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Transaction #</Label>
+                    <p className="font-mono text-sm font-medium text-primary">{selectedItem.transactionNumber}</p>
                   </div>
                   <div>
                     <Label className="text-xs text-muted-foreground">Contract #</Label>
