@@ -94,6 +94,7 @@ const CORRESPONDENCE_REGISTER_COLUMNS = [
   { id: "correspondence_type", label: "Type" },
   { id: "subject", label: "Subject" },
   { id: "originating_mda", label: "Ministry/MDA" },
+  { id: "ministry_file_reference", label: "Min. File Ref. #" },
   { id: "submitter_name", label: "Submitter" },
   { id: "date_received", label: "Date" },
   { id: "priority_level", label: "Priority" },
@@ -156,6 +157,7 @@ export default function CorrespondenceRegisterPage() {
           type: item.correspondence_type ?? "-",
           subject: item.subject ?? "-",
           ministry: item.originating_mda ?? "-",
+          ministryFileRef: item.ministry_file_reference ?? "-",
           submitter: item.submitter_name ?? "-",
           date: item.date_received ? String(item.date_received).slice(0, 10) : "-",
           status: String(item.current_status_code ?? "pending").toLowerCase().replace(/_/g, "-"),
@@ -397,6 +399,7 @@ export default function CorrespondenceRegisterPage() {
                       </TableCell>
                       <TableCell className="max-w-[250px] truncate" title={item.subject}>{item.subject}</TableCell>
                       <TableCell className="text-sm">{item.ministry}</TableCell>
+                      <TableCell className="font-mono text-sm">{item.ministryFileRef}</TableCell>
                       <TableCell className="text-sm">{item.submitter}</TableCell>
                       <TableCell className="text-sm text-muted-foreground">{item.date}</TableCell>
                       <TableCell>
@@ -438,7 +441,7 @@ export default function CorrespondenceRegisterPage() {
                 })}
                 {!loading && filteredData.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
+                    <TableCell colSpan={10} className="text-center text-muted-foreground py-8">
                       No correspondence found.
                     </TableCell>
                   </TableRow>
@@ -494,6 +497,10 @@ export default function CorrespondenceRegisterPage() {
                 <div>
                   <Label className="text-xs text-muted-foreground">Ministry/MDA</Label>
                   <p className="font-medium">{selectedItem.ministry}</p>
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Min. File Ref. #</Label>
+                  <p className="font-medium font-mono">{selectedItem.ministryFileRef}</p>
                 </div>
                 <div>
                   <Label className="text-xs text-muted-foreground">Submitter</Label>
