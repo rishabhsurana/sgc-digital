@@ -5,7 +5,6 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Label } from "@/components/ui/label"
 import {
   Select,
   SelectContent,
@@ -29,63 +28,54 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import {
   FileSignature,
   Search,
-  Eye,
-  MoreHorizontal,
-  CheckCircle,
-  Clock,
-  XCircle,
+  Download,
   RefreshCw,
   X,
+  FileText,
 } from "lucide-react"
 import { ManagementPaginationBar } from "@/components/management/management-pagination-bar"
-import { MINISTRIES_DEPARTMENTS_AGENCIES } from "@/lib/constants"
 import {
   fetchUserContractRegister,
+  fetchContractDetail,
+  downloadDocumentAuthorized,
   type RegisterContractRow,
   type ContractRegisterFetchParams,
 } from "@/lib/dashboard-api"
+import Link from "next/link"
 
-const STATUS_CONFIG: Record<string, { label: string; color: string; icon: typeof Clock }> = {
-  pending: { label: "Pending", color: "bg-amber-100 text-amber-700 border-amber-200", icon: Clock },
-  "under-review": { label: "Under Review", color: "bg-blue-100 text-blue-700 border-blue-200", icon: Eye },
-  approved: { label: "Approved", color: "bg-green-100 text-green-700 border-green-200", icon: CheckCircle },
-  rejected: { label: "Rejected", color: "bg-red-100 text-red-700 border-red-200", icon: XCircle },
+interface DocumentRow {
+  document_id: string
+  document_name: string
+  document_type_label?: string
+  file_size?: number
 }
 
-const COLUMNS = [
-  { id: "date_received", label: "Date Received" },
-  { id: "originating_mda", label: "Originating MDA" },
-  { id: "subject", label: "Subject" },
-  { id: "nature_of_contract", label: "Nature of Contract" },
-  { id: "category", label: "Category" },
-  { id: "contract_number", label: "Transaction #" },
-  { id: "contract_type", label: "Contract Type" },
-  { id: "current_status_code", label: "Status/Stage" },
-  { id: "date_completed", label: "Date Completed" },
-] as const
+function formatDate(val: string | null | undefined): string {
+  if (!val) return "-"
+  return String(val).slice(0, 10)
+}
 
 export function ContractRegisterTable() {
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
   const [natureFilter, setNatureFilter] = useState("all")
   const [contractTypeFilter, setContractTypeFilter] = useState("all")
-  const [selectedItem, setSelectedItem] = useState<any | null>(null)
   const [rows, setRows] = useState<RegisterContractRow[]>([])
   const [loading, setLoading] = useState(false)
   const [page, setPage] = useState(1)
   const [limit, setLimit] = useState(20)
   const [total, setTotal] = useState(0)
   const [totalPages, setTotalPages] = useState(1)
+
+  // Download dialog state
+  const [downloadDialogOpen, setDownloadDialogOpen] = useState(false)
+  const [downloadingContractId, setDownloadingContractId] = useState<string | null>(null)
+  const [downloadDocuments, setDownloadDocuments] = useState<DocumentRow[]>([])
+  const [downloadLoading, setDownloadLoading] = useState(false)
+  const [downloadingDocId, setDownloadingDocId] = useState<string | null>(null)
+
   const searchRef = useRef(searchQuery)
   searchRef.current = searchQuery
 
@@ -135,30 +125,18 @@ export function ContractRegisterTable() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const filteredData = useMemo(
+  const tableData = useMemo(
     () =>
       rows.map((item) => ({
-        id: item.register_id,
-        dateReceived: item.date_received ? String(item.date_received).slice(0, 10) : "-",
-        dateCompleted: item.date_completed ? String(item.date_completed).slice(0, 10) : "-",
-        originatingMDA: (() => {
-          const raw = item.originating_mda ?? ""
-          const match = MINISTRIES_DEPARTMENTS_AGENCIES.find(
-            (mda) =>
-              mda.value.toLowerCase() === raw.toLowerCase() ||
-              mda.label.toLowerCase() === raw.toLowerCase()
-          )
-          return match?.label ?? (raw || "-")
-        })(),
-        subject: item.subject ?? "-",
+        contractId: item.contract_id ?? "",
+        transactionNumber: item.transaction_number ?? "-",
+        title: item.contract_title ?? item.subject ?? "-",
+        type: item.contract_type ?? "-",
         nature: item.nature_of_contract ?? "-",
         category: item.category ?? "-",
-        ref: item.contract_number ?? "-",
-        contractType: item.contract_type ?? "-",
-        status: String(item.current_status_code ?? "pending").toLowerCase().replace(/_/g, "-"),
-        contractor: item.contractor_name ?? "-",
-        value: Number(item.contract_value ?? 0),
-        currency: item.contract_currency ?? "BBD",
+        contractNumber: item.contract_number ?? "-",
+        dateOfIssue: formatDate(item.contract_start_date),
+        dateOfExpiration: formatDate(item.contract_end_date),
       })),
     [rows]
   )
@@ -168,6 +146,31 @@ export function ContractRegisterTable() {
     statusFilter !== "all" ||
     natureFilter !== "all" ||
     contractTypeFilter !== "all"
+
+  const openDownloadDialog = async (contractId: string) => {
+    if (!contractId) return
+    setDownloadingContractId(contractId)
+    setDownloadDocuments([])
+    setDownloadLoading(true)
+    setDownloadDialogOpen(true)
+    try {
+      const res = await fetchContractDetail(contractId)
+      if (res.success && res.data) {
+        setDownloadDocuments((res.data.documents as DocumentRow[]) ?? [])
+      }
+    } finally {
+      setDownloadLoading(false)
+    }
+  }
+
+  const handleDownloadDoc = async (doc: DocumentRow) => {
+    setDownloadingDocId(doc.document_id)
+    try {
+      await downloadDocumentAuthorized(doc.document_id, doc.document_name)
+    } finally {
+      setDownloadingDocId(null)
+    }
+  }
 
   return (
     <div className="space-y-4">
@@ -204,25 +207,6 @@ export function ContractRegisterTable() {
               </div>
             </div>
             <div className="flex flex-wrap gap-2">
-              <Select
-                value={statusFilter}
-                onValueChange={(v) => {
-                  setStatusFilter(v)
-                  setPage(1)
-                  void loadRegisters(1, limit, v)
-                }}
-              >
-                <SelectTrigger className="w-[150px]">
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="under-review">Under Review</SelectItem>
-                  <SelectItem value="approved">Approved</SelectItem>
-                  <SelectItem value="rejected">Rejected</SelectItem>
-                </SelectContent>
-              </Select>
               <Select
                 value={natureFilter}
                 onValueChange={(v) => {
@@ -275,7 +259,7 @@ export function ContractRegisterTable() {
             <div className="mt-4 pt-4 border-t flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex flex-wrap items-center gap-2 text-sm">
                 <span className="text-muted-foreground">
-                  Showing <span className="font-semibold text-foreground">{filteredData.length}</span> of {total} records
+                  Showing <span className="font-semibold text-foreground">{tableData.length}</span> of {total} records
                 </span>
                 {searchQuery && (
                   <span className="text-muted-foreground">
@@ -312,16 +296,20 @@ export function ContractRegisterTable() {
             <Table>
               <TableHeader>
                 <TableRow className="bg-muted/50">
-                  {COLUMNS.map((column) => (
-                    <TableHead key={column.id} className="font-semibold">
-                      {column.label}
-                    </TableHead>
-                  ))}
-                  <TableHead className="font-semibold w-[50px]">Actions</TableHead>
+                  <TableHead className="font-semibold whitespace-nowrap">Transaction #</TableHead>
+                  <TableHead className="font-semibold">Title</TableHead>
+                  <TableHead className="font-semibold whitespace-nowrap">Type</TableHead>
+                  <TableHead className="font-semibold whitespace-nowrap">Nature</TableHead>
+                  <TableHead className="font-semibold whitespace-nowrap">Category</TableHead>
+                  <TableHead className="font-semibold whitespace-nowrap">Contract #</TableHead>
+                  <TableHead className="font-semibold whitespace-nowrap">Date of Issue</TableHead>
+                  <TableHead className="font-semibold whitespace-nowrap">Date of Expiration</TableHead>
+                  <TableHead className="font-semibold w-[90px] text-center">Download</TableHead>
+                  <TableHead className="font-semibold w-[80px] text-center">Renew</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {loading && filteredData.length === 0 && (
+                {loading && tableData.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={10} className="text-center text-muted-foreground py-8">
                       <RefreshCw className="h-4 w-4 animate-spin inline mr-2" />
@@ -329,62 +317,70 @@ export function ContractRegisterTable() {
                     </TableCell>
                   </TableRow>
                 )}
-                {filteredData.map((item) => {
-                  const statusConfig = STATUS_CONFIG[item.status] ?? STATUS_CONFIG.pending
-                  const StatusIcon = statusConfig.icon
-                  return (
-                    <TableRow key={item.id} className="hover:bg-muted/30">
-                      <TableCell className="text-sm">{item.dateReceived}</TableCell>
-                      <TableCell className="text-sm max-w-[280px] min-w-[220px] truncate" title={item.originatingMDA}>{item.originatingMDA}</TableCell>
-                      <TableCell className="max-w-[180px] truncate" title={item.subject}>{item.subject}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className={
-                          item.nature === "Works" ? "border-orange-200 bg-orange-50 text-orange-700" :
-                          item.nature === "Goods" ? "border-blue-200 bg-blue-50 text-blue-700" :
-                          "border-purple-200 bg-purple-50 text-purple-700"
-                        }>
-                          {item.nature}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-xs max-w-[140px] truncate" title={item.category}>{item.category}</TableCell>
-                      <TableCell className="font-mono text-sm font-medium text-primary">{item.ref}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className={
-                          item.contractType === "New" ? "border-green-200 bg-green-50 text-green-700" :
-                          item.contractType === "Renewal" ? "border-blue-200 bg-blue-50 text-blue-700" :
-                          "border-amber-200 bg-amber-50 text-amber-700"
-                        }>
-                          {item.contractType}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge className={statusConfig.color} variant="secondary">
-                          <StatusIcon className="mr-1 h-3 w-3" />
-                          {statusConfig.label}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-sm">{item.dateCompleted || "-"}</TableCell>
-                      <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem onClick={() => setSelectedItem(item)}>
-                              <Eye className="mr-2 h-4 w-4" />
-                              View Details
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  )
-                })}
-                {!loading && filteredData.length === 0 && (
+                {tableData.map((item) => (
+                  <TableRow key={item.contractId || item.contractNumber} className="hover:bg-muted/30">
+                    <TableCell className="font-mono text-sm font-semibold text-primary whitespace-nowrap">
+                      {item.transactionNumber}
+                    </TableCell>
+                    <TableCell className="max-w-[220px] truncate text-sm" title={item.title}>
+                      {item.title}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className={
+                        item.type === "New" ? "border-green-200 bg-green-50 text-green-700 whitespace-nowrap" :
+                        item.type === "Renewal" ? "border-blue-200 bg-blue-50 text-blue-700 whitespace-nowrap" :
+                        "border-amber-200 bg-amber-50 text-amber-700 whitespace-nowrap"
+                      }>
+                        {item.type}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className={
+                        item.nature === "Works" ? "border-orange-200 bg-orange-50 text-orange-700 whitespace-nowrap" :
+                        item.nature === "Goods" ? "border-blue-200 bg-blue-50 text-blue-700 whitespace-nowrap" :
+                        "border-purple-200 bg-purple-50 text-purple-700 whitespace-nowrap"
+                      }>
+                        {item.nature}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-xs max-w-[140px] truncate" title={item.category}>
+                      {item.category}
+                    </TableCell>
+                    <TableCell className="font-mono text-sm font-medium whitespace-nowrap">
+                      {item.contractNumber}
+                    </TableCell>
+                    <TableCell className="text-sm whitespace-nowrap">{item.dateOfIssue}</TableCell>
+                    <TableCell className="text-sm whitespace-nowrap">{item.dateOfExpiration}</TableCell>
+                    <TableCell className="text-center">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0 text-primary hover:text-primary hover:bg-primary/10"
+                        disabled={!item.contractId}
+                        onClick={() => void openDownloadDialog(item.contractId)}
+                        title="Download contract documents"
+                      >
+                        <Download className="h-4 w-4" />
+                        <span className="sr-only">Download</span>
+                      </Button>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
+                        asChild
+                        title="Submit a renewal"
+                      >
+                        <Link href="/contracts">
+                          <RefreshCw className="h-4 w-4" />
+                          <span className="sr-only">Renew</span>
+                        </Link>
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {!loading && tableData.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={10} className="text-center text-muted-foreground py-8">
                       No contracts found.
@@ -414,97 +410,59 @@ export function ContractRegisterTable() {
         </CardContent>
       </Card>
 
-      {/* Detail Dialog */}
-      <Dialog open={!!selectedItem} onOpenChange={() => setSelectedItem(null)}>
-        <DialogContent className="max-w-2xl">
+      {/* Download Documents Dialog */}
+      <Dialog open={downloadDialogOpen} onOpenChange={(open) => { if (!open) setDownloadingContractId(null); setDownloadDialogOpen(open) }}>
+        <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <FileSignature className="h-5 w-5 text-purple-600" />
-              Contract Details
+              <FileSignature className="h-5 w-5 text-primary" />
+              Contract Documents
             </DialogTitle>
             <DialogDescription>
-              Reference: {selectedItem?.ref}
+              Download the documents attached to this contract.
             </DialogDescription>
           </DialogHeader>
-          {selectedItem && (
-            <div className="space-y-6">
-              <div>
-                <h4 className="text-sm font-semibold text-foreground mb-3 border-b pb-2">Contract Classification</h4>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-xs text-muted-foreground">Nature of Contract</Label>
-                    <Badge variant="outline" className={
-                      selectedItem.nature === "Works" ? "border-orange-200 bg-orange-50 text-orange-700" :
-                      selectedItem.nature === "Goods" ? "border-blue-200 bg-blue-50 text-blue-700" :
-                      "border-purple-200 bg-purple-50 text-purple-700"
-                    }>
-                      {selectedItem.nature}
-                    </Badge>
-                  </div>
-                  <div>
-                    <Label className="text-xs text-muted-foreground">Category</Label>
-                    <p className="font-medium text-sm">{selectedItem.category}</p>
-                  </div>
-                  <div>
-                    <Label className="text-xs text-muted-foreground">Contract Type</Label>
-                    <Badge variant="outline" className={
-                      selectedItem.contractType === "New" ? "border-green-200 bg-green-50 text-green-700" :
-                      selectedItem.contractType === "Renewal" ? "border-blue-200 bg-blue-50 text-blue-700" :
-                      "border-amber-200 bg-amber-50 text-amber-700"
-                    }>
-                      {selectedItem.contractType}
-                    </Badge>
-                  </div>
-                  <div>
-                    <Label className="text-xs text-muted-foreground">Contract #</Label>
-                    <p className="font-mono text-sm font-medium text-primary">{selectedItem.ref}</p>
+          <div className="space-y-2 max-h-[400px] overflow-y-auto">
+            {downloadLoading && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground py-4">
+                <RefreshCw className="h-4 w-4 animate-spin" />
+                Loading documents…
+              </div>
+            )}
+            {!downloadLoading && downloadDocuments.length === 0 && (
+              <p className="text-sm text-muted-foreground py-4">No documents available for this contract.</p>
+            )}
+            {!downloadLoading && downloadDocuments.map((doc) => (
+              <div
+                key={doc.document_id}
+                className="flex items-center justify-between gap-3 rounded-lg border border-border p-3 hover:bg-muted/30"
+              >
+                <div className="flex items-center gap-2 min-w-0">
+                  <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium truncate">{doc.document_name}</p>
+                    {doc.document_type_label && (
+                      <p className="text-xs text-muted-foreground">{doc.document_type_label}</p>
+                    )}
                   </div>
                 </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 shrink-0"
+                  disabled={downloadingDocId === doc.document_id}
+                  onClick={() => void handleDownloadDoc(doc)}
+                >
+                  {downloadingDocId === doc.document_id ? (
+                    <RefreshCw className="h-3 w-3 animate-spin" />
+                  ) : (
+                    <Download className="h-3 w-3" />
+                  )}
+                  <span className="ml-1">Download</span>
+                </Button>
               </div>
-
-              <div>
-                <h4 className="text-sm font-semibold text-foreground mb-3 border-b pb-2">Contract Details</h4>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="col-span-2">
-                    <Label className="text-xs text-muted-foreground">Subject</Label>
-                    <p className="font-medium">{selectedItem.subject}</p>
-                  </div>
-                  <div>
-                    <Label className="text-xs text-muted-foreground">Originating MDA</Label>
-                    <p className="font-medium text-sm">{selectedItem.originatingMDA}</p>
-                  </div>
-                  <div>
-                    <Label className="text-xs text-muted-foreground">Contractor</Label>
-                    <p className="font-medium text-sm">{selectedItem.contractor}</p>
-                  </div>
-                  <div>
-                    <Label className="text-xs text-muted-foreground">Contract Value</Label>
-                    <p className="font-medium font-mono">{selectedItem.currency} ${selectedItem.value.toLocaleString()}</p>
-                  </div>
-                  <div>
-                    <Label className="text-xs text-muted-foreground">Status/Stage</Label>
-                    <Badge className={(STATUS_CONFIG[selectedItem.status] ?? STATUS_CONFIG.pending).color}>
-                      {(STATUS_CONFIG[selectedItem.status] ?? STATUS_CONFIG.pending).label}
-                    </Badge>
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <h4 className="text-sm font-semibold text-foreground mb-3 border-b pb-2">Key Dates</h4>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-xs text-muted-foreground">Date Received</Label>
-                    <p className="font-medium text-sm">{selectedItem.dateReceived}</p>
-                  </div>
-                  <div>
-                    <Label className="text-xs text-muted-foreground">Date Completed</Label>
-                    <p className="font-medium text-sm">{selectedItem.dateCompleted || "Not completed"}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
+            ))}
+          </div>
         </DialogContent>
       </Dialog>
     </div>

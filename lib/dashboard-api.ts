@@ -467,8 +467,13 @@ export function deleteManagementMda(id: number): Promise<ApiResponse<null>> {
 
 export interface RegisterContractRow {
   register_id: string
+  contract_id: string | null
+  transaction_number: string | null
+  contract_title: string | null
   date_received: string | null
   date_completed: string | null
+  contract_start_date: string | null
+  contract_end_date: string | null
   originating_mda: string | null
   subject: string | null
   nature_of_contract: string | null

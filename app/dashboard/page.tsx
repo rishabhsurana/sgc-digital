@@ -16,11 +16,11 @@ import {
   SelectValue 
 } from "@/components/ui/select"
 import { Dialog } from "@/components/ui/dialog"
-import { 
-  Search, 
-  FileText, 
-  FileSignature, 
-  CheckCircle, 
+import {
+  Search,
+  FileText,
+  FileSignature,
+  CheckCircle,
   AlertCircle,
   Download,
   Eye,
@@ -34,7 +34,8 @@ import {
   LogOut,
   LayoutDashboard,
   Pencil,
-  Trash2
+  Trash2,
+  BookOpen,
 } from "lucide-react"
 import { AskRex } from "@/components/ask-rex"
 import Link from "next/link"
@@ -76,18 +77,23 @@ function formatMinistryDisplay(value?: string): string {
   return normalized
 }
 
+// Strips legacy number prefixes like "1: ", "3A: " from stage strings stored in DB
+function normalizeContractStage(stage: string): string {
+  return stage.replace(/^\d+[A-Za-z]*:\s*/, "")
+}
+
 const PROGRESS_STEPS: Record<"correspondence" | "contract", string[]> = {
   correspondence: ["Submitted", "Under Review", "In Progress", "Completed"],
   contract: [
-    "1: Contract Received",
-    "2: Contract Assigned",
-    "3: Drafting & Review",
-    "3A: Reviewed & Approved",
-    "3B: Reviewed & Rejected",
-    "3C: Returned to MDA for Additional Info",
-    "4: Contract Execution",
-    "5: Adjudicated",
-    "6: Delivered / Completed",
+    "Contract Received",       // 0
+    "Contract Assigned",       // 1
+    "Drafting & Review",       // 2
+    // "Reviewed & Approved",  // dynamic — shown via CONTRACT_STAGE_TO_STEP mapping (→ step 3)
+    // "Reviewed & Rejected",  // dynamic — shown via isRejected flag
+    // "Returned to MDA for Additional Info", // dynamic — shown via isClarification flag
+    "Contract Execution",      // 3
+    "Adjudicated",             // 4
+    "Delivered / Completed",   // 5
   ],
 }
 
@@ -100,30 +106,31 @@ const STATUS_TO_STEP: Record<string, number> = {
   rejected: -1,
 }
 
-// Maps contract stage codes (from BPM or stageLabelFromStatus) to progress step index (0-based, 9 steps)
+// Maps contract stage names (clean, no number prefix) to progress step index (0-based, 6 steps)
 const CONTRACT_STAGE_TO_STEP: Record<string, number> = {
-  "1: Contract Received": 0,
-  "2: Contract Assigned": 1,
-  "3: Drafting & Review": 2,
-  "3A: Reviewed & Approved": 3,
-  "3B: Reviewed & Rejected": 4,
-  "3C: Returned to MDA for Additional Info": 5,
-  "4: Contract Execution": 6,
-  "5: Adjudicated": 7,
-  "6: Delivered / Completed": 8,
+  "Contract Received": 0,
+  "Contract Assigned": 1,
+  "Drafting & Review": 2,
+  // Dynamic branch stages — map to nearest logical position in the 6-step spine:
+  "Reviewed & Approved": 3,              // approved → Contract Execution is next
+  "Reviewed & Rejected": -1,             // rejected branch
+  "Returned to MDA for Additional Info": 2, // back in Drafting & Review
+  "Contract Execution": 3,
+  "Adjudicated": 4,
+  "Delivered / Completed": 5,
   // Legacy stage labels derived from status (before BPM sends a stage)
   "Submitted": 0,
   "Under review": 2,
-  "Returned for clarification": 5,
+  "Returned for clarification": 2,
   "Approved": 3,
-  "Completed": 8,
+  "Completed": 5,
   "Rejected": -1,
   // Status code fallbacks
   "pending": 0,
   "in-review": 2,
-  "clarification": 5,
+  "clarification": 2,
   "approved": 3,
-  "completed": 8,
+  "completed": 5,
   "rejected": -1,
 }
 
@@ -150,23 +157,24 @@ function SubmissionCard({
   }
 
   const steps = PROGRESS_STEPS[submission.type]
+  // Normalize stage names so old DB records with numbered prefixes ("1: Contract Received")
+  // map correctly to the new clean display labels ("Contract Received")
   const stageDateMap = new Map(
-    (submission.history || []).map((h) => [h.stage, h.date])
+    (submission.history || []).map((h) => [normalizeContractStage(h.stage), h.date])
   )
   // Use the last stage history entry as the effective current stage (most up-to-date BPM stage).
   // Fall back to submission.stage (derived from DB status) if no history exists yet.
   const history = submission.history || []
-  const effectiveStage = history.length > 0
-    ? history[history.length - 1].stage
-    : submission.stage
+  const rawStage = history.length > 0 ? history[history.length - 1].stage : submission.stage
+  const effectiveStage = normalizeContractStage(rawStage)
   const currentStep =
     submission.type === "contract"
       ? (CONTRACT_STAGE_TO_STEP[effectiveStage] ?? CONTRACT_STAGE_TO_STEP[submission.status] ?? 0)
       : (STATUS_TO_STEP[submission.status] ?? 0)
   const isRejected = submission.status === "rejected" ||
-    (submission.type === "contract" && effectiveStage === "3B: Reviewed & Rejected")
+    (submission.type === "contract" && effectiveStage === "Reviewed & Rejected")
   const isClarification = submission.status === "clarification" ||
-    (submission.type === "contract" && effectiveStage === "3C: Returned to MDA for Additional Info")
+    (submission.type === "contract" && effectiveStage === "Returned to MDA for Additional Info")
 
   return (
     <Card className="bg-card border-border hover:shadow-md transition-shadow">
@@ -273,8 +281,10 @@ function SubmissionCard({
                       <div className="h-2 w-2 rounded-full bg-orange-400" />
                     )}
                   </div>
-                  <span className={`text-[10px] leading-tight text-center break-words ${
-                    steps.length > 4 ? "max-w-[48px]" : "max-w-[56px]"
+                  <span className={`text-[10px] leading-tight text-center ${
+                    step.length < 15
+                      ? "whitespace-nowrap"
+                      : `break-normal ${steps.length > 4 ? "max-w-[48px]" : "max-w-[56px]"}`
                   } ${labelClass}`}>
                     {step}
                   </span>
@@ -688,14 +698,38 @@ function DashboardPageInner() {
 
           {/* Submissions Tabs */}
           <Tabs defaultValue="active" className="space-y-4">
-            <TabsList>
-              <TabsTrigger value="active">
-                Active ({activeSubmissions.length})
+            <TabsList className="h-auto w-full bg-transparent p-0 gap-2 flex">
+              <TabsTrigger
+                value="active"
+                className="flex-1 flex items-center justify-center gap-2 h-11 rounded-lg border-2 border-blue-200 bg-blue-50 text-blue-700 font-semibold text-sm transition-all
+                  data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:border-blue-600 data-[state=active]:shadow-md
+                  hover:bg-blue-100 hover:border-blue-400"
+              >
+                <RefreshCw className="h-4 w-4" />
+                Active
+                <span className="inline-flex items-center justify-center rounded-full bg-white/60 text-blue-800 text-xs font-bold px-2 py-0.5 min-w-[22px]">
+                  {activeSubmissions.length}
+                </span>
               </TabsTrigger>
-              <TabsTrigger value="completed">
-                Completed ({completedSubmissions.length})
+              <TabsTrigger
+                value="completed"
+                className="flex-1 flex items-center justify-center gap-2 h-11 rounded-lg border-2 border-emerald-200 bg-emerald-50 text-emerald-700 font-semibold text-sm transition-all
+                  data-[state=active]:bg-emerald-600 data-[state=active]:text-white data-[state=active]:border-emerald-600 data-[state=active]:shadow-md
+                  hover:bg-emerald-100 hover:border-emerald-400"
+              >
+                <CheckCircle className="h-4 w-4" />
+                Completed
+                <span className="inline-flex items-center justify-center rounded-full bg-white/60 text-emerald-800 text-xs font-bold px-2 py-0.5 min-w-[22px]">
+                  {completedSubmissions.length}
+                </span>
               </TabsTrigger>
-              <TabsTrigger value="registers">
+              <TabsTrigger
+                value="registers"
+                className="flex-1 flex items-center justify-center gap-2 h-11 rounded-lg border-2 border-violet-200 bg-violet-50 text-violet-700 font-semibold text-sm transition-all
+                  data-[state=active]:bg-violet-600 data-[state=active]:text-white data-[state=active]:border-violet-600 data-[state=active]:shadow-md
+                  hover:bg-violet-100 hover:border-violet-400"
+              >
+                <BookOpen className="h-4 w-4" />
                 Registers
               </TabsTrigger>
             </TabsList>
