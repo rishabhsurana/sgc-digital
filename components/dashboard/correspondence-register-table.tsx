@@ -69,8 +69,6 @@ const COLUMNS = [
   { id: "reference_number", label: "Transaction Number" },
   { id: "correspondence_type", label: "Type" },
   { id: "subject", label: "Subject" },
-  { id: "originating_mda", label: "Ministry/MDA" },
-  { id: "submitter_name", label: "Submitter" },
   { id: "date_received", label: "Date" },
   { id: "priority_level", label: "Priority" },
   { id: "current_status_code", label: "Status" },
@@ -260,7 +258,7 @@ export function CorrespondenceRegisterTable() {
               <TableBody>
                 {loading && filteredData.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
+                    <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                       <RefreshCw className="h-4 w-4 animate-spin inline mr-2" />
                       Loading...
                     </TableCell>
@@ -277,8 +275,6 @@ export function CorrespondenceRegisterTable() {
                         <Badge variant="outline">{item.type}</Badge>
                       </TableCell>
                       <TableCell className="max-w-[250px] truncate" title={item.subject}>{item.subject}</TableCell>
-                      <TableCell className="text-sm">{item.ministry}</TableCell>
-                      <TableCell className="text-sm">{item.submitter}</TableCell>
                       <TableCell className="text-sm text-muted-foreground">{item.date}</TableCell>
                       <TableCell>
                         <Badge className={priorityConfig.color} variant="secondary">
@@ -311,7 +307,7 @@ export function CorrespondenceRegisterTable() {
                 })}
                 {!loading && filteredData.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
+                    <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                       No correspondence found.
                     </TableCell>
                   </TableRow>
