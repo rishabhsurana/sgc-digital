@@ -91,11 +91,10 @@ const PRIORITY_CONFIG = {
 
 const CORRESPONDENCE_REGISTER_COLUMNS = [
   { id: "reference_number", label: "Transaction Number" },
+  { id: "originating_mda", label: "Ministry/MDA" },
   { id: "correspondence_type", label: "Type" },
   { id: "subject", label: "Subject" },
-  { id: "originating_mda", label: "Ministry/MDA" },
   { id: "ministry_file_reference", label: "Min. File Ref. #" },
-  { id: "submitter_name", label: "Submitter" },
   { id: "date_received", label: "Date" },
   { id: "priority_level", label: "Priority" },
   { id: "current_status_code", label: "Status" },
@@ -394,13 +393,12 @@ export default function CorrespondenceRegisterPage() {
                   return (
                     <TableRow key={item.id} className="hover:bg-muted/30">
                       <TableCell className="font-mono text-sm font-medium text-primary">{item.ref}</TableCell>
+                      <TableCell className="text-sm">{item.ministry}</TableCell>
                       <TableCell>
                         <Badge variant="outline">{item.type}</Badge>
                       </TableCell>
                       <TableCell className="max-w-[250px] truncate" title={item.subject}>{item.subject}</TableCell>
-                      <TableCell className="text-sm">{item.ministry}</TableCell>
                       <TableCell className="font-mono text-sm">{item.ministryFileRef}</TableCell>
-                      <TableCell className="text-sm">{item.submitter}</TableCell>
                       <TableCell className="text-sm text-muted-foreground">{item.date}</TableCell>
                       <TableCell>
                         <Badge className={priorityConfig.color} variant="secondary">
@@ -441,7 +439,7 @@ export default function CorrespondenceRegisterPage() {
                 })}
                 {!loading && filteredData.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={10} className="text-center text-muted-foreground py-8">
+                    <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
                       No correspondence found.
                     </TableCell>
                   </TableRow>
