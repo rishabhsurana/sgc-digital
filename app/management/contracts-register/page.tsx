@@ -66,6 +66,17 @@ const PRIORITY_CONFIG = {
   low: { label: "Low", color: "bg-gray-100 text-gray-700" },
 }
 
+const CATEGORY_LABELS: Record<string, string> = {
+  CAT_PROC: "Procurement",
+  CAT_CONS: "Consultancy",
+  CAT_CONST: "Construction",
+  CAT_LEASE: "Lease",
+  CAT_MOU: "MOU",
+  CAT_EMP: "Employment",
+  CAT_OTHER: "Other",
+  CAT_INTER: "Inter-Agency / MOU",
+}
+
 const CONTRACT_REGISTER_COLUMNS = [
   { id: "transaction_number", label: "Transaction #" },
   { id: "date_received", label: "Date Received" },
@@ -76,7 +87,8 @@ const CONTRACT_REGISTER_COLUMNS = [
   { id: "contract_number", label: "Contract #" },
   { id: "contract_type", label: "Contract Type" },
   { id: "current_status_code", label: "Status/Stage" },
-  { id: "date_completed", label: "Date Completed" },
+  { id: "contract_start_date", label: "Start Date" },
+  { id: "contract_end_date", label: "End Date" },
 ] as const
 
 type RegisterRow = {
@@ -84,6 +96,8 @@ type RegisterRow = {
   transaction_number: string | null
   date_received: string | null
   date_completed: string | null
+  contract_start_date: string | null
+  contract_end_date: string | null
   originating_mda: string | null
   subject: string | null
   nature_of_contract: string | null
@@ -162,7 +176,8 @@ export default function ContractsRegisterPage() {
         id: item.register_id,
         transactionNumber: item.transaction_number ?? "-",
         dateReceived: item.date_received ? String(item.date_received).slice(0, 10) : "-",
-        dateCompleted: item.date_completed ? String(item.date_completed).slice(0, 10) : "-",
+        startDate: item.contract_start_date ? String(item.contract_start_date).slice(0, 10) : "-",
+        endDate: item.contract_end_date ? String(item.contract_end_date).slice(0, 10) : "-",
         originatingMDA: (() => {
           const raw = item.originating_mda ?? ""
           const match = MINISTRIES_DEPARTMENTS_AGENCIES.find(
@@ -174,7 +189,7 @@ export default function ContractsRegisterPage() {
         })(),
         subject: item.subject ?? "-",
         nature: item.nature_of_contract ?? "-",
-        category: item.category ?? "-",
+        category: CATEGORY_LABELS[item.category ?? ""] ?? item.category ?? "-",
         ref: item.contract_number ?? "-",
         contractType: item.contract_type ?? "-",
         status: String(item.current_status_code ?? "pending").toLowerCase().replace(/_/g, "-"),
@@ -184,8 +199,6 @@ export default function ContractsRegisterPage() {
       })),
     [rows]
   )
-
-  debugger
 
   const isFiltered =
     searchQuery.trim() !== "" ||
@@ -485,7 +498,8 @@ export default function ContractsRegisterPage() {
                           {statusConfig.label}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-sm">{item.dateCompleted || "-"}</TableCell>
+                      <TableCell className="text-sm whitespace-nowrap">{item.startDate}</TableCell>
+                      <TableCell className="text-sm whitespace-nowrap">{item.endDate}</TableCell>
                       <TableCell>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -516,7 +530,7 @@ export default function ContractsRegisterPage() {
                 })}
                 {!loading && filteredData.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={11} className="text-center text-muted-foreground py-8">
+                    <TableCell colSpan={12} className="text-center text-muted-foreground py-8">
                       No contracts found.
                     </TableCell>
                   </TableRow>
@@ -635,12 +649,12 @@ export default function ContractsRegisterPage() {
                     <p className="font-medium text-sm">{selectedItem.dateReceived}</p>
                   </div>
                   <div>
-                    <Label className="text-xs text-muted-foreground">Date Completed</Label>
-                    <p className="font-medium text-sm">{selectedItem.dateCompleted || "Not completed"}</p>
+                    <Label className="text-xs text-muted-foreground">Start Date</Label>
+                    <p className="font-medium text-sm">{selectedItem.startDate !== "-" ? selectedItem.startDate : "Not set"}</p>
                   </div>
                   <div>
-                    <Label className="text-xs text-muted-foreground">Submitted By</Label>
-                    <p className="font-medium text-sm">{selectedItem.submittedBy}</p>
+                    <Label className="text-xs text-muted-foreground">End Date</Label>
+                    <p className="font-medium text-sm">{selectedItem.endDate !== "-" ? selectedItem.endDate : "Not set"}</p>
                   </div>
                 </div>
               </div>

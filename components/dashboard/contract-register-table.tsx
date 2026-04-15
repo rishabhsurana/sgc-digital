@@ -52,6 +52,17 @@ interface DocumentRow {
   file_size?: number
 }
 
+const CATEGORY_LABELS: Record<string, string> = {
+  CAT_PROC: "Procurement",
+  CAT_CONS: "Consultancy",
+  CAT_CONST: "Construction",
+  CAT_LEASE: "Lease",
+  CAT_MOU: "MOU",
+  CAT_EMP: "Employment",
+  CAT_OTHER: "Other",
+  CAT_INTER: "Inter-Agency / MOU",
+}
+
 function formatDate(val: string | null | undefined): string {
   if (!val) return "-"
   return String(val).slice(0, 10)
@@ -133,7 +144,7 @@ export function ContractRegisterTable() {
         title: item.contract_title ?? item.subject ?? "-",
         type: item.contract_type ?? "-",
         nature: item.nature_of_contract ?? "-",
-        category: item.category ?? "-",
+        category: CATEGORY_LABELS[item.category ?? ""] ?? item.category ?? "-",
         contractNumber: item.contract_number ?? "-",
         dateOfIssue: formatDate(item.contract_start_date),
         dateOfExpiration: formatDate(item.contract_end_date),
