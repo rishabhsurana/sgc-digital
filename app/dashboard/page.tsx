@@ -405,13 +405,16 @@ function DashboardPageInner() {
     return matchesSearch && matchesStatus && matchesType
   })
 
-  const activeSubmissions = filteredSubmissions.filter(s => 
+  const activeSubmissions = filteredSubmissions.filter(s =>
     ["pending", "in-review", "clarification", "approved"].includes(s.status)
   )
-  const completedSubmissions = filteredSubmissions.filter(s => 
+  const completedSubmissions = filteredSubmissions.filter(s =>
     ["completed", "rejected"].includes(s.status)
   )
   const actionRequired = filteredSubmissions.filter(s => s.status === "clarification")
+
+  const contractsCompleted = submissions.filter(s => s.type === "contract" && s.status === "completed").length
+  const correspondenceCompleted = submissions.filter(s => s.type === "correspondence" && s.status === "completed").length
 
   const authUser = getUser()
 
@@ -496,44 +499,44 @@ function DashboardPageInner() {
                 </div>
               </CardContent>
             </Card>
-            
-            <Card className="bg-gradient-to-br from-blue-100 to-blue-200 border border-blue-300 shadow-md">
+
+            <Card className="bg-gradient-to-br from-orange-100 to-orange-200 border border-orange-300 shadow-md">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-blue-700 font-medium">Active</p>
-                    <p className="text-2xl font-bold text-blue-900">{stats.active}</p>
+                    <p className="text-sm text-orange-700 font-medium">Action Required</p>
+                    <p className="text-2xl font-bold text-orange-900">{stats.actionRequired}</p>
                   </div>
-                  <div className="h-10 w-10 rounded-lg bg-blue-300 flex items-center justify-center">
-                    <RefreshCw className="h-5 w-5 text-blue-700" />
+                  <div className="h-10 w-10 rounded-lg bg-orange-300 flex items-center justify-center">
+                    <AlertCircle className="h-5 w-5 text-orange-700" />
                   </div>
                 </div>
               </CardContent>
             </Card>
-            
-            <Card className="bg-gradient-to-br from-sky-100 to-cyan-200 border border-cyan-300 shadow-md">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-cyan-700 font-medium">Action Required</p>
-                    <p className="text-2xl font-bold text-cyan-900">{stats.actionRequired}</p>
-                  </div>
-                  <div className="h-10 w-10 rounded-lg bg-cyan-300 flex items-center justify-center">
-                    <AlertCircle className="h-5 w-5 text-cyan-700" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            
+
             <Card className="bg-gradient-to-br from-emerald-100 to-emerald-200 border border-emerald-300 shadow-md">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-emerald-700 font-medium">Completed</p>
-                    <p className="text-2xl font-bold text-emerald-900">{stats.completed}</p>
+                    <p className="text-sm text-emerald-700 font-medium">Contracts Completed</p>
+                    <p className="text-2xl font-bold text-emerald-900">{contractsCompleted}</p>
                   </div>
                   <div className="h-10 w-10 rounded-lg bg-emerald-300 flex items-center justify-center">
-                    <CheckCircle className="h-5 w-5 text-emerald-700" />
+                    <FileSignature className="h-5 w-5 text-emerald-700" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gradient-to-br from-blue-100 to-blue-200 border border-blue-300 shadow-md">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-blue-700 font-medium">Correspondence Completed</p>
+                    <p className="text-2xl font-bold text-blue-900">{correspondenceCompleted}</p>
+                  </div>
+                  <div className="h-10 w-10 rounded-lg bg-blue-300 flex items-center justify-center">
+                    <CheckCircle className="h-5 w-5 text-blue-700" />
                   </div>
                 </div>
               </CardContent>
