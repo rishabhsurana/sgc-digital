@@ -1,11 +1,13 @@
 'use client'
 
-import { useTheme } from 'next-themes'
 import { Toaster as Sonner, ToasterProps } from 'sonner'
 
-const Toaster = ({ ...props }: ToasterProps) => {
-  const { theme = 'system' } = useTheme()
-
+// The app does not (yet) wrap its tree in a next-themes ThemeProvider, so
+// `useTheme()` here would just resolve to the "system" default which can
+// produce unreadable dark toasts against the app's light surfaces. Pin to
+// "light" until a real theme story is in place — callers can still override
+// via props if needed.
+const Toaster = ({ theme = 'light', ...props }: ToasterProps) => {
   return (
     <Sonner
       theme={theme as ToasterProps['theme']}

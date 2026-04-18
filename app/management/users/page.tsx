@@ -93,6 +93,7 @@ import {
   type StaffRequestOptions,
   type MdaOption,
 } from "@/lib/user-management-api"
+import { toast } from "sonner"
 
 const PORTAL_STATUSES = [
   { value: "active", label: "Active", color: "bg-green-100 text-green-800" },
@@ -124,6 +125,19 @@ const MANAGEMENT_ROLE_OPTIONS = [
   { value: "admin", label: "Admin" },
   { value: "super_admin", label: "Super Admin" },
 ]
+
+const MANAGEMENT_ROLE_RANK: Record<string, number> = {
+  manager: 1,
+  admin: 2,
+  super_admin: 3,
+}
+
+function managementRoleRank(role: string | null | undefined): number {
+  if (!role) return 0
+  return MANAGEMENT_ROLE_RANK[role.toLowerCase()] ?? 0
+}
+
+const MIN_PASSWORD_LENGTH = 8
 
 const STAFF_REQUEST_STATUSES = [
   { value: "pending", label: "Pending" },
@@ -175,6 +189,18 @@ function currentManagementJwtRole(): string | null {
     if (!raw) return null
     const u = JSON.parse(raw) as { role?: string }
     return u.role ? String(u.role) : null
+  } catch {
+    return null
+  }
+}
+
+function currentManagementJwtUserId(): string | null {
+  if (typeof window === "undefined") return null
+  try {
+    const raw = localStorage.getItem("sgc_user")
+    if (!raw) return null
+    const u = JSON.parse(raw) as { id?: string }
+    return u.id ? String(u.id) : null
   } catch {
     return null
   }
@@ -253,6 +279,25 @@ export default function UserManagementPage() {
     department: "",
     isActive: true,
   })
+
+  // After creating a user, if the backend generated a throw-away password
+  // we surface it once here so the admin can hand it off securely.
+  const [createdCredential, setCreatedCredential] = useState<{
+    email: string
+    password: string
+    label: string
+  } | null>(null)
+
+  // Tracks pre-flight validation errors surfaced inside the create dialogs.
+  const [createUserError, setCreateUserError] = useState<string | null>(null)
+  const [createMgmtUserError, setCreateMgmtUserError] = useState<string | null>(null)
+
+  // Caller's role on the management portal. Used to hide affordances that
+  // the backend won't accept (e.g. a plain `manager` cannot create/modify
+  // management users post the role-hierarchy fix).
+  const callerManagementRole = currentManagementJwtRole()
+  const callerManagementId = currentManagementJwtUserId()
+  const canManageAccounts = managementRoleRank(callerManagementRole) >= managementRoleRank("admin")
 
   // Load data on mount
   useEffect(() => {
@@ -442,6 +487,14 @@ export default function UserManagementPage() {
 
   const handleDeleteUser = async () => {
     if (!selectedUser) return
+    // Defense in depth: the UI already hides the "Delete" menu item for
+    // non-admin callers, but refuse to fire the request at all if the caller
+    // doesn't have account-management privileges. The backend will reject it
+    // too, but this avoids a misleading "Deleting…" spinner.
+    if (!canManageAccounts) {
+      toast.error("You do not have permission to delete users.")
+      return
+    }
 
     setIsSubmitting(true)
     try {
@@ -450,26 +503,54 @@ export default function UserManagementPage() {
         await loadData()
         setIsDeleteDialogOpen(false)
         setSelectedUser(null)
+        toast.success("User deleted.")
+      } else {
+        toast.error(res.error || "Failed to delete user.")
       }
     } catch (error) {
       console.error("Error deleting user:", error)
+      toast.error(error instanceof Error ? error.message : "Failed to delete user.")
     } finally {
       setIsSubmitting(false)
     }
   }
 
   const handleCreatePortalUser = async () => {
-    if (!newUserForm.firstName.trim() || !newUserForm.lastName.trim() || !newUserForm.email.trim())
+    setCreateUserError(null)
+
+    const firstName = newUserForm.firstName.trim()
+    const lastName = newUserForm.lastName.trim()
+    const email = newUserForm.email.trim().toLowerCase()
+    const password = newUserForm.password
+
+    if (!firstName || !lastName || !email) {
+      setCreateUserError("First name, last name, and email are required.")
       return
+    }
+    const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!EMAIL_RE.test(email)) {
+      setCreateUserError("Please enter a valid email address.")
+      return
+    }
+    if (password.length < MIN_PASSWORD_LENGTH) {
+      setCreateUserError(
+        `Password is required and must be at least ${MIN_PASSWORD_LENGTH} characters.`,
+      )
+      return
+    }
+    if (password.trim().length === 0) {
+      setCreateUserError("Password cannot be blank or whitespace only.")
+      return
+    }
 
     setIsSubmitting(true)
     try {
       const mdaId = newUserForm.mdaId ? parseInt(newUserForm.mdaId, 10) : null
       const res = await createPortalUserApi({
-        firstName: newUserForm.firstName.trim(),
-        lastName: newUserForm.lastName.trim(),
-        email: newUserForm.email.trim().toLowerCase(),
-        password: newUserForm.password.trim() || "TempPassword1!",
+        firstName,
+        lastName,
+        email,
+        password,
         phone: newUserForm.phone.trim() || undefined,
         role: newUserForm.role,
         submitter_type: newUserForm.submitterType,
@@ -492,9 +573,12 @@ export default function UserManagementPage() {
           position: "",
           role: "submitter",
         })
+      } else {
+        setCreateUserError(res.error || "Failed to create user.")
       }
     } catch (error) {
       console.error("Error creating user:", error)
+      setCreateUserError(error instanceof Error ? error.message : "Failed to create user.")
     } finally {
       setIsSubmitting(false)
     }
@@ -536,19 +620,64 @@ export default function UserManagementPage() {
   }
 
   const handleCreateManagementUser = async () => {
-    if (!newMgmtUserForm.name.trim() || !newMgmtUserForm.email.trim()) return
+    setCreateMgmtUserError(null)
+
+    const name = newMgmtUserForm.name.trim()
+    const email = newMgmtUserForm.email.trim().toLowerCase()
+    const password = newMgmtUserForm.password
+
+    if (!name || !email) {
+      setCreateMgmtUserError("Name and email are required.")
+      return
+    }
+    const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!EMAIL_RE.test(email)) {
+      setCreateMgmtUserError("Please enter a valid email address.")
+      return
+    }
+    // The admin can either supply their own password for the new account, or
+    // leave it blank and let the backend generate a strong one we show below.
+    if (password.length > 0) {
+      if (password.length < MIN_PASSWORD_LENGTH) {
+        setCreateMgmtUserError(
+          `Password must be at least ${MIN_PASSWORD_LENGTH} characters, or leave blank to auto-generate one.`,
+        )
+        return
+      }
+      if (password.trim().length === 0) {
+        setCreateMgmtUserError(
+          "Password cannot be blank or whitespace only. Leave the field empty to auto-generate one.",
+        )
+        return
+      }
+    }
+
     setIsSubmitting(true)
     try {
       const res = await createManagementUserApi({
-        email: newMgmtUserForm.email.trim().toLowerCase(),
-        name: newMgmtUserForm.name.trim(),
-        password: newMgmtUserForm.password.trim() || "TempPassword1!",
+        email,
+        name,
+        password: password.length > 0 ? password : undefined,
         role: newMgmtUserForm.role,
         department: newMgmtUserForm.department.trim() || null,
       })
       if (res.success) {
         await loadData()
         setIsAddMgmtUserOpen(false)
+        const generated = res.data?.temporary_password
+        if (generated) {
+          // Only shown once — render the reveal dialog with a copy button.
+          setCreatedCredential({
+            email,
+            password: generated,
+            label: "Management user",
+          })
+        } else {
+          // Admin supplied the password themselves, so there's nothing to
+          // reveal. Confirm the account was created so the UI doesn't go
+          // silent (the dialog just closes).
+          toast.success(`Management user ${email} created.`)
+        }
         setNewMgmtUserForm({
           name: "",
           email: "",
@@ -556,9 +685,14 @@ export default function UserManagementPage() {
           role: "manager",
           department: "",
         })
+      } else {
+        setCreateMgmtUserError(res.error || "Failed to create management user.")
       }
     } catch (error) {
       console.error("Error creating management user:", error)
+      setCreateMgmtUserError(
+        error instanceof Error ? error.message : "Failed to create management user.",
+      )
     } finally {
       setIsSubmitting(false)
     }
@@ -622,13 +756,21 @@ export default function UserManagementPage() {
               <p className="mt-1 text-white/80">Manage portal users, access permissions, and staff registration requests</p>
             </div>
           </div>
-          <Dialog open={isAddUserOpen} onOpenChange={setIsAddUserOpen}>
-            <DialogTrigger asChild>
-              <Button size="sm" className="bg-white/20 hover:bg-white/30 text-white">
-                <UserPlus className="h-4 w-4 mr-2" />
-                Add User
-              </Button>
-            </DialogTrigger>
+          <Dialog
+            open={isAddUserOpen}
+            onOpenChange={(open) => {
+              setIsAddUserOpen(open)
+              if (!open) setCreateUserError(null)
+            }}
+          >
+            {canManageAccounts && (
+              <DialogTrigger asChild>
+                <Button size="sm" className="bg-white/20 hover:bg-white/30 text-white">
+                  <UserPlus className="h-4 w-4 mr-2" />
+                  Add User
+                </Button>
+              </DialogTrigger>
+            )}
             <DialogContent className="max-w-md max-h-[85vh] flex flex-col">
               <DialogHeader>
                 <DialogTitle>Add New User</DialogTitle>
@@ -637,6 +779,11 @@ export default function UserManagementPage() {
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-4 overflow-y-auto pr-1">
+                {createUserError && (
+                  <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                    {createUserError}
+                  </div>
+                )}
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="firstName">First Name</Label>
@@ -668,14 +815,23 @@ export default function UserManagementPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="portal-password">Password (optional)</Label>
+                  <Label htmlFor="portal-password">
+                    Password <span className="text-red-500">*</span>
+                  </Label>
                   <Input
                     id="portal-password"
                     type="password"
-                    placeholder="Defaults to TempPassword1!"
+                    placeholder={`Minimum ${MIN_PASSWORD_LENGTH} characters`}
                     value={newUserForm.password}
                     onChange={(e) => setNewUserForm((prev) => ({ ...prev, password: e.target.value }))}
+                    minLength={MIN_PASSWORD_LENGTH}
+                    autoComplete="new-password"
+                    required
                   />
+                  <p className="text-xs text-muted-foreground">
+                    Share this password with the user over a secure channel. They can change it after
+                    first login.
+                  </p>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="phone">Phone (Optional)</Label>
@@ -1032,14 +1188,21 @@ export default function UserManagementPage() {
                                   Deactivate
                                 </DropdownMenuItem>
                               )}
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem 
-                                className="text-destructive"
-                                onClick={() => { setSelectedUser(user); setIsDeleteDialogOpen(true); }}
-                              >
-                                <Trash2 className="h-4 w-4 mr-2" />
-                                Delete User
-                              </DropdownMenuItem>
+                              {canManageAccounts && (
+                                <>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem
+                                    className="text-destructive"
+                                    onClick={() => {
+                                      setSelectedUser(user)
+                                      setIsDeleteDialogOpen(true)
+                                    }}
+                                  >
+                                    <Trash2 className="h-4 w-4 mr-2" />
+                                    Delete User
+                                  </DropdownMenuItem>
+                                </>
+                              )}
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </TableCell>
@@ -1062,10 +1225,12 @@ export default function UserManagementPage() {
                   accounts).
                 </CardDescription>
               </div>
-              <Button onClick={() => setIsAddMgmtUserOpen(true)}>
-                <UserPlus className="h-4 w-4 mr-2" />
-                Add management user
-              </Button>
+              {canManageAccounts && (
+                <Button onClick={() => setIsAddMgmtUserOpen(true)}>
+                  <UserPlus className="h-4 w-4 mr-2" />
+                  Add management user
+                </Button>
+              )}
             </CardHeader>
             <CardContent>
               {managementUsers.length === 0 ? (
@@ -1104,9 +1269,17 @@ export default function UserManagementPage() {
                             {formatDateSafe(u.created_at ?? (u as { createdAt?: string | null }).createdAt)}
                           </TableCell>
                           <TableCell>
-                            <Button variant="ghost" size="icon" onClick={() => openEditMgmtUser(u)}>
-                              <Edit className="h-4 w-4" />
-                            </Button>
+                            {canManageAccounts &&
+                              managementRoleRank(u.role) <= managementRoleRank(callerManagementRole) && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => openEditMgmtUser(u)}
+                                  aria-label={`Edit ${u.name}`}
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                              )}
                           </TableCell>
                         </TableRow>
                       ))}
@@ -1262,7 +1435,13 @@ export default function UserManagementPage() {
         </TabsContent>
       </Tabs>
 
-      <Dialog open={isAddMgmtUserOpen} onOpenChange={setIsAddMgmtUserOpen}>
+      <Dialog
+        open={isAddMgmtUserOpen}
+        onOpenChange={(open) => {
+          setIsAddMgmtUserOpen(open)
+          if (!open) setCreateMgmtUserError(null)
+        }}
+      >
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Add management user</DialogTitle>
@@ -1272,6 +1451,11 @@ export default function UserManagementPage() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
+            {createMgmtUserError && (
+              <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                {createMgmtUserError}
+              </div>
+            )}
             <div className="space-y-2">
               <Label htmlFor="mgmt-name">Full name</Label>
               <Input
@@ -1290,14 +1474,19 @@ export default function UserManagementPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="mgmt-password">Password (optional)</Label>
+              <Label htmlFor="mgmt-password">Password</Label>
               <Input
                 id="mgmt-password"
                 type="password"
-                placeholder="Defaults to TempPassword1!"
+                placeholder={`Minimum ${MIN_PASSWORD_LENGTH} characters (or leave blank to auto-generate)`}
                 value={newMgmtUserForm.password}
                 onChange={(e) => setNewMgmtUserForm((p) => ({ ...p, password: e.target.value }))}
+                autoComplete="new-password"
               />
+              <p className="text-xs text-muted-foreground">
+                Leave blank and we&apos;ll generate a strong one-time password that&apos;s displayed
+                after the user is created — share it securely and ask them to change it.
+              </p>
             </div>
             <div className="space-y-2">
               <Label>Role</Label>
@@ -1310,8 +1499,7 @@ export default function UserManagementPage() {
                 </SelectTrigger>
                 <SelectContent>
                   {MANAGEMENT_ROLE_OPTIONS.filter(
-                    (r) =>
-                      r.value !== "super_admin" || currentManagementJwtRole() === "super_admin"
+                    (r) => managementRoleRank(r.value) <= managementRoleRank(callerManagementRole),
                   ).map((r) => (
                     <SelectItem key={r.value} value={r.value}>
                       {r.label}
@@ -1454,8 +1642,7 @@ export default function UserManagementPage() {
                   </SelectTrigger>
                   <SelectContent>
                     {MANAGEMENT_ROLE_OPTIONS.filter(
-                      (r) =>
-                        r.value !== "super_admin" || currentManagementJwtRole() === "super_admin"
+                      (r) => managementRoleRank(r.value) <= managementRoleRank(callerManagementRole),
                     ).map((r) => (
                       <SelectItem key={r.value} value={r.value}>
                         {r.label}
@@ -1478,12 +1665,18 @@ export default function UserManagementPage() {
                   type="checkbox"
                   className="h-4 w-4"
                   checked={editMgmtForm.isActive}
+                  disabled={!!selectedMgmtUser && selectedMgmtUser.id === callerManagementId}
                   onChange={(e) => setEditMgmtForm((p) => ({ ...p, isActive: e.target.checked }))}
                 />
                 <Label htmlFor="edit-mgmt-active" className="font-normal cursor-pointer">
                   Account active
                 </Label>
               </div>
+              {selectedMgmtUser && selectedMgmtUser.id === callerManagementId && (
+                <p className="text-xs text-muted-foreground">
+                  You can&apos;t deactivate or demote your own account. Ask another admin to do so.
+                </p>
+              )}
             </div>
           ) : null}
           <DialogFooter>
@@ -1618,6 +1811,60 @@ export default function UserManagementPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* One-time credential reveal: shown after creating a user when the
+          backend generates a throw-away password for us. */}
+      <Dialog
+        open={!!createdCredential}
+        onOpenChange={(open) => {
+          if (!open) setCreatedCredential(null)
+        }}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>One-time password</DialogTitle>
+            <DialogDescription>
+              {createdCredential?.label} created. This is the only time this password will be shown —
+              copy it now and share it with the user through a secure channel.
+            </DialogDescription>
+          </DialogHeader>
+          {createdCredential && (
+            <div className="space-y-3 py-2">
+              <div>
+                <Label className="text-xs text-muted-foreground">Email</Label>
+                <p className="mt-1 font-mono text-sm">{createdCredential.email}</p>
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Temporary password</Label>
+                <div className="mt-1 flex items-center gap-2">
+                  <code className="flex-1 rounded-md border bg-muted px-3 py-2 font-mono text-sm break-all">
+                    {createdCredential.password}
+                  </code>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      if (typeof navigator !== "undefined" && navigator.clipboard) {
+                        void navigator.clipboard.writeText(createdCredential.password)
+                      }
+                    }}
+                  >
+                    Copy
+                  </Button>
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Ask the user to sign in at <span className="font-medium">/management/login</span> and
+                change their password immediately.
+              </p>
+            </div>
+          )}
+          <DialogFooter>
+            <Button onClick={() => setCreatedCredential(null)}>Done</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Delete User Dialog */}
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>

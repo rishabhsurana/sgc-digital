@@ -36,6 +36,19 @@ export type ManagementUserApiRow = {
   updatedAt?: string | null
 }
 
+/**
+ * Response shape returned by POST /api/management/users.
+ *
+ * This is a superset of {@link ManagementUserApiRow}: when the admin does not
+ * provide a password, the backend generates a random one and returns it as
+ * `temporary_password`. The field is never present on subsequent fetches, so
+ * we keep it out of the base row type to prevent accidental use from list
+ * responses.
+ */
+export type ManagementUserCreateResponse = ManagementUserApiRow & {
+  temporary_password?: string
+}
+
 export type StaffRequestOptions = {
   departments: Array<{ department_id: number; department_name: string; department_code?: string }>
   roles: Array<{ role_id: number; role_name: string; role_code?: string }>
@@ -86,8 +99,8 @@ export async function createManagementUserApi(body: {
   password?: string
   role: string
   department?: string | null
-}): Promise<ApiResponse<ManagementUserApiRow>> {
-  return apiPost<ManagementUserApiRow>('/api/management/users', body)
+}): Promise<ApiResponse<ManagementUserCreateResponse>> {
+  return apiPost<ManagementUserCreateResponse>('/api/management/users', body)
 }
 
 export async function updateManagementUserApi(

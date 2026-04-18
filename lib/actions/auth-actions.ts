@@ -318,10 +318,14 @@ export async function registerMDAUser(
   const phone = formData.get('phone') as string
   const departmentId = parseInt(formData.get('departmentId') as string)
   const position = formData.get('position') as string
-  
+
   // Validation
-  if (!email || !password || !firstName || !lastName || !departmentId || !position) {
+  if (!email || !password || !firstName || !lastName || !position) {
     return { success: false, error: 'All required fields must be filled' }
+  }
+
+  if (isNaN(departmentId) || departmentId <= 0) {
+    return { success: false, error: 'Please select a valid department' }
   }
   
   if (password !== confirmPassword) {
@@ -392,13 +396,17 @@ export async function registerAttorney(
   if (password !== confirmPassword) {
     return { success: false, error: 'Passwords do not match' }
   }
-  
+
+  if (password.length < 8) {
+    return { success: false, error: 'Password must be at least 8 characters' }
+  }
+
   // Check if email already exists
   const existingUser = await getUserByEmail(email)
   if (existingUser) {
     return { success: false, error: 'An account with this email already exists' }
   }
-  
+
   try {
     // Attorneys require approval, so set status to pending
     const user = await createUser({
@@ -455,13 +463,17 @@ export async function registerCompany(
   if (password !== confirmPassword) {
     return { success: false, error: 'Passwords do not match' }
   }
-  
+
+  if (password.length < 8) {
+    return { success: false, error: 'Password must be at least 8 characters' }
+  }
+
   // Check if email already exists
   const existingUser = await getUserByEmail(email)
   if (existingUser) {
     return { success: false, error: 'An account with this email already exists' }
   }
-  
+
   try {
     // Companies require approval, so set status to pending
     const user = await createUser({
@@ -519,12 +531,22 @@ export async function submitStaffRegistrationRequest(
   const employeeId = formData.get('employeeId') as string
   const supervisorName = formData.get('supervisorName') as string
   const supervisorEmail = formData.get('supervisorEmail') as string
-  const requestedRoleId = parseInt(formData.get('requestedRoleId') as string) || 5
+  // Role ids are always positive in the DB (see seed data starting at 1), so
+  // treat NaN / 0 / negative as "not provided" and fall back to 5 ("staff").
+  // This mirrors the original `parseInt(...) || 5` semantics but avoids the
+  // footgun of an empty string silently becoming role 0.
+  const requestedRoleIdRaw = parseInt(formData.get('requestedRoleId') as string)
+  const requestedRoleId =
+    Number.isNaN(requestedRoleIdRaw) || requestedRoleIdRaw <= 0 ? 5 : requestedRoleIdRaw
   const justification = formData.get('justification') as string
-  
+
   // Validation
-  if (!firstName || !lastName || !email || !departmentId || !position) {
+  if (!firstName || !lastName || !email || !position) {
     return { success: false, error: 'All required fields must be filled' }
+  }
+
+  if (isNaN(departmentId) || departmentId <= 0) {
+    return { success: false, error: 'Please select a valid department' }
   }
   
   // Check if email already exists as a user

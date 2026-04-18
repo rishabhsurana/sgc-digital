@@ -18,13 +18,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import {
   Table,
   TableBody,
   TableCell,
@@ -128,12 +121,14 @@ interface AddUserDialogProps {
   onSuccess: () => void
 }
 
+const MIN_PASSWORD_LENGTH = 8
+
 function AddUserDialog({ open, onClose, onSuccess }: AddUserDialogProps) {
   const [fullName, setFullName] = useState("")
   const [email, setEmail] = useState("")
   const [phone, setPhone] = useState("")
   const [password, setPassword] = useState("")
-  const [role, setRole] = useState("submitter")
+  const [confirmPassword, setConfirmPassword] = useState("")
   const [department, setDepartment] = useState("")
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState("")
@@ -143,7 +138,7 @@ function AddUserDialog({ open, onClose, onSuccess }: AddUserDialogProps) {
     setEmail("")
     setPhone("")
     setPassword("")
-    setRole("submitter")
+    setConfirmPassword("")
     setDepartment("")
     setError("")
     setSubmitting(false)
@@ -155,18 +150,43 @@ function AddUserDialog({ open, onClose, onSuccess }: AddUserDialogProps) {
   }
 
   const handleSubmit = async () => {
-    if (!fullName.trim() || !email.trim()) {
+    const trimmedName = fullName.trim()
+    const trimmedEmail = email.trim()
+    if (!trimmedName || !trimmedEmail) {
       setError("Full name and email are required.")
+      return
+    }
+    const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!EMAIL_RE.test(trimmedEmail)) {
+      setError("Please enter a valid email address.")
+      return
+    }
+    if (password.length < MIN_PASSWORD_LENGTH) {
+      setError(`Password is required and must be at least ${MIN_PASSWORD_LENGTH} characters.`)
+      return
+    }
+    // Reject whitespace-only passwords; bcrypt would happily hash them but the
+    // resulting login would be effectively "Enter". We intentionally check
+    // this after the length guard so the message is consistent.
+    if (password.trim().length === 0) {
+      setError("Password cannot be blank or whitespace only.")
+      return
+    }
+    if (password !== confirmPassword) {
+      setError("Passwords do not match.")
       return
     }
     setSubmitting(true)
     setError("")
     const res = await apiPost("/api/profile/add-user", {
-      full_name: fullName.trim(),
-      email: email.trim(),
+      full_name: trimmedName,
+      email: trimmedEmail.toLowerCase(),
       phone: phone.trim() || null,
-      password: password || undefined,
-      role,
+      password,
+      // The backend only allows entity admins to add 'submitter' users
+      // through this endpoint. Entity-admin provisioning must go through
+      // the management portal.
+      role: "submitter",
       department: department.trim() || null,
     })
     setSubmitting(false)
@@ -232,42 +252,51 @@ function AddUserDialog({ open, onClose, onSuccess }: AddUserDialogProps) {
 
           <div className="space-y-1.5">
             <Label htmlFor="add-password">
-              Password{" "}
-              <span className="text-xs text-slate-400">(leave blank for default)</span>
+              Password <span className="text-red-500">*</span>
             </Label>
             <Input
               id="add-password"
               type="password"
-              placeholder="Minimum 8 characters"
+              placeholder={`Minimum ${MIN_PASSWORD_LENGTH} characters`}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              minLength={MIN_PASSWORD_LENGTH}
+              autoComplete="new-password"
+              required
+            />
+            <p className="text-xs text-slate-400">
+              Share this password with the user securely. They can change it after first login.
+            </p>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="add-password-confirm">
+              Confirm Password <span className="text-red-500">*</span>
+            </Label>
+            <Input
+              id="add-password-confirm"
+              type="password"
+              placeholder="Re-enter password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              minLength={MIN_PASSWORD_LENGTH}
+              autoComplete="new-password"
+              required
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label>Role</Label>
-              <Select value={role} onValueChange={setRole}>
-                <SelectTrigger id="add-role">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="submitter">Submitter</SelectItem>
-                  <SelectItem value="admin">Admin</SelectItem>
-                  <SelectItem value="viewer">Viewer</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="add-dept">Department</Label>
-              <Input
-                id="add-dept"
-                placeholder="e.g. Legal"
-                value={department}
-                onChange={(e) => setDepartment(e.target.value)}
-              />
-            </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="add-dept">Department</Label>
+            <Input
+              id="add-dept"
+              placeholder="e.g. Legal"
+              value={department}
+              onChange={(e) => setDepartment(e.target.value)}
+            />
+            <p className="text-xs text-slate-400">
+              New users are added as <span className="font-medium text-slate-500">Submitters</span>.
+              Entity admins must be provisioned by SGC management.
+            </p>
           </div>
         </div>
 
@@ -390,6 +419,11 @@ function ProfilePageInner() {
   }
 
   const displayProfile = profile || (localUser as unknown as ProfileData)
+
+  // Only entity admins can provision additional users within their entity.
+  // Matches the backend guard in POST /api/profile/add-user.
+  const canManageEntityUsers =
+    (displayProfile?.role || "").toLowerCase() === "admin"
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100/50">
@@ -603,14 +637,16 @@ function ProfilePageInner() {
                     {entityUsers.length}
                   </span>
                 </CardTitle>
-                <Button
-                  size="sm"
-                  className="bg-blue-600 hover:bg-blue-700"
-                  onClick={() => setAddDialogOpen(true)}
-                >
-                  <UserPlus className="mr-2 h-4 w-4" />
-                  Add User
-                </Button>
+                {canManageEntityUsers && (
+                  <Button
+                    size="sm"
+                    className="bg-blue-600 hover:bg-blue-700"
+                    onClick={() => setAddDialogOpen(true)}
+                  >
+                    <UserPlus className="mr-2 h-4 w-4" />
+                    Add User
+                  </Button>
+                )}
               </CardHeader>
               <CardContent className="p-0">
                 {entityUsers.length === 0 ? (
@@ -678,14 +714,16 @@ function ProfilePageInner() {
         </Tabs>
       </div>
 
-      <AddUserDialog
-        open={addDialogOpen}
-        onClose={() => setAddDialogOpen(false)}
-        onSuccess={() => {
-          setAddDialogOpen(false)
-          void load()
-        }}
-      />
+      {canManageEntityUsers && (
+        <AddUserDialog
+          open={addDialogOpen}
+          onClose={() => setAddDialogOpen(false)}
+          onSuccess={() => {
+            setAddDialogOpen(false)
+            void load()
+          }}
+        />
+      )}
     </div>
   )
 }

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import React, { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Header } from "@/components/header"
@@ -30,6 +30,7 @@ const SUBMITTER_TYPES = [
 
 
 export default function RegisterPage() {
+  const nextUserIdRef = React.useRef(0)
   const [isLoading, setIsLoading] = useState(false)
   const [isRegistered, setIsRegistered] = useState(false)
   const [entityNumber, setEntityNumber] = useState("")
@@ -69,7 +70,7 @@ export default function RegisterPage() {
     confirmPassword: "",
     
     // Additional authorized users (for Company/MDA - multiple users per entity)
-    additionalUsers: [] as Array<{ name: string; email: string }>,
+    additionalUsers: [] as Array<{ id: number; name: string; email: string }>,
     
     // Address (optional)
     address: "",
@@ -80,9 +81,10 @@ export default function RegisterPage() {
 
   const addAdditionalUser = () => {
     if (formData.additionalUsers.length < 5) {
+      const id = nextUserIdRef.current++
       setFormData(prev => ({
         ...prev,
-        additionalUsers: [...prev.additionalUsers, { name: "", email: "" }]
+        additionalUsers: [...prev.additionalUsers, { id, name: "", email: "" }]
       }))
     }
   }
@@ -656,7 +658,7 @@ export default function RegisterPage() {
                     {formData.additionalUsers.length > 0 && (
                       <div className="space-y-3">
                         {formData.additionalUsers.map((user, index) => (
-                          <div key={index} className="flex gap-3 items-start p-3 rounded-lg bg-muted/50">
+                          <div key={user.id} className="flex gap-3 items-start p-3 rounded-lg bg-muted/50">
                             <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-3">
                               <Input
                                 value={user.name}

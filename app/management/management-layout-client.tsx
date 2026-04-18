@@ -289,16 +289,11 @@ export function ManagementLayoutClient({
       })
     } else {
       setAdminSession(null)
+      if (!isPublicPage) {
+        router.push("/management/login")
+      }
     }
-  }, [pathname])
-
-  // Redirect to login if not authenticated on protected pages
-  useEffect(() => {
-    if (adminSession === undefined) return
-    if (!isPublicPage && adminSession === null) {
-      router.push("/management/login")
-    }
-  }, [isPublicPage, adminSession, router])
+  }, [pathname, isPublicPage, router])
 
   const handleSignOut = () => {
     clearAuth()

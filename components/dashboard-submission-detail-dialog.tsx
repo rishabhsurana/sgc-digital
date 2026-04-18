@@ -35,6 +35,7 @@ import {
   Upload,
   X,
 } from "lucide-react"
+import { toast } from "sonner"
 
 export function DashboardSubmissionDetailDialog({
   submission,
@@ -167,9 +168,9 @@ export function DashboardSubmissionDetailDialog({
       setUploadedFiles([])
       setResponseMessage("")
       onAfterRespond?.()
-      alert("Response submitted successfully! The SGC will be notified.")
+      toast.success("Response submitted successfully! The SGC will be notified.")
     } catch (e) {
-      alert(e instanceof Error ? e.message : "Submit failed")
+      toast.error(e instanceof Error ? e.message : "Submit failed")
     } finally {
       setIsSubmitting(false)
     }
