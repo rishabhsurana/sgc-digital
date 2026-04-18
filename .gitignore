@@ -10,6 +10,5 @@ node_modules/
 .DS_Store
 
 next-env.d.ts
-package-lock.json
 tsconfig.json
 tsconfig.tsbuildinfo
