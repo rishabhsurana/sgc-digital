@@ -1,13 +1,12 @@
 "use client"
 
-import React, { useState, useEffect, useCallback } from "react"
+import React, { useState, useEffect, useCallback, useRef, Suspense } from "react"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { 
   Select, 
   SelectContent, 
@@ -35,10 +34,10 @@ import {
   LayoutDashboard,
   Pencil,
   Trash2,
-  BookOpen,
 } from "lucide-react"
 import { AskRex } from "@/components/ask-rex"
 import Link from "next/link"
+import { useSearchParams, useRouter } from "next/navigation"
 import { logout } from "@/lib/actions/auth-actions"
 import { RequireAuthGuard } from "@/components/require-auth-guard"
 import { getUser } from "@/lib/auth"
@@ -52,7 +51,8 @@ import {
 import type { Submission } from "@/lib/dashboard-types"
 import { STATUS_CONFIG } from "@/lib/dashboard-types"
 import { DashboardSubmissionDetailDialog } from "@/components/dashboard-submission-detail-dialog"
-import { RegistersTab } from "@/components/dashboard/registers-tab"
+import { ContractRegisterTable } from "@/components/dashboard/contract-register-table"
+import { CorrespondenceRegisterTable } from "@/components/dashboard/correspondence-register-table"
 
 function mapApiItemToSubmission(item: DashboardSubmissionItem): Submission {
   return {
@@ -333,9 +333,14 @@ function SubmissionCard({
 }
 
 function DashboardPageInner() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const tabsRef = useRef<HTMLDivElement>(null)
+
   const [searchQuery, setSearchQuery] = useState("")
-  const [statusFilter, setStatusFilter] = useState<string>("all")
-  const [typeFilter, setTypeFilter] = useState<string>("all")
+  const [view, setView] = useState<string>(searchParams.get("view") || "")
+  const [statusFilter, setStatusFilter] = useState<string>(searchParams.get("status") || "all")
+  const [typeFilter, setTypeFilter] = useState<string>(searchParams.get("type") || "all")
   const [submissions, setSubmissions] = useState<Submission[]>([])
   const [stats, setStats] = useState({
     total: 0,
@@ -384,6 +389,42 @@ function DashboardPageInner() {
     fetchDrafts()
   }, [])
   
+  // Sync state when URL params change (back/forward navigation)
+  useEffect(() => {
+    setView(searchParams.get("view") || "")
+    setTypeFilter(searchParams.get("type") || "all")
+    setStatusFilter(searchParams.get("status") || "all")
+  }, [searchParams])
+
+  const buildUrl = (type: string, status: string, v = "") => {
+    const params = new URLSearchParams()
+    if (type !== "all") params.set("type", type)
+    if (status !== "all") params.set("status", status)
+    if (v) params.set("view", v)
+    const query = params.toString()
+    return `/dashboard${query ? `?${query}` : ""}`
+  }
+
+  const handleCardClick = (type = "all", status = "all", v = "") => {
+    setTypeFilter(type)
+    setStatusFilter(status)
+    setView(v)
+    router.replace(buildUrl(type, status, v), { scroll: false })
+    tabsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
+  }
+
+  const handleTypeFilterChange = (type: string) => {
+    setTypeFilter(type)
+    setView("")
+    router.replace(buildUrl(type, statusFilter), { scroll: false })
+  }
+
+  const handleStatusFilterChange = (status: string) => {
+    setStatusFilter(status)
+    setView("")
+    router.replace(buildUrl(typeFilter, status), { scroll: false })
+  }
+
   // Handle delete draft
   const handleDeleteDraft = async (draftId: string) => {
     if (confirm('Are you sure you want to delete this draft? This cannot be undone.')) {
@@ -405,16 +446,10 @@ function DashboardPageInner() {
     return matchesSearch && matchesStatus && matchesType
   })
 
-  const activeSubmissions = filteredSubmissions.filter(s =>
-    ["pending", "in-review", "clarification", "approved"].includes(s.status)
-  )
-  const completedSubmissions = filteredSubmissions.filter(s =>
-    ["completed", "rejected"].includes(s.status)
-  )
   const actionRequired = filteredSubmissions.filter(s => s.status === "clarification")
 
-  const contractsCompleted = submissions.filter(s => s.type === "contract" && s.status === "completed").length
-  const correspondenceCompleted = submissions.filter(s => s.type === "correspondence" && s.status === "completed").length
+  const contractsCompleted = submissions.filter(s => s.type === "contract").length
+  const correspondenceCompleted = submissions.filter(s => s.type === "correspondence").length
 
   const authUser = getUser()
 
@@ -486,7 +521,10 @@ function DashboardPageInner() {
 
           {/* Stats Cards */}
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-8">
-            <Card className="bg-gradient-to-br from-slate-100 to-slate-200 border border-slate-300 shadow-md">
+            <Card
+              className="bg-gradient-to-br from-slate-100 to-slate-200 border border-slate-300 shadow-md cursor-pointer hover:ring-2 hover:ring-slate-400/60 transition-all"
+              onClick={() => handleCardClick()}
+            >
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
@@ -500,7 +538,10 @@ function DashboardPageInner() {
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-br from-orange-100 to-orange-200 border border-orange-300 shadow-md">
+            <Card
+              className="bg-gradient-to-br from-orange-100 to-orange-200 border border-orange-300 shadow-md cursor-pointer hover:ring-2 hover:ring-orange-400/60 transition-all"
+              onClick={() => handleCardClick("all", "clarification")}
+            >
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
@@ -514,7 +555,10 @@ function DashboardPageInner() {
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-br from-emerald-100 to-emerald-200 border border-emerald-300 shadow-md">
+            <Card
+              className="bg-gradient-to-br from-emerald-100 to-emerald-200 border border-emerald-300 shadow-md cursor-pointer hover:ring-2 hover:ring-emerald-400/60 transition-all"
+              onClick={() => handleCardClick("all", "all", "contract-register")}
+            >
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
@@ -528,7 +572,10 @@ function DashboardPageInner() {
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-br from-blue-100 to-blue-200 border border-blue-300 shadow-md">
+            <Card
+              className="bg-gradient-to-br from-blue-100 to-blue-200 border border-blue-300 shadow-md cursor-pointer hover:ring-2 hover:ring-blue-400/60 transition-all"
+              onClick={() => handleCardClick("all", "all", "correspondence-register")}
+            >
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
@@ -648,7 +695,7 @@ function DashboardPageInner() {
               />
             </div>
             <div className="flex gap-2">
-              <Select value={typeFilter} onValueChange={setTypeFilter}>
+              <Select value={typeFilter} onValueChange={handleTypeFilterChange}>
                 <SelectTrigger className="w-[160px]">
                   <Filter className="h-4 w-4 mr-2" />
                   <SelectValue placeholder="Type" />
@@ -659,7 +706,7 @@ function DashboardPageInner() {
                   <SelectItem value="contract">Contract</SelectItem>
                 </SelectContent>
               </Select>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <Select value={statusFilter} onValueChange={handleStatusFilterChange}>
                 <SelectTrigger className="w-[160px]">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
@@ -699,106 +746,44 @@ function DashboardPageInner() {
             </Card>
           )}
 
-          {/* Submissions Tabs */}
-          <Tabs defaultValue="active" className="space-y-4">
-            <TabsList className="h-auto w-full bg-transparent p-0 gap-2 flex">
-              <TabsTrigger
-                value="active"
-                className="flex-1 flex items-center justify-center gap-2 h-11 rounded-lg border-2 border-blue-200 bg-blue-50 text-blue-700 font-semibold text-sm transition-all
-                  data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:border-blue-600 data-[state=active]:shadow-md
-                  hover:bg-blue-100 hover:border-blue-400"
-              >
-                <RefreshCw className="h-4 w-4" />
-                Active
-                <span className="inline-flex items-center justify-center rounded-full bg-white/60 text-blue-800 text-xs font-bold px-2 py-0.5 min-w-[22px]">
-                  {activeSubmissions.length}
-                </span>
-              </TabsTrigger>
-              <TabsTrigger
-                value="completed"
-                className="flex-1 flex items-center justify-center gap-2 h-11 rounded-lg border-2 border-emerald-200 bg-emerald-50 text-emerald-700 font-semibold text-sm transition-all
-                  data-[state=active]:bg-emerald-600 data-[state=active]:text-white data-[state=active]:border-emerald-600 data-[state=active]:shadow-md
-                  hover:bg-emerald-100 hover:border-emerald-400"
-              >
-                <CheckCircle className="h-4 w-4" />
-                Completed
-                <span className="inline-flex items-center justify-center rounded-full bg-white/60 text-emerald-800 text-xs font-bold px-2 py-0.5 min-w-[22px]">
-                  {completedSubmissions.length}
-                </span>
-              </TabsTrigger>
-              <TabsTrigger
-                value="registers"
-                className="flex-1 flex items-center justify-center gap-2 h-11 rounded-lg border-2 border-violet-200 bg-violet-50 text-violet-700 font-semibold text-sm transition-all
-                  data-[state=active]:bg-violet-600 data-[state=active]:text-white data-[state=active]:border-violet-600 data-[state=active]:shadow-md
-                  hover:bg-violet-100 hover:border-violet-400"
-              >
-                <BookOpen className="h-4 w-4" />
-                Registers
-              </TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="active" className="space-y-4">
-              {activeSubmissions.length === 0 ? (
-                <Card className="bg-card border-border">
-                  <CardContent className="py-12 text-center">
-                    <FileText className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />
-                    <h3 className="font-semibold text-foreground mb-1">No active submissions</h3>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      {searchQuery || statusFilter !== "all" || typeFilter !== "all"
-                        ? "No submissions match your filters."
-                        : "You don't have any active submissions yet."}
-                    </p>
-                    <div className="flex justify-center gap-2">
-                      <Button asChild>
-                        <Link href="/correspondence">
-                          <Plus className="mr-2 h-4 w-4" />
-                          New Submission
-                        </Link>
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ) : (
-                <div className="space-y-3">
-                  {activeSubmissions.map((submission) => (
-                    <SubmissionCard
-                      key={submission.id}
-                      submission={submission}
-                      onRefresh={loadSubmissions}
-                    />
-                  ))}
-                </div>
-              )}
-            </TabsContent>
-            
-            <TabsContent value="completed" className="space-y-4">
-              {completedSubmissions.length === 0 ? (
-                <Card className="bg-card border-border">
-                  <CardContent className="py-12 text-center">
-                    <CheckCircle className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />
-                    <h3 className="font-semibold text-foreground mb-1">No completed submissions</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Completed submissions will appear here.
-                    </p>
-                  </CardContent>
-                </Card>
-              ) : (
-                <div className="space-y-3">
-                  {completedSubmissions.map((submission) => (
-                    <SubmissionCard
-                      key={submission.id}
-                      submission={submission}
-                      onRefresh={loadSubmissions}
-                    />
-                  ))}
-                </div>
-              )}
-            </TabsContent>
-
-            <TabsContent value="registers">
-              <RegistersTab />
-            </TabsContent>
-          </Tabs>
+          {/* Submissions List / Register Tables */}
+          <div ref={tabsRef}>
+            {view === "contract-register" ? (
+              <ContractRegisterTable />
+            ) : view === "correspondence-register" ? (
+              <CorrespondenceRegisterTable />
+            ) : filteredSubmissions.length === 0 ? (
+              <Card className="bg-card border-border">
+                <CardContent className="py-12 text-center">
+                  <FileText className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />
+                  <h3 className="font-semibold text-foreground mb-1">No submissions found</h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    {searchQuery || statusFilter !== "all" || typeFilter !== "all"
+                      ? "No submissions match your filters."
+                      : "You don't have any submissions yet."}
+                  </p>
+                  <div className="flex justify-center gap-2">
+                    <Button asChild>
+                      <Link href="/correspondence">
+                        <Plus className="mr-2 h-4 w-4" />
+                        New Submission
+                      </Link>
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-3">
+                {filteredSubmissions.map((submission) => (
+                  <SubmissionCard
+                    key={submission.id}
+                    submission={submission}
+                    onRefresh={loadSubmissions}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </main>
 
@@ -809,8 +794,10 @@ function DashboardPageInner() {
 
 export default function DashboardPage() {
   return (
-    <RequireAuthGuard returnPath="/dashboard">
-      <DashboardPageInner />
-    </RequireAuthGuard>
+    <Suspense>
+      <RequireAuthGuard returnPath="/dashboard">
+        <DashboardPageInner />
+      </RequireAuthGuard>
+    </Suspense>
   )
 }
