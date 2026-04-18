@@ -326,7 +326,6 @@ function CorrespondencePageContent() {
       const result = await apiPost<{ transaction_number: string }>("/api/correspondences", {
         ...formData,
         status: "submitted",
-        draftId: draftId ?? undefined,
       })
       if (!result.success) throw new Error(result.error || "Submission failed")
       const correspondenceData = (result.data || {}) as Record<string, unknown>
@@ -356,8 +355,6 @@ function CorrespondencePageContent() {
         (typeof correspondenceData.transaction_number === "string" && correspondenceData.transaction_number)
           || `COR-${Date.now().toString(36).toUpperCase()}`
       )
-
-      setDraftId(null)
       setIsSubmitted(true)
     } catch (error) {
       console.error('[v0] Submission failed:', error)

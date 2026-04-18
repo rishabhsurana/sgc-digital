@@ -757,7 +757,6 @@ function ContractsPageContent() {
         ...formData,
         ministryLabel: MINISTRIES.find((m) => m.value === formData.ministry)?.label || formData.ministry,
         status: "submitted",
-        draftId: draftId ?? undefined,
       })
       if (!result.success) throw new Error(result.error || "Submission failed")
       const contractData = (result.data || {}) as Record<string, unknown>
@@ -787,8 +786,6 @@ function ContractsPageContent() {
         (typeof contractData.transaction_number === "string" && contractData.transaction_number)
           || `CON-${Date.now().toString(36).toUpperCase()}`
       )
-
-      setDraftId(null)
       setIsSubmitted(true)
     } catch (error) {
       console.error('[v0] Submission failed:', error)
