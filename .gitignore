@@ -10,5 +10,6 @@ node_modules/
 .DS_Store
 
 next-env.d.ts
+pnpm-lock.yaml
 tsconfig.json
 tsconfig.tsbuildinfo
