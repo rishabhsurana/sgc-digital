@@ -79,9 +79,13 @@ const CORRESPONDENCE_DATA = [
 const STATUS_CONFIG = {
   pending: { label: "Pending", color: "bg-amber-100 text-amber-700 border-amber-200", icon: Clock },
   "under-review": { label: "Under Review", color: "bg-blue-100 text-blue-700 border-blue-200", icon: Eye },
+  approved: { label: "Approved", color: "bg-green-100 text-green-700 border-green-200", icon: CheckCircle },
   completed: { label: "Completed", color: "bg-green-100 text-green-700 border-green-200", icon: CheckCircle },
   rejected: { label: "Rejected", color: "bg-red-100 text-red-700 border-red-200", icon: XCircle },
+  clarification: { label: "Clarification", color: "bg-orange-100 text-orange-700 border-orange-200", icon: MessageSquare },
 }
+
+const DEFAULT_STATUS_CONFIG = { label: "Unknown", color: "bg-gray-100 text-gray-700 border-gray-200", icon: AlertCircle }
 
 const PRIORITY_CONFIG = {
   high: { label: "High", color: "bg-red-100 text-red-700" },
@@ -388,7 +392,7 @@ export default function CorrespondenceRegisterPage() {
               </TableHeader>
               <TableBody>
                 {filteredData.map((item) => {
-                  const statusConfig = STATUS_CONFIG[item.status as keyof typeof STATUS_CONFIG]
+                  const statusConfig = STATUS_CONFIG[item.status as keyof typeof STATUS_CONFIG] ?? DEFAULT_STATUS_CONFIG
                   const priorityConfig = PRIORITY_CONFIG[item.priority as keyof typeof PRIORITY_CONFIG]
                   return (
                     <TableRow key={item.id} className="hover:bg-muted/30">
@@ -488,8 +492,8 @@ export default function CorrespondenceRegisterPage() {
                 </div>
                 <div>
                   <Label className="text-xs text-muted-foreground">Status</Label>
-                  <Badge className={STATUS_CONFIG[selectedItem.status as keyof typeof STATUS_CONFIG].color}>
-                    {STATUS_CONFIG[selectedItem.status as keyof typeof STATUS_CONFIG].label}
+                  <Badge className={(STATUS_CONFIG[selectedItem.status as keyof typeof STATUS_CONFIG] ?? DEFAULT_STATUS_CONFIG).color}>
+                    {(STATUS_CONFIG[selectedItem.status as keyof typeof STATUS_CONFIG] ?? DEFAULT_STATUS_CONFIG).label}
                   </Badge>
                 </div>
                 <div>
