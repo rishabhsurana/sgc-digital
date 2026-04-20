@@ -417,6 +417,11 @@ function ContractsPageContent() {
   const [originalContractDataOriginalTransaction, setOriginalContractDataOriginalTransaction] = useState<OriginalContractData | null>(null)
   
   const searchParams = useSearchParams()
+  const documentsStepIndex = STEPS.findIndex((step) => step.id === "documents")
+  const isAutoSaveActive =
+    !isSubmitting &&
+    !isSubmitted &&
+    (documentsStepIndex === -1 || currentStep < documentsStepIndex)
 
   const buildDraftPayload = useCallback(() => {
     return {
@@ -490,6 +495,8 @@ function ContractsPageContent() {
   
   // Auto-save draft every 30 seconds when form data changes
   useEffect(() => {
+    if (!isAutoSaveActive) return
+
     const autoSaveTimer = setInterval(async () => {
       if (formData.contractNature || formData.contractTitle) {
         try {
@@ -502,8 +509,7 @@ function ContractsPageContent() {
     }, 30000) // 30 seconds
     
     return () => clearInterval(autoSaveTimer)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentStep, formData, upsertDraft])
+  }, [formData.contractNature, formData.contractTitle, isAutoSaveActive, upsertDraft])
   
   // Manual save draft function
   const handleSaveDraft = useCallback(async () => {

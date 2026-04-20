@@ -160,6 +160,11 @@ function CorrespondencePageContent() {
   const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
   
   const searchParams = useSearchParams()
+  const documentsStepIndex = STEPS.findIndex((step) => step.id === "documents")
+  const isAutoSaveActive =
+    !isSubmitting &&
+    !isSubmitted &&
+    (documentsStepIndex === -1 || currentStep < documentsStepIndex)
 
   const buildDraftPayload = useCallback(() => {
     return {
@@ -257,6 +262,8 @@ function CorrespondencePageContent() {
   
   // Auto-save draft every 30 seconds
   useEffect(() => {
+    if (!isAutoSaveActive) return
+
     const autoSaveTimer = setInterval(async () => {
       if (formData.correspondenceType || formData.subject) {
         try {
@@ -269,8 +276,7 @@ function CorrespondencePageContent() {
     }, 30000)
     
     return () => clearInterval(autoSaveTimer)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentStep, formData, upsertDraft])
+  }, [formData.correspondenceType, formData.subject, isAutoSaveActive, upsertDraft])
   
   // Manual save draft
   const handleSaveDraft = useCallback(async () => {
