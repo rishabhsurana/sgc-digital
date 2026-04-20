@@ -490,10 +490,12 @@ export interface RegisterContractRow {
 
 export interface RegisterCorrespondenceRow {
   register_id: string
+  correspondence_id: string | null
   reference_number: string | null
   correspondence_type: string | null
   subject: string | null
   originating_mda: string | null
+  ministry_file_reference: string | null
   submitter_name: string | null
   date_received: string | null
   priority_level: string | null

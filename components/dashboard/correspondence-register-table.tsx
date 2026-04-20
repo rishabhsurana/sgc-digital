@@ -40,6 +40,8 @@ import {
   MoreHorizontal,
   RefreshCw,
   FileText,
+  Download,
+  FileSignature,
   CheckCircle,
   Clock,
   XCircle,
@@ -48,6 +50,8 @@ import {
 import { ManagementPaginationBar } from "@/components/management/management-pagination-bar"
 import {
   fetchUserCorrespondenceRegister,
+  fetchCorrespondenceDetail,
+  downloadDocumentAuthorized,
   type RegisterCorrespondenceRow,
   type RegisterFetchParams,
 } from "@/lib/dashboard-api"
@@ -69,10 +73,17 @@ const COLUMNS = [
   { id: "reference_number", label: "Transaction Number" },
   { id: "correspondence_type", label: "Type" },
   { id: "subject", label: "Subject" },
+  { id: "ministry_file_reference", label: "Min. File Ref. #" },
   { id: "date_received", label: "Date" },
   { id: "priority_level", label: "Priority" },
   { id: "current_status_code", label: "Status" },
 ] as const
+
+interface CorrespondenceDocumentRow {
+  id: string
+  file_name: string
+  document_type_label?: string
+}
 
 export function CorrespondenceRegisterTable() {
   const [searchQuery, setSearchQuery] = useState("")
@@ -84,6 +95,10 @@ export function CorrespondenceRegisterTable() {
   const [totalPages, setTotalPages] = useState(1)
   const [loading, setLoading] = useState(false)
   const [limit, setLimit] = useState(20)
+  const [downloadDialogOpen, setDownloadDialogOpen] = useState(false)
+  const [downloadDocuments, setDownloadDocuments] = useState<CorrespondenceDocumentRow[]>([])
+  const [downloadLoading, setDownloadLoading] = useState(false)
+  const [downloadingDocId, setDownloadingDocId] = useState<string | null>(null)
   const searchRef = useRef(searchQuery)
   searchRef.current = searchQuery
 
@@ -127,9 +142,11 @@ export function CorrespondenceRegisterTable() {
     () =>
       rows.map((item) => ({
         id: item.register_id,
+        correspondenceId: item.correspondence_id ?? "",
         ref: item.reference_number ?? "-",
         type: item.correspondence_type ?? "-",
         subject: item.subject ?? "-",
+        minFileRef: item.ministry_file_reference ?? "-",
         ministry: item.originating_mda ?? "-",
         submitter: item.submitter_name ?? "-",
         date: item.date_received ? String(item.date_received).slice(0, 10) : "-",
@@ -140,6 +157,30 @@ export function CorrespondenceRegisterTable() {
   )
 
   const isFiltered = searchQuery.trim() !== "" || statusFilter !== "all"
+
+  const openDownloadDialog = async (correspondenceId: string) => {
+    if (!correspondenceId) return
+    setDownloadDocuments([])
+    setDownloadLoading(true)
+    setDownloadDialogOpen(true)
+    try {
+      const res = await fetchCorrespondenceDetail(correspondenceId)
+      if (res.success && res.data) {
+        setDownloadDocuments((res.data.documents as CorrespondenceDocumentRow[]) ?? [])
+      }
+    } finally {
+      setDownloadLoading(false)
+    }
+  }
+
+  const handleDownloadDoc = async (doc: CorrespondenceDocumentRow) => {
+    setDownloadingDocId(doc.id)
+    try {
+      await downloadDocumentAuthorized(doc.id, doc.file_name)
+    } finally {
+      setDownloadingDocId(null)
+    }
+  }
 
   return (
     <div className="space-y-4">
@@ -252,13 +293,14 @@ export function CorrespondenceRegisterTable() {
                       {column.label}
                     </TableHead>
                   ))}
+                  <TableHead className="font-semibold w-[90px] text-center">Download</TableHead>
                   <TableHead className="font-semibold w-[50px]">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {loading && filteredData.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                    <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
                       <RefreshCw className="h-4 w-4 animate-spin inline mr-2" />
                       Loading...
                     </TableCell>
@@ -275,6 +317,9 @@ export function CorrespondenceRegisterTable() {
                         <Badge variant="outline">{item.type}</Badge>
                       </TableCell>
                       <TableCell className="max-w-[250px] truncate" title={item.subject}>{item.subject}</TableCell>
+                      <TableCell className="font-mono text-sm whitespace-nowrap">
+                        {item.minFileRef}
+                      </TableCell>
                       <TableCell className="text-sm text-muted-foreground">{item.date}</TableCell>
                       <TableCell>
                         <Badge className={priorityConfig.color} variant="secondary">
@@ -286,6 +331,19 @@ export function CorrespondenceRegisterTable() {
                           <StatusIcon className="mr-1 h-3 w-3" />
                           {statusConfig.label}
                         </Badge>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 p-0 text-primary hover:text-primary hover:bg-primary/10"
+                          disabled={!item.correspondenceId}
+                          onClick={() => void openDownloadDialog(item.correspondenceId)}
+                          title="Download correspondence documents"
+                        >
+                          <Download className="h-4 w-4" />
+                          <span className="sr-only">Download</span>
+                        </Button>
                       </TableCell>
                       <TableCell>
                         <DropdownMenu>
@@ -307,7 +365,7 @@ export function CorrespondenceRegisterTable() {
                 })}
                 {!loading && filteredData.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                    <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
                       No correspondence found.
                     </TableCell>
                   </TableRow>
@@ -385,6 +443,64 @@ export function CorrespondenceRegisterTable() {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={downloadDialogOpen}
+        onOpenChange={setDownloadDialogOpen}
+      >
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileSignature className="h-5 w-5 text-primary" />
+              Correspondence Documents
+            </DialogTitle>
+            <DialogDescription>
+              Download the documents attached to this correspondence.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 max-h-[400px] overflow-y-auto">
+            {downloadLoading && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground py-4">
+                <RefreshCw className="h-4 w-4 animate-spin" />
+                Loading documents…
+              </div>
+            )}
+            {!downloadLoading && downloadDocuments.length === 0 && (
+              <p className="text-sm text-muted-foreground py-4">No documents available for this correspondence.</p>
+            )}
+            {!downloadLoading && downloadDocuments.map((doc) => (
+              <div
+                key={doc.id}
+                className="flex items-center justify-between gap-3 rounded-lg border border-border p-3 hover:bg-muted/30"
+              >
+                <div className="flex items-center gap-2 min-w-0">
+                  <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium truncate">{doc.file_name}</p>
+                    {doc.document_type_label && (
+                      <p className="text-xs text-muted-foreground">{doc.document_type_label}</p>
+                    )}
+                  </div>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 shrink-0"
+                  disabled={downloadingDocId === doc.id}
+                  onClick={() => void handleDownloadDoc(doc)}
+                >
+                  {downloadingDocId === doc.id ? (
+                    <RefreshCw className="h-3 w-3 animate-spin" />
+                  ) : (
+                    <Download className="h-3 w-3" />
+                  )}
+                  <span className="ml-1">Download</span>
+                </Button>
+              </div>
+            ))}
+          </div>
         </DialogContent>
       </Dialog>
     </div>
