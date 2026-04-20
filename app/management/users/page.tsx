@@ -93,6 +93,7 @@ import {
   type StaffRequestOptions,
   type MdaOption,
 } from "@/lib/user-management-api"
+import { sameUuid } from "@/lib/utils/uuid"
 import { toast } from "sonner"
 
 const PORTAL_STATUSES = [
@@ -1665,14 +1666,14 @@ export default function UserManagementPage() {
                   type="checkbox"
                   className="h-4 w-4"
                   checked={editMgmtForm.isActive}
-                  disabled={!!selectedMgmtUser && selectedMgmtUser.id === callerManagementId}
+                  disabled={!!selectedMgmtUser && sameUuid(selectedMgmtUser.id, callerManagementId)}
                   onChange={(e) => setEditMgmtForm((p) => ({ ...p, isActive: e.target.checked }))}
                 />
                 <Label htmlFor="edit-mgmt-active" className="font-normal cursor-pointer">
                   Account active
                 </Label>
               </div>
-              {selectedMgmtUser && selectedMgmtUser.id === callerManagementId && (
+              {selectedMgmtUser && sameUuid(selectedMgmtUser.id, callerManagementId) && (
                 <p className="text-xs text-muted-foreground">
                   You can&apos;t deactivate or demote your own account. Ask another admin to do so.
                 </p>
