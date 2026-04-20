@@ -169,7 +169,7 @@ export default function ManagementReportsPage() {
       fetchReportsTopMinistries(filters),
       fetchReportsStatusOverview(filters),
       fetchReportsMonthlyTrends(filters),
-      fetchReportsMinistries({ dateRange: filters.dateRange }),
+      fetchReportsMinistries(filters),
     ])
 
     const failed = [summaryRes, corrTypeRes, contractsNatureRes, topMinRes, statusRes, trendsRes].find((r) => !r.success)
