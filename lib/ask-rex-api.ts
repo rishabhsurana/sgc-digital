@@ -1,4 +1,5 @@
 import { apiGet, apiPost, type ApiResponse, handleUnauthorizedResponse } from './api-client';
+import { parsePresentDataBlock, type RexPresentDataBlock } from './rex-present-data';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
 
@@ -60,7 +61,10 @@ export type AskRexStreamEvent =
   | { type: 'user-message-saved'; data: { message_id: string } }
   | { type: 'text-delta'; data: { text: string } }
   | { type: 'tool-call'; data: { tool: string; input: unknown } }
-  | { type: 'tool-result'; data: { tool: string; has_output: boolean } }
+  | {
+      type: 'tool-result';
+      data: { tool: string; has_output: boolean; block?: RexPresentDataBlock };
+    }
   | { type: 'tool-error'; data: { tool: string; error: string } }
   | {
       type: 'finish';
@@ -119,14 +123,20 @@ function parseSseBlock(raw: string): AskRexStreamEvent | null {
         type: 'tool-call',
         data: { tool: String(data.tool ?? ''), input: data.input },
       };
-    case 'tool-result':
+    case 'tool-result': {
+      const block =
+        data.block !== undefined && data.block !== null
+          ? parsePresentDataBlock(data.block)
+          : undefined;
       return {
         type: 'tool-result',
         data: {
           tool: String(data.tool ?? ''),
           has_output: Boolean(data.has_output),
+          ...(block ? { block } : {}),
         },
       };
+    }
     case 'tool-error':
       return {
         type: 'tool-error',

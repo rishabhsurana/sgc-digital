@@ -2,11 +2,13 @@
 
 import { useState, useRef, useEffect } from "react"
 import ReactMarkdown from "react-markdown"
+import remarkGfm from "remark-gfm"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { cn } from "@/lib/utils"
 import { useAskRex } from "@/hooks/use-ask-rex"
+import { RexPresentation } from "@/components/rex-presentation"
 import {
   Bot,
   X,
@@ -47,6 +49,7 @@ const TOOL_LABELS: Record<string, string> = {
   searchDocuments: "Searching documents…",
   generateReport: "Generating report…",
   searchKnowledgeBase: "Searching knowledge base…",
+  presentData: "Formatting display…",
 }
 
 export function AskRex({ position = "header" }: AskRexProps) {
@@ -300,15 +303,34 @@ export function AskRex({ position = "header" }: AskRexProps) {
                   )}
                 >
                   {message.role === "assistant" ? (
-                    <div className="prose prose-sm max-w-none dark:prose-invert prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-pre:my-1">
-                      {message.content ? (
-                        <ReactMarkdown>{message.content}</ReactMarkdown>
-                      ) : message.isStreaming ? (
-                        <span className="text-muted-foreground">Thinking…</span>
-                      ) : null}
-                      {message.isStreaming && message.content && (
-                        <span className="inline-block w-2 h-4 align-text-bottom bg-foreground/60 animate-pulse ml-0.5" />
-                      )}
+                    <div className="space-y-3 w-full min-w-0">
+                      <div
+                        className={cn(
+                          "prose prose-sm max-w-none dark:prose-invert prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-pre:my-1",
+                          // GFM (remark-gfm): tables, task lists, strikethrough — base prose may omit table tokens in Tailwind v4
+                          "[&_table]:w-full [&_table]:my-2 [&_table]:text-xs [&_table]:border-collapse",
+                          "[&_thead]:border-b [&_thead]:border-border",
+                          "[&_th]:border [&_th]:border-border [&_th]:bg-muted/60 [&_th]:px-2 [&_th]:py-1.5 [&_th]:text-left [&_th]:font-medium",
+                          "[&_td]:border [&_td]:border-border [&_td]:px-2 [&_td]:py-1.5 [&_td]:align-top",
+                          "[&_tr:nth-child(even)]:bg-muted/30",
+                          "[&_input[type=checkbox]]:mr-1.5 [&_input[type=checkbox]]:align-middle",
+                          "[&_del]:text-muted-foreground"
+                        )}
+                      >
+                        {message.content ? (
+                          <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                            {message.content}
+                          </ReactMarkdown>
+                        ) : message.isStreaming ? (
+                          <span className="text-muted-foreground">Thinking…</span>
+                        ) : null}
+                        {message.isStreaming && message.content && (
+                          <span className="inline-block w-2 h-4 align-text-bottom bg-foreground/60 animate-pulse ml-0.5" />
+                        )}
+                      </div>
+                      {message.presentations?.map((block, idx) => (
+                        <RexPresentation key={idx} block={block} />
+                      ))}
                     </div>
                   ) : (
                     <p className="whitespace-pre-wrap">{message.content}</p>

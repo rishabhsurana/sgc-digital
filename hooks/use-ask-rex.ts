@@ -10,6 +10,7 @@ import {
   submitFeedback,
   type PortalContext,
 } from "../lib/ask-rex-api"
+import type { RexPresentDataBlock } from "../lib/rex-present-data"
 
 export interface ChatMessage {
   id: string
@@ -18,6 +19,8 @@ export interface ChatMessage {
   timestamp: Date
   isStreaming?: boolean
   toolsInvoked?: string[]
+  /** Interactive blocks from the `presentData` tool (generative UI). */
+  presentations?: RexPresentDataBlock[]
   feedback?: "positive" | "negative"
   serverMessageId?: string
 }
@@ -141,6 +144,7 @@ export function useAskRex() {
           timestamp: new Date(),
           isStreaming: true,
           toolsInvoked: [],
+          presentations: [],
         },
       ])
       setIsStreaming(true)
@@ -181,6 +185,18 @@ export function useAskRex() {
               break
             case "tool-result":
               setCurrentTool(null)
+              if (event.data.block) {
+                setMessages((prev) =>
+                  prev.map((m) =>
+                    m.id === assistantId
+                      ? {
+                          ...m,
+                          presentations: [...(m.presentations ?? []), event.data.block!],
+                        }
+                      : m
+                  )
+                )
+              }
               break
             case "finish":
               setMessages((prev) =>
