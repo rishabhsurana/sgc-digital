@@ -1,11 +1,12 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
+import ReactMarkdown from "react-markdown"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
+import { useAskRex } from "@/hooks/use-ask-rex"
 import {
   Bot,
   X,
@@ -21,27 +22,32 @@ import {
   User,
   Volume2,
   VolumeX,
-  Lightbulb
+  Lightbulb,
+  ThumbsUp,
+  ThumbsDown,
+  RotateCcw,
 } from "lucide-react"
 
 interface AskRexProps {
   position?: "header" | "content"
 }
 
-interface Message {
-  id: string
-  role: "user" | "assistant"
-  content: string
-  timestamp: Date
-  type?: "text" | "file-result" | "report" | "search-result"
-  files?: { name: string; ref: string; type: string }[]
-}
-
 const SUGGESTED_PROMPTS = [
-  { icon: Search, label: "Find a file", prompt: "Find me file with FileNumber " },
-  { icon: FileText, label: "Retrieve documents", prompt: "Retrieve all documents on " },
-  { icon: FileBarChart, label: "Generate report", prompt: "Generate a report on " },
+  { icon: Search, label: "Recent activity", prompt: "Show me my most recent submissions" },
+  { icon: FileText, label: "Pending items", prompt: "How many of my contracts are pending review?" },
+  { icon: FileBarChart, label: "Status report", prompt: "Give me a status summary of all my submissions" },
 ]
+
+const TOOL_LABELS: Record<string, string> = {
+  searchCorrespondences: "Searching correspondences…",
+  searchContracts: "Searching contracts…",
+  getSubmissionStats: "Calculating status counts…",
+  lookupTransaction: "Looking up transaction…",
+  getRecentSubmissions: "Fetching recent submissions…",
+  searchDocuments: "Searching documents…",
+  generateReport: "Generating report…",
+  searchKnowledgeBase: "Searching knowledge base…",
+}
 
 export function AskRex({ position = "header" }: AskRexProps) {
   const [isOpen, setIsOpen] = useState(false)
@@ -49,27 +55,32 @@ export function AskRex({ position = "header" }: AskRexProps) {
   const [input, setInput] = useState("")
   const [isListening, setIsListening] = useState(false)
   const [isSpeaking, setIsSpeaking] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "welcome",
-      role: "assistant",
-      content: "Hello! I'm Rex, your AI assistant. I can help you find files, retrieve documents, and generate reports. How can I assist you today?",
-      timestamp: new Date(),
-      type: "text"
-    }
-  ])
+
+  const {
+    messages,
+    sendMessage,
+    isStreaming,
+    currentTool,
+    error,
+    giveFeedback,
+    resetConversation,
+  } = useAskRex()
+
   const scrollRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  const bottomRef = useRef<HTMLDivElement>(null)
 
-  // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight
+    const viewport = scrollRef.current?.querySelector<HTMLDivElement>(
+      '[data-slot="scroll-area-viewport"]'
+    )
+    if (viewport) {
+      viewport.scrollTop = viewport.scrollHeight
+    } else {
+      bottomRef.current?.scrollIntoView({ block: "end" })
     }
-  }, [messages])
+  }, [messages, isStreaming, currentTool, error])
 
-  // Focus input when chat opens
   useEffect(() => {
     if (isOpen && inputRef.current) {
       inputRef.current.focus()
@@ -82,9 +93,10 @@ export function AskRex({ position = "header" }: AskRexProps) {
       return
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
     const recognition = new SpeechRecognition()
-    
+
     recognition.continuous = false
     recognition.interimResults = false
     recognition.lang = "en-US"
@@ -93,6 +105,7 @@ export function AskRex({ position = "header" }: AskRexProps) {
     recognition.onend = () => setIsListening(false)
     recognition.onerror = () => setIsListening(false)
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     recognition.onresult = (event: any) => {
       const transcript = event.results[0][0].transcript
       setInput(transcript)
@@ -107,7 +120,7 @@ export function AskRex({ position = "header" }: AskRexProps) {
 
   const speakResponse = (text: string) => {
     if (!("speechSynthesis" in window)) return
-    
+
     if (isSpeaking) {
       window.speechSynthesis.cancel()
       setIsSpeaking(false)
@@ -121,97 +134,12 @@ export function AskRex({ position = "header" }: AskRexProps) {
     window.speechSynthesis.speak(utterance)
   }
 
-  const simulateAIResponse = async (userMessage: string): Promise<Message> => {
-    // Simulate AI processing delay
-    await new Promise(resolve => setTimeout(resolve, 1500))
-
-    const lowerMessage = userMessage.toLowerCase()
-
-    // File search simulation
-    if (lowerMessage.includes("find") && lowerMessage.includes("file")) {
-      const fileMatch = userMessage.match(/[A-Z0-9]{4,}/i)
-      const fileNumber = fileMatch ? fileMatch[0].toUpperCase() : "X5556"
-      return {
-        id: Date.now().toString(),
-        role: "assistant",
-        content: `I found the file you requested. Here are the details for File Number ${fileNumber}:`,
-        timestamp: new Date(),
-        type: "file-result",
-        files: [
-          { name: `Contract Agreement - ${fileNumber}`, ref: fileNumber, type: "Contract" },
-        ]
-      }
-    }
-
-    // Document retrieval simulation
-    if (lowerMessage.includes("retrieve") && lowerMessage.includes("document")) {
-      const subject = userMessage.replace(/retrieve all documents on|retrieve documents on|retrieve/gi, "").trim() || "contracts"
-      return {
-        id: Date.now().toString(),
-        role: "assistant",
-        content: `I found several documents related to "${subject}" across the repository:`,
-        timestamp: new Date(),
-        type: "search-result",
-        files: [
-          { name: `${subject} - Policy Document 2024`, ref: "DOC-2024-001", type: "Policy" },
-          { name: `${subject} - Guidelines Update`, ref: "DOC-2024-015", type: "Guidelines" },
-          { name: `${subject} - Annual Review`, ref: "DOC-2023-089", type: "Report" },
-        ]
-      }
-    }
-
-    // Report generation simulation
-    if (lowerMessage.includes("generate") && lowerMessage.includes("report")) {
-      const subject = userMessage.replace(/generate a report on|generate report on|generate report/gi, "").trim() || "correspondence"
-      return {
-        id: Date.now().toString(),
-        role: "assistant",
-        content: `I've generated a summary report on "${subject}":\n\n**Executive Summary**\nBased on analysis of 47 documents in the repository, here are the key findings:\n\n• Total active items: 23\n• Pending review: 12\n• Completed this month: 8\n• Average processing time: 5.2 days\n\n**Key Insights**\nThe data shows a 15% improvement in processing efficiency compared to the previous quarter. Most items are being resolved within the standard SLA.\n\nWould you like me to export this as a detailed PDF report?`,
-        timestamp: new Date(),
-        type: "report"
-      }
-    }
-
-    // Default response
-    return {
-      id: Date.now().toString(),
-      role: "assistant",
-      content: `I understand you're asking about "${userMessage}". I can help you with:\n\n• **Finding files** - Just say "Find me file with FileNumber [number]"\n• **Retrieving documents** - Say "Retrieve all documents on [subject]"\n• **Generating reports** - Say "Generate a report on [subject]"\n\nHow would you like me to assist you?`,
-      timestamp: new Date(),
-      type: "text"
-    }
-  }
-
   const handleSubmit = async (e?: React.FormEvent) => {
     e?.preventDefault()
-    if (!input.trim() || isLoading) return
-
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      role: "user",
-      content: input.trim(),
-      timestamp: new Date(),
-      type: "text"
-    }
-
-    setMessages(prev => [...prev, userMessage])
+    if (!input.trim() || isStreaming) return
+    const content = input.trim()
     setInput("")
-    setIsLoading(true)
-
-    try {
-      const response = await simulateAIResponse(userMessage.content)
-      setMessages(prev => [...prev, response])
-    } catch (error) {
-      setMessages(prev => [...prev, {
-        id: Date.now().toString(),
-        role: "assistant",
-        content: "I apologize, but I encountered an error processing your request. Please try again.",
-        timestamp: new Date(),
-        type: "text"
-      }])
-    } finally {
-      setIsLoading(false)
-    }
+    await sendMessage(content)
   }
 
   const handleSuggestionClick = (prompt: string) => {
@@ -221,7 +149,7 @@ export function AskRex({ position = "header" }: AskRexProps) {
 
   if (!isOpen) {
     const isSmall = position === "header"
-    
+
     return (
       <div className={cn(
         "fixed right-4 z-[100]",
@@ -233,13 +161,13 @@ export function AskRex({ position = "header" }: AskRexProps) {
             "absolute left-1/2 -translate-x-1/2 bg-gradient-to-b from-slate-600 to-slate-400 rounded-full",
             isSmall ? "-top-6 w-0.5 h-6" : "-top-8 w-1 h-8"
           )} />
-          
+
           {/* Bulb socket/cap */}
           <div className={cn(
             "absolute left-1/2 -translate-x-1/2 bg-slate-700 rounded-t-lg border-2 border-slate-500",
             isSmall ? "-top-1.5 w-5 h-2.5" : "-top-2 w-8 h-4"
           )} />
-          
+
           {/* Main bulb button */}
           <Button
             onClick={() => setIsOpen(true)}
@@ -254,10 +182,10 @@ export function AskRex({ position = "header" }: AskRexProps) {
               isSmall ? "h-10 w-10" : "h-16 w-16"
             )} />
           </Button>
-          
+
           {/* Glow effect on hover */}
           <div className="absolute inset-0 rounded-full bg-yellow-400/0 group-hover:bg-yellow-400/20 blur-xl transition-all duration-300 pointer-events-none" />
-          
+
           {/* Ask Rex label */}
           <div className={cn(
             "absolute left-1/2 -translate-x-1/2 whitespace-nowrap bg-slate-900 font-bold rounded-full shadow-lg",
@@ -265,7 +193,7 @@ export function AskRex({ position = "header" }: AskRexProps) {
           )}>
             <span className="text-emerald-400">Ask</span> <span className="text-blue-400">Rex</span>
           </div>
-          
+
           {/* Notification dot */}
           <div className={cn(
             "absolute rounded-full bg-red-500 animate-ping",
@@ -308,6 +236,15 @@ export function AskRex({ position = "header" }: AskRexProps) {
             variant="ghost"
             size="icon"
             className="h-8 w-8"
+            title="New conversation"
+            onClick={() => resetConversation()}
+          >
+            <RotateCcw className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
             onClick={() => setIsExpanded(!isExpanded)}
           >
             {isExpanded ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
@@ -324,7 +261,7 @@ export function AskRex({ position = "header" }: AskRexProps) {
       </div>
 
       {/* Messages Area */}
-      <ScrollArea className="flex-1 p-4" ref={scrollRef}>
+      <ScrollArea className="flex-1 min-h-0 p-4" ref={scrollRef}>
         <div className="space-y-4">
           {messages.map((message) => (
             <div
@@ -350,7 +287,7 @@ export function AskRex({ position = "header" }: AskRexProps) {
               </div>
               <div
                 className={cn(
-                  "flex flex-col gap-2 max-w-[80%]",
+                  "flex flex-col gap-2 max-w-[85%]",
                   message.role === "user" ? "items-end" : "items-start"
                 )}
               >
@@ -362,31 +299,33 @@ export function AskRex({ position = "header" }: AskRexProps) {
                       : "bg-muted text-foreground"
                   )}
                 >
-                  <p className="whitespace-pre-wrap">{message.content}</p>
+                  {message.role === "assistant" ? (
+                    <div className="prose prose-sm max-w-none dark:prose-invert prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-pre:my-1">
+                      {message.content ? (
+                        <ReactMarkdown>{message.content}</ReactMarkdown>
+                      ) : message.isStreaming ? (
+                        <span className="text-muted-foreground">Thinking…</span>
+                      ) : null}
+                      {message.isStreaming && message.content && (
+                        <span className="inline-block w-2 h-4 align-text-bottom bg-foreground/60 animate-pulse ml-0.5" />
+                      )}
+                    </div>
+                  ) : (
+                    <p className="whitespace-pre-wrap">{message.content}</p>
+                  )}
                 </div>
-                
-                {/* File Results */}
-                {message.files && message.files.length > 0 && (
-                  <div className="w-full space-y-2">
-                    {message.files.map((file, index) => (
-                      <div
-                        key={index}
-                        className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 border border-primary/10 hover:bg-muted transition-colors cursor-pointer"
-                      >
-                        <FileText className="h-5 w-5 text-primary" />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate">{file.name}</p>
-                          <p className="text-xs text-muted-foreground">Ref: {file.ref}</p>
-                        </div>
-                        <Badge variant="outline" className="shrink-0">{file.type}</Badge>
-                      </div>
-                    ))}
+
+                {/* Tool-execution indicators */}
+                {message.role === "assistant" && message.isStreaming && currentTool && (
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                    <span>{TOOL_LABELS[currentTool] ?? `Running ${currentTool}…`}</span>
                   </div>
                 )}
 
-                {/* Actions for assistant messages */}
-                {message.role === "assistant" && (
-                  <div className="flex items-center gap-2">
+                {/* Actions for completed assistant messages */}
+                {message.role === "assistant" && !message.isStreaming && message.id !== "welcome" && (
+                  <div className="flex items-center gap-1">
                     <Button
                       variant="ghost"
                       size="icon"
@@ -399,27 +338,39 @@ export function AskRex({ position = "header" }: AskRexProps) {
                         <Volume2 className="h-3 w-3" />
                       )}
                     </Button>
-                    <span className="text-xs text-muted-foreground">
-                      {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className={cn("h-6 w-6", message.feedback === "positive" && "text-green-600")}
+                      onClick={() => giveFeedback(message.id, "positive")}
+                      disabled={!message.serverMessageId || message.feedback !== undefined}
+                    >
+                      <ThumbsUp className="h-3 w-3" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className={cn("h-6 w-6", message.feedback === "negative" && "text-red-600")}
+                      onClick={() => giveFeedback(message.id, "negative")}
+                      disabled={!message.serverMessageId || message.feedback !== undefined}
+                    >
+                      <ThumbsDown className="h-3 w-3" />
+                    </Button>
+                    <span className="text-xs text-muted-foreground ml-1">
+                      {message.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                     </span>
                   </div>
                 )}
               </div>
             </div>
           ))}
-          
-          {/* Loading indicator */}
-          {isLoading && (
-            <div className="flex gap-3">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent text-accent-foreground">
-                <Bot className="h-4 w-4" />
-              </div>
-              <div className="flex items-center gap-2 rounded-lg bg-muted px-3 py-2">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                <span className="text-sm text-muted-foreground">Rex is thinking...</span>
-              </div>
+
+          {error && (
+            <div className="text-xs text-red-600 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 rounded p-2">
+              {error}
             </div>
           )}
+          <div ref={bottomRef} />
         </div>
       </ScrollArea>
 
@@ -466,19 +417,19 @@ export function AskRex({ position = "header" }: AskRexProps) {
             onChange={(e) => setInput(e.target.value)}
             placeholder="Ask Rex anything..."
             className="flex-1"
-            disabled={isLoading}
+            disabled={isStreaming}
           />
           <Button
             type="submit"
             size="icon"
             className="h-10 w-10 shrink-0"
-            disabled={!input.trim() || isLoading}
+            disabled={!input.trim() || isStreaming}
           >
             <Send className="h-4 w-4" />
           </Button>
         </form>
         <p className="text-xs text-muted-foreground mt-2 text-center">
-          Rex can find files, retrieve documents, and generate reports
+          Rex searches your contracts, correspondences, and documents in real time
         </p>
       </div>
     </div>
