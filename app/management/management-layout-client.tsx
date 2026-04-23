@@ -19,6 +19,7 @@ import {
   Settings,
   Users,
   Building2,
+  ChevronDown,
   ChevronRight,
   Home,
   LogOut,
@@ -35,6 +36,13 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { AskRex } from "@/components/ask-rex"
 import { clearAuth, getToken, getUser, isManagementUser } from "@/lib/auth"
 
@@ -205,26 +213,6 @@ function SidebarContent({
         </nav>
       </ScrollArea>
 
-      {/* Admin Info */}
-      {adminSession && (
-        <div className="border-t border-primary/10 p-4">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10">
-              <User className="h-4 w-4 text-primary" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-foreground truncate">
-                {adminSession.firstName} {adminSession.lastName}
-              </p>
-              <p className="text-xs text-muted-foreground truncate">{adminSession.email}</p>
-            </div>
-          </div>
-          <Badge variant="outline" className="w-full justify-center text-xs capitalize mb-3">
-            {adminSession.roleName.replace("_", " ")}
-          </Badge>
-        </div>
-      )}
-
       {/* Footer */}
       <div className="border-t border-primary/10 p-4 space-y-2">
         <Button variant="ghost" size="sm" className="w-full justify-start" asChild>
@@ -241,15 +229,6 @@ function SidebarContent({
             </svg>
             SGC Public Portal
           </Link>
-        </Button>
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          className="w-full justify-start text-destructive hover:text-destructive"
-          onClick={onSignOut}
-        >
-          <LogOut className="mr-2 h-4 w-4" />
-          Sign Out
         </Button>
       </div>
     </div>
@@ -393,15 +372,60 @@ export function ManagementLayoutClient({
               </Breadcrumb>
               </div>
 
-              <Button
-                variant="outline"
-                size="sm"
-                className="shrink-0 text-destructive hover:text-destructive"
-                onClick={handleSignOut}
-              >
-                <LogOut className="mr-2 h-4 w-4" />
-                Logout
-              </Button>
+              {adminSession && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm" className="shrink-0 flex items-center gap-2 rounded-full border-slate-200 hover:border-primary/50 hover:bg-primary/5 px-4">
+                      <div className="w-7 h-7 rounded-full bg-gradient-to-br from-primary to-blue-600 flex items-center justify-center text-white text-xs font-semibold">
+                        {adminSession.firstName.charAt(0).toUpperCase()}
+                      </div>
+                      <span className="max-w-[160px] truncate font-medium text-slate-700">
+                        {adminSession.firstName} {adminSession.lastName}
+                      </span>
+                      <ChevronDown className="h-3.5 w-3.5 text-slate-400" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-64 p-2">
+                    <div className="px-3 py-2 mb-1">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-blue-600 flex items-center justify-center text-white font-semibold">
+                          {adminSession.firstName.charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                          <p className="font-semibold text-slate-900">{adminSession.firstName} {adminSession.lastName}</p>
+                          <p className="text-xs text-slate-500">{adminSession.email}</p>
+                        </div>
+                      </div>
+                      <div className="mt-2">
+                        <Badge variant="outline" className="text-xs capitalize">
+                          {adminSession.roleName.replace("_", " ")}
+                        </Badge>
+                      </div>
+                    </div>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild className="rounded-lg cursor-pointer">
+                      <Link href="/management/landing" className="flex items-center gap-2 py-2">
+                        <Home className="h-4 w-4 text-slate-400" />
+                        Management Home
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild className="rounded-lg cursor-pointer">
+                      <Link href="/" className="flex items-center gap-2 py-2">
+                        <svg className="h-4 w-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <circle cx="12" cy="12" r="10" strokeWidth="2"/>
+                          <path strokeWidth="2" d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                        </svg>
+                        SGC Public Portal
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleSignOut} className="text-red-600 focus:text-red-600 rounded-lg cursor-pointer py-2">
+                      <LogOut className="h-4 w-4 mr-2" />
+                      Sign Out
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
             </div>
           </div>
           

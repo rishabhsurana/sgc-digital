@@ -85,8 +85,8 @@ export default function RegistersPage() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <Card className="border-blue-200 hover:shadow-lg transition-shadow">
-          <CardHeader className="bg-gradient-to-r from-blue-50 to-blue-100/50 border-b border-blue-100">
+        <Card className="border-blue-200 hover:shadow-lg transition-shadow pt-0 overflow-hidden">
+          <CardHeader className="bg-gradient-to-r from-blue-50 to-blue-100/50 border-b border-blue-100 py-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-500 text-white">
@@ -170,8 +170,8 @@ export default function RegistersPage() {
           </CardContent>
         </Card>
 
-        <Card className="border-purple-200 hover:shadow-lg transition-shadow">
-          <CardHeader className="bg-gradient-to-r from-purple-50 to-purple-100/50 border-b border-purple-100">
+        <Card className="border-purple-200 hover:shadow-lg transition-shadow pt-0 overflow-hidden">
+          <CardHeader className="bg-gradient-to-r from-purple-50 to-purple-100/50 border-b border-purple-100 py-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-purple-500 text-white">
