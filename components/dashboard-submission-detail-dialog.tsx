@@ -207,7 +207,9 @@ export function DashboardSubmissionDetailDialog({
               </span>
             )}
           </TabsTrigger>
-          <TabsTrigger value="respond">Respond</TabsTrigger>
+          <TabsTrigger value="respond" disabled={submission.status !== "clarification"}>
+            Respond
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="details" className="flex-1 overflow-y-auto mt-4">
@@ -235,7 +237,11 @@ export function DashboardSubmissionDetailDialog({
 
             <div>
               <p className="text-sm font-medium text-foreground mb-2">Current Stage</p>
-              <p className="text-sm text-muted-foreground">{display.stage}</p>
+              <p className="text-sm text-muted-foreground">
+                {display.history && display.history.length > 0
+                  ? display.history[display.history.length - 1].stage
+                  : display.stage}
+              </p>
             </div>
 
             {/* <div>
@@ -343,104 +349,107 @@ export function DashboardSubmissionDetailDialog({
         </TabsContent>
 
         <TabsContent value="respond" className="flex-1 overflow-y-auto mt-4">
-          <div className="space-y-4">
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <p className="text-sm text-blue-800">
-                Use this section to respond to the SGC or upload additional documents. Your response
-                will be sent directly to the SGC for review.
+          {submission.status !== "clarification" ? (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <div className="h-16 w-16 rounded-full bg-muted/50 flex items-center justify-center mb-4">
+                <Send className="h-8 w-8 text-muted-foreground/50" />
+              </div>
+              <p className="text-sm font-medium text-muted-foreground">Responses not available</p>
+              <p className="text-xs text-muted-foreground mt-1 max-w-xs">
+                You can only respond when the SGC has returned your submission for clarification.
               </p>
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="response-message">Response Message (Optional)</Label>
-              <Textarea
-                id="response-message"
-                placeholder="Enter any comments or explanations for the SGC..."
-                value={responseMessage}
-                onChange={(e) => setResponseMessage(e.target.value)}
-                rows={4}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>Upload Documents</Label>
-              <div
-                className="border-2 border-dashed rounded-lg p-6 text-center hover:border-primary/50 transition-colors cursor-pointer"
-                onClick={() => fileInputRef.current?.click()}
-              >
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  multiple
-                  className="hidden"
-                  onChange={handleFileSelect}
-                  accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
-                />
-                <Upload className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                <p className="text-sm font-medium text-foreground">Click to upload or drag and drop</p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  PDF, DOC, DOCX, XLS, XLSX, JPG, PNG (max 10MB each)
+          ) : (
+            <div className="space-y-4">
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <p className="text-sm text-blue-800">
+                  Use this section to respond to the SGC or upload additional documents. Your response
+                  will be sent directly to the SGC for review.
                 </p>
               </div>
-            </div>
 
-            {uploadedFiles.length > 0 && (
               <div className="space-y-2">
-                <Label>Files to Upload ({uploadedFiles.length})</Label>
-                <div className="space-y-2">
-                  {uploadedFiles.map((file, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center justify-between p-3 border rounded-lg bg-card"
-                    >
-                      <div className="flex items-center gap-3">
-                        <Paperclip className="h-4 w-4 text-muted-foreground" />
-                        <div>
-                          <p className="text-sm font-medium text-foreground">{file.name}</p>
-                          <p className="text-xs text-muted-foreground">{formatBytes(file.size)}</p>
-                        </div>
-                      </div>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => removeFile(index)}
-                        className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))}
+                <Label htmlFor="response-message">Response Message (Optional)</Label>
+                <Textarea
+                  id="response-message"
+                  placeholder="Enter any comments or explanations for the SGC..."
+                  value={responseMessage}
+                  onChange={(e) => setResponseMessage(e.target.value)}
+                  rows={4}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Upload Documents</Label>
+                <div
+                  className="border-2 border-dashed rounded-lg p-6 text-center hover:border-primary/50 transition-colors cursor-pointer"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    multiple
+                    className="hidden"
+                    onChange={handleFileSelect}
+                    accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
+                  />
+                  <Upload className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                  <p className="text-sm font-medium text-foreground">Click to upload or drag and drop</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    PDF, DOC, DOCX, XLS, XLSX, JPG, PNG (max 10MB each)
+                  </p>
                 </div>
               </div>
-            )}
 
-            <Button
-              className="w-full"
-              onClick={handleSubmitResponse}
-              disabled={
-                isSubmitting ||
-                submission.status !== "clarification" ||
-                (uploadedFiles.length === 0 && !responseMessage.trim())
-              }
-            >
-              {isSubmitting ? (
-                <>
-                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                  Submitting...
-                </>
-              ) : (
-                <>
-                  <Send className="h-4 w-4 mr-2" />
-                  Submit Response to SGC
-                </>
+              {uploadedFiles.length > 0 && (
+                <div className="space-y-2">
+                  <Label>Files to Upload ({uploadedFiles.length})</Label>
+                  <div className="space-y-2">
+                    {uploadedFiles.map((file, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center justify-between p-3 border rounded-lg bg-card"
+                      >
+                        <div className="flex items-center gap-3">
+                          <Paperclip className="h-4 w-4 text-muted-foreground" />
+                          <div>
+                            <p className="text-sm font-medium text-foreground">{file.name}</p>
+                            <p className="text-xs text-muted-foreground">{formatBytes(file.size)}</p>
+                          </div>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => removeFile(index)}
+                          className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               )}
-            </Button>
-            {submission.status !== "clarification" && (
-              <p className="text-xs text-muted-foreground text-center">
-                Responses are only available when the submission is returned for clarification.
-              </p>
-            )}
-          </div>
+
+              <Button
+                className="w-full"
+                onClick={handleSubmitResponse}
+                disabled={isSubmitting || (uploadedFiles.length === 0 && !responseMessage.trim())}
+              >
+                {isSubmitting ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                    Submitting...
+                  </>
+                ) : (
+                  <>
+                    <Send className="h-4 w-4 mr-2" />
+                    Submit Response to SGC
+                  </>
+                )}
+              </Button>
+            </div>
+          )}
         </TabsContent>
       </Tabs>
     </DialogContent>
