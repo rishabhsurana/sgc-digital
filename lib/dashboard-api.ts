@@ -182,14 +182,44 @@ export interface DocumentRow {
   document_type_label?: string
 }
 
+export interface ApplicantResponseRow {
+  applicant_response_id: number
+  clarification_request_id: number | null
+  case_id: string
+  responded_by_user_id: string | null
+  response_message: string
+  responded_at: string
+}
+
+export interface ClarificationDocumentRow {
+  id: string
+  file_name: string
+  file_size: number
+  mime_type: string
+}
+
+export interface ClarificationRequestRow {
+  clarification_request_id: number
+  case_id: string
+  requested_by_user_id: string
+  request_title: string
+  request_message: string
+  requested_at: string
+  response_due_at: string | null
+  status_code: string
+  is_validated: boolean | null
+  responses: ApplicantResponseRow[]
+  documents: ClarificationDocumentRow[]
+}
+
 export async function fetchCorrespondenceDetail(id: string): Promise<
-  ApiResponse<{ correspondence: Record<string, unknown>; documents: DocumentRow[]; history: HistoryEventRow[] }>
+  ApiResponse<{ correspondence: Record<string, unknown>; documents: DocumentRow[]; history: HistoryEventRow[]; clarification_requests: ClarificationRequestRow[] }>
 > {
   return apiGet(`/api/correspondences/${id}`)
 }
 
 export async function fetchContractDetail(id: string): Promise<
-  ApiResponse<{ contract: Record<string, unknown>; documents: DocumentRow[]; history: HistoryEventRow[] }>
+  ApiResponse<{ contract: Record<string, unknown>; documents: DocumentRow[]; history: HistoryEventRow[]; clarification_requests: ClarificationRequestRow[] }>
 > {
   return apiGet(`/api/contracts/${id}`)
 }

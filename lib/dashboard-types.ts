@@ -18,6 +18,22 @@ export interface SGCDocument {
   uploadedBy: string
 }
 
+export interface ClarificationDocument {
+  id: string
+  fileName: string
+  fileSize: number
+  mimeType: string
+}
+
+export interface ClarificationMessage {
+  id: number
+  sender: "sgc" | "applicant"
+  message: string
+  timestamp: string
+  title?: string
+  documents?: ClarificationDocument[]
+}
+
 export interface Submission {
   id: string
   transactionNumber: string
@@ -30,6 +46,7 @@ export interface Submission {
   stage: string
   history: { date: string; stage: string; note?: string }[]
   sgcDocuments?: SGCDocument[]
+  clarificationTrail?: ClarificationMessage[]
 }
 
 export const STATUS_CONFIG: Record<
