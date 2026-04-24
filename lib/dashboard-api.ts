@@ -191,6 +191,16 @@ export interface ApplicantResponseRow {
   responded_at: string
 }
 
+export interface SubmissionResponseRow {
+  response_id: string
+  submission_type: 'correspondence' | 'contract'
+  submission_id: string
+  response_text: string | null
+  responded_by: string
+  response_source: string
+  created_at: string
+}
+
 export interface ClarificationDocumentRow {
   id: string
   file_name: string
@@ -213,13 +223,25 @@ export interface ClarificationRequestRow {
 }
 
 export async function fetchCorrespondenceDetail(id: string): Promise<
-  ApiResponse<{ correspondence: Record<string, unknown>; documents: DocumentRow[]; history: HistoryEventRow[]; clarification_requests: ClarificationRequestRow[] }>
+  ApiResponse<{
+    correspondence: Record<string, unknown>
+    documents: DocumentRow[]
+    history: HistoryEventRow[]
+    clarification_requests: ClarificationRequestRow[]
+    submission_responses: SubmissionResponseRow[]
+  }>
 > {
   return apiGet(`/api/correspondences/${id}`)
 }
 
 export async function fetchContractDetail(id: string): Promise<
-  ApiResponse<{ contract: Record<string, unknown>; documents: DocumentRow[]; history: HistoryEventRow[]; clarification_requests: ClarificationRequestRow[] }>
+  ApiResponse<{
+    contract: Record<string, unknown>
+    documents: DocumentRow[]
+    history: HistoryEventRow[]
+    clarification_requests: ClarificationRequestRow[]
+    submission_responses: SubmissionResponseRow[]
+  }>
 > {
   return apiGet(`/api/contracts/${id}`)
 }

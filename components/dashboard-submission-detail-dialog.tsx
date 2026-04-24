@@ -23,7 +23,7 @@ import {
   formatYmd,
 } from "@/lib/dashboard-api"
 import type { ClarificationDocument, ClarificationMessage, SGCDocument, Submission } from "@/lib/dashboard-types"
-import type { ClarificationRequestRow } from "@/lib/dashboard-api"
+import type { ClarificationRequestRow, SubmissionResponseRow } from "@/lib/dashboard-api"
 import type { LucideIcon } from "lucide-react"
 import {
   Download,
@@ -58,7 +58,10 @@ export function DashboardSubmissionDetailDialog({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const fileInputRef = React.useRef<HTMLInputElement>(null)
 
-  function buildClarificationTrail(requests: ClarificationRequestRow[]): ClarificationMessage[] {
+  function buildClarificationTrail(
+    requests: ClarificationRequestRow[],
+    submissionResponses: SubmissionResponseRow[] = []
+  ): ClarificationMessage[] {
     const messages: ClarificationMessage[] = []
     for (const req of requests || []) {
       const docs: ClarificationDocument[] = (req.documents || []).map((d) => ({
@@ -84,6 +87,14 @@ export function DashboardSubmissionDetailDialog({
         })
       }
     }
+    for (const resp of submissionResponses || []) {
+      messages.push({
+        id: resp.response_id,
+        sender: "applicant",
+        message: resp.response_text || "Responded to clarification request.",
+        timestamp: resp.created_at,
+      })
+    }
     messages.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
     return messages
   }
@@ -101,7 +112,7 @@ export function DashboardSubmissionDetailDialog({
           if (!res.success || !res.data) {
             throw new Error(res.error || res.message || "Failed to load")
           }
-          const { correspondence, documents, history, clarification_requests } = res.data
+          const { correspondence, documents, history, clarification_requests, submission_responses } = res.data
           const rec = correspondence as Record<string, unknown>
           const hist = (history || []).map((h) => ({
             date: formatYmd(h.changed_at),
@@ -116,7 +127,7 @@ export function DashboardSubmissionDetailDialog({
             uploadedDate: formatYmd(d.uploaded_date),
             uploadedBy: "SGC",
           }))
-          const trail = buildClarificationTrail(clarification_requests || [])
+          const trail = buildClarificationTrail(clarification_requests || [], submission_responses || [])
           if (!cancelled) {
             setDisplay({
               ...submission,
@@ -133,7 +144,7 @@ export function DashboardSubmissionDetailDialog({
           if (!res.success || !res.data) {
             throw new Error(res.error || res.message || "Failed to load")
           }
-          const { contract, documents, history, clarification_requests } = res.data
+          const { contract, documents, history, clarification_requests, submission_responses } = res.data
           const rec = contract as Record<string, unknown>
           const hist = (history || []).map((h) => ({
             date: formatYmd(h.changed_at),
@@ -148,7 +159,7 @@ export function DashboardSubmissionDetailDialog({
             uploadedDate: formatYmd(d.uploaded_date),
             uploadedBy: "SGC",
           }))
-          const trail = buildClarificationTrail(clarification_requests || [])
+          const trail = buildClarificationTrail(clarification_requests || [], submission_responses || [])
           const lastRaw = (rec.last_updated as string) || (rec.updated_at as string)
           if (!cancelled) {
             setDisplay({

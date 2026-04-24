@@ -26,7 +26,7 @@ export interface ClarificationDocument {
 }
 
 export interface ClarificationMessage {
-  id: number
+  id: number | string
   sender: "sgc" | "applicant"
   message: string
   timestamp: string
