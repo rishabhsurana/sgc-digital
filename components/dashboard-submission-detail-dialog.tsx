@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -27,6 +28,7 @@ import type { ClarificationRequestRow, SubmissionResponseRow } from "@/lib/dashb
 import type { LucideIcon } from "lucide-react"
 import {
   Download,
+  Edit,
   Eye,
   FileIcon,
   FileText,
@@ -50,6 +52,7 @@ export function DashboardSubmissionDetailDialog({
   defaultTab?: "details" | "documents" | "respond"
   onAfterRespond?: () => void
 }) {
+  const router = useRouter()
   const [display, setDisplay] = useState<Submission>(submission)
   const [detailLoading, setDetailLoading] = useState(true)
   const [detailError, setDetailError] = useState<string | null>(null)
@@ -77,6 +80,7 @@ export function DashboardSubmissionDetailDialog({
         timestamp: req.requested_at,
         title: req.request_title,
         documents: docs.length > 0 ? docs : undefined,
+        is_validated: req.is_validated,
       })
       for (const resp of req.responses || []) {
         messages.push({
@@ -437,13 +441,13 @@ export function DashboardSubmissionDetailDialog({
                             {msg.sender === "sgc" ? "SGC" : "You"}
                           </span>
                         </div>
-                        {msg.title && (
+                        {/* {msg.title && (
                           <p className={`text-xs font-medium mb-1 ${
                             msg.sender === "sgc" ? "text-muted-foreground" : "text-primary-foreground/80"
                           }`}>
                             {msg.title}
                           </p>
-                        )}
+                        )} */}
                         <p className="text-sm whitespace-pre-wrap">{msg.message}</p>
                         {msg.documents && msg.documents.length > 0 && (
                           <div className="mt-2 space-y-1">
@@ -480,81 +484,114 @@ export function DashboardSubmissionDetailDialog({
               </div>
 
               {/* Compose area - only when status is clarification */}
-              {submission.status === "clarification" && (
-                <div className="border-t pt-3 space-y-3 flex-shrink-0">
-                  <Textarea
-                    id="response-message"
-                    placeholder="Type your response to the SGC..."
-                    value={responseMessage}
-                    onChange={(e) => setResponseMessage(e.target.value)}
-                    rows={2}
-                    className="resize-none"
-                  />
+              {submission.status === "clarification" && (() => {
+                const latestClarification = display.clarificationTrail
+                  ? [...display.clarificationTrail]
+                      .filter((m) => m.sender === "sgc")
+                      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())[0]
+                  : null
+                const isResubmitMode =
+                  submission.type === "contract" &&
+                  latestClarification &&
+                  (latestClarification as any).is_validated === false
 
-                  <div className="flex items-center gap-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                    >
-                      <Paperclip className="h-4 w-4 mr-1" />
-                      Attach
-                    </Button>
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      multiple
-                      className="hidden"
-                      onChange={handleFileSelect}
-                      accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
-                    />
-                    <div className="flex-1" />
-                    <Button
-                      size="sm"
-                      onClick={handleSubmitResponse}
-                      disabled={isSubmitting || (uploadedFiles.length === 0 && !responseMessage.trim())}
-                    >
-                      {isSubmitting ? (
-                        <>
-                          <RefreshCw className="h-4 w-4 mr-1 animate-spin" />
-                          Sending...
-                        </>
-                      ) : (
-                        <>
-                          <Send className="h-4 w-4 mr-1" />
-                          Send
-                        </>
-                      )}
-                    </Button>
-                  </div>
-
-                  {uploadedFiles.length > 0 && (
-                    <div className="space-y-1">
-                      {uploadedFiles.map((file, index) => (
-                        <div
-                          key={index}
-                          className="flex items-center justify-between p-2 border rounded bg-card text-sm"
+                return (
+                  <div className="border-t pt-3 space-y-3 flex-shrink-0">
+                    {isResubmitMode ? (
+                      <div className="space-y-3">
+                        <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-sm text-amber-800">
+                          <p className="font-medium mb-1">Full resubmission required</p>
+                          <p className="text-xs">
+                            The SGC has returned this application and requires you to edit and resubmit it with
+                            the necessary corrections.
+                          </p>
+                        </div>
+                        <Button
+                          className="w-full bg-amber-600 hover:bg-amber-700 text-white"
+                          onClick={() => router.push(`/contracts?resubmit=${submission.id}`)}
                         >
-                          <div className="flex items-center gap-2 min-w-0">
-                            <Paperclip className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
-                            <span className="truncate">{file.name}</span>
-                            <span className="text-xs text-muted-foreground flex-shrink-0">{formatBytes(file.size)}</span>
-                          </div>
+                          <Edit className="h-4 w-4 mr-2" />
+                          Edit &amp; Resubmit Application
+                        </Button>
+                      </div>
+                    ) : (
+                      <>
+                        <Textarea
+                          id="response-message"
+                          placeholder="Type your response to the SGC..."
+                          value={responseMessage}
+                          onChange={(e) => setResponseMessage(e.target.value)}
+                          rows={2}
+                          className="resize-none"
+                        />
+
+                        <div className="flex items-center gap-2">
                           <Button
                             size="sm"
-                            variant="ghost"
-                            onClick={() => removeFile(index)}
-                            className="text-red-500 hover:text-red-700 hover:bg-red-50 h-6 w-6 p-0"
+                            variant="outline"
+                            type="button"
+                            onClick={() => fileInputRef.current?.click()}
                           >
-                            <X className="h-3.5 w-3.5" />
+                            <Paperclip className="h-4 w-4 mr-1" />
+                            Attach
+                          </Button>
+                          <input
+                            ref={fileInputRef}
+                            type="file"
+                            multiple
+                            className="hidden"
+                            onChange={handleFileSelect}
+                            accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
+                          />
+                          <div className="flex-1" />
+                          <Button
+                            size="sm"
+                            onClick={handleSubmitResponse}
+                            disabled={isSubmitting || (uploadedFiles.length === 0 && !responseMessage.trim())}
+                          >
+                            {isSubmitting ? (
+                              <>
+                                <RefreshCw className="h-4 w-4 mr-1 animate-spin" />
+                                Sending...
+                              </>
+                            ) : (
+                              <>
+                                <Send className="h-4 w-4 mr-1" />
+                                Send
+                              </>
+                            )}
                           </Button>
                         </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
+
+                        {uploadedFiles.length > 0 && (
+                          <div className="space-y-1">
+                            {uploadedFiles.map((file, index) => (
+                              <div
+                                key={index}
+                                className="flex items-center justify-between p-2 border rounded bg-card text-sm"
+                              >
+                                <div className="flex items-center gap-2 min-w-0">
+                                  <Paperclip className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                                  <span className="truncate">{file.name}</span>
+                                  <span className="text-xs text-muted-foreground flex-shrink-0">{formatBytes(file.size)}</span>
+                                </div>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => removeFile(index)}
+                                  className="text-red-500 hover:text-red-700 hover:bg-red-50 h-6 w-6 p-0"
+                                >
+                                  <X className="h-3.5 w-3.5" />
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+                )
+              })()}
             </div>
           )}
         </TabsContent>

@@ -309,7 +309,6 @@ function CorrespondencePageContent() {
           formData.submitterName !== "" &&
           formData.submitterEmail !== "" &&
           formData.subject !== "" &&
-          formData.description !== "" &&
           (formData.urgency !== "Urgent" || formData.urgentReason !== "")
         )
       case 2:
@@ -778,7 +777,7 @@ function CorrespondencePageContent() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="description">Detailed Description <span className="text-destructive">*</span></Label>
+                      <Label htmlFor="description">Detailed Description</Label>
                       <Textarea
                         id="description"
                         value={formData.description}

@@ -16,22 +16,33 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
-import { 
-  ArrowLeft, ArrowRight, Save, Send, Info, 
+import {
+  ArrowLeft, ArrowRight, Save, Send, Info,
   Package, Briefcase, HardHat, Plus, RefreshCw,
-  CheckCircle, AlertTriangle, FileText, Building2, User, 
+  CheckCircle, AlertTriangle, FileText, Building2, User,
   Calendar, DollarSign, Clock, MapPin, Mail, Phone,
-  FileCheck, Shield, Banknote, CalendarDays, Timer, AlertCircle
+  FileCheck, Shield, Banknote, CalendarDays, Timer, AlertCircle,
+  Trash2
 } from "lucide-react"
 import { Progress } from "@/components/ui/progress"
 import { AskRex } from "@/components/ask-rex"
 import Link from "next/link"
 import { MINISTRIES_DEPARTMENTS_AGENCIES } from "@/lib/constants"
-import { apiGet, apiPost, apiPostFormData, apiPut } from "@/lib/api-client"
+import { apiGet, apiPost, apiPostFormData, apiPut, apiDelete } from "@/lib/api-client"
 import { validateOriginalContract, type OriginalContractData, type ValidationResult } from "@/lib/actions/contract-validation-actions"
 import { ContractsSubmitGuard } from "@/components/contracts-submit-guard"
 import { RequireAuthGuard } from "@/components/require-auth-guard"
 import { getUser } from "@/lib/auth"
+
+interface ExistingDocument {
+  id: string
+  file_name: string
+  file_size: number
+  mime_type: string
+  document_type_code: string
+  document_type_label: string
+  uploaded_date: string
+}
 
 const STEPS = [
   { id: "nature", title: "Contract Nature", description: "Select contract type" },
@@ -400,12 +411,15 @@ function ContractsPageContent() {
   const [isSubmitted, setIsSubmitted] = useState(false)
   const [transactionNumber, setTransactionNumber] = useState("")
   const [draftId, setDraftId] = useState<string | null>(null)
+  const [resubmitId, setResubmitId] = useState<string | null>(null)
   const [isSavingDraft, setIsSavingDraft] = useState(false)
   const [lastSaved, setLastSaved] = useState<Date | null>(null)
   const [submissionError, setSubmissionError] = useState<string | null>(null)
   const [isLoadingDraft, setIsLoadingDraft] = useState(false)
   const [documentRequirements, setDocumentRequirements] = useState<DocumentChecklistRequirement>({ always: [], optional: [] })
   const [isChecklistLoading, setIsChecklistLoading] = useState(false)
+  const [existingDocuments, setExistingDocuments] = useState<ExistingDocument[]>([])
+  const [removedDocumentIds, setRemovedDocumentIds] = useState<Set<string>>(new Set())
   
   // Validation state for Parent Contract Number field
   const [isValidatingParentContract, setIsValidatingParentContract] = useState(false)
@@ -460,6 +474,84 @@ function ContractsPageContent() {
     }
 
     loadDraft()
+  }, [searchParams])
+
+  // Load existing contract for resubmission if URL has resubmit parameter
+  useEffect(() => {
+    const resubmitParam = searchParams.get("resubmit")
+    if (!resubmitParam) return
+
+    const loadContractForResubmit = async () => {
+      setIsLoadingDraft(true)
+      try {
+        const result = await apiGet<{ contract: Record<string, unknown>; applicant_documents?: ExistingDocument[] }>(`/api/contracts/${resubmitParam}`)
+        if (!result.success || !result.data) {
+          throw new Error(result.error || "Failed to load contract for resubmission")
+        }
+        const c = result.data.contract
+        setResubmitId(resubmitParam)
+
+        // Load previously uploaded applicant documents
+        const applicantDocs = (result.data.applicant_documents || []).map((d: any) => ({
+          id: d.id,
+          file_name: d.file_name,
+          file_size: d.file_size,
+          mime_type: d.mime_type,
+          document_type_code: d.document_type_code,
+          document_type_label: d.document_type_label,
+          uploaded_date: d.uploaded_date,
+        }))
+        setExistingDocuments(applicantDocs)
+        setRemovedDocumentIds(new Set())
+        setFormData((prev) => ({
+          ...prev,
+          contractNature: (c.contract_nature as string) || prev.contractNature,
+          contractCategory: (c.contract_category as string) || prev.contractCategory,
+          contractInstrument: (c.contract_instrument as string) || prev.contractInstrument,
+          contractInstrumentOther: (c.contract_instrument_other as string) || prev.contractInstrumentOther,
+          contractType: (c.contract_type as string) || prev.contractType,
+          parentContractNumber: (c.parent_contract_number as string) || prev.parentContractNumber,
+          originalTransactionNumber: (c.original_transaction_number as string) || prev.originalTransactionNumber,
+          categoryOtherJustification: (c.category_other_justification as string) || prev.categoryOtherJustification,
+          ministry: (c.ministry as string) || prev.ministry,
+          department: (c.department as string) || prev.department,
+          ministryFileReference: (c.ministry_file_reference as string) || prev.ministryFileReference,
+          contactName: (c.contact_name as string) || prev.contactName,
+          contactEmail: (c.contact_email as string) || prev.contactEmail,
+          contactPhone: (c.contact_phone as string) || prev.contactPhone,
+          contractorType: (c.contractor_type as string) || prev.contractorType,
+          contractorName: (c.contractor_name as string) || prev.contractorName,
+          contractorAddress: (c.contractor_address as string) || prev.contractorAddress,
+          contractorCity: (c.contractor_city as string) || prev.contractorCity,
+          contractorCountry: (c.contractor_country as string) || prev.contractorCountry,
+          contractorEmail: (c.contractor_email as string) || prev.contractorEmail,
+          contractorPhone: (c.contractor_phone as string) || prev.contractorPhone,
+          companyRegistrationNumber: (c.company_registration_number as string) || prev.companyRegistrationNumber,
+          taxIdentificationNumber: (c.tax_identification_number as string) || prev.taxIdentificationNumber,
+          contractTitle: (c.contract_title as string) || prev.contractTitle,
+          contractDescription: (c.contract_description as string) || prev.contractDescription,
+          scopeOfWork: (c.scope_of_work as string) || prev.scopeOfWork,
+          keyDeliverables: (c.key_deliverables as string) || prev.keyDeliverables,
+          contractCurrency: (c.contract_currency as string) || prev.contractCurrency,
+          contractValue: c.contract_value !== undefined ? String(c.contract_value) : prev.contractValue,
+          fundingSource: (c.funding_source as string) || prev.fundingSource,
+          procurementMethod: (c.procurement_method as string) || prev.procurementMethod,
+          awardDate: (c.award_date as string) || prev.awardDate,
+          contractStartDate: (c.contract_start_date as string) || prev.contractStartDate,
+          contractEndDate: (c.contract_end_date as string) || prev.contractEndDate,
+          contractDuration: (c.contract_duration as string) || prev.contractDuration,
+          renewalTerm: (c.renewal_term as string) || prev.renewalTerm,
+          missingDocumentReason: (c.missing_document_reason as string) || prev.missingDocumentReason,
+        }))
+        setCurrentStep(0)
+      } catch (err) {
+        console.error("Load contract for resubmit failed", err)
+      } finally {
+        setIsLoadingDraft(false)
+      }
+    }
+
+    loadContractForResubmit()
   }, [searchParams])
 
   useEffect(() => {
@@ -708,11 +800,18 @@ function ContractsPageContent() {
     ]
   }, [documentRequirements])
 
+  // Existing documents that haven't been removed
+  const keptExistingDocuments = useMemo(() => {
+    return existingDocuments.filter(d => !removedDocumentIds.has(d.id))
+  }, [existingDocuments, removedDocumentIds])
+
   // Check if required documents are uploaded
   const missingRequiredDocs = useMemo(() => {
     const uploadedTypes = files.map(f => f.documentType)
-    return documentRequirements.always.filter(doc => !uploadedTypes.includes(doc.value))
-  }, [files, documentRequirements.always])
+    const existingTypes = keptExistingDocuments.map(d => d.document_type_code)
+    const allTypes = [...uploadedTypes, ...existingTypes]
+    return documentRequirements.always.filter(doc => !allTypes.includes(doc.value))
+  }, [files, keptExistingDocuments, documentRequirements.always])
 
   const canProceed = () => {
     switch (currentStep) {
@@ -755,22 +854,46 @@ function ContractsPageContent() {
     setSubmissionError(null)
     
     try {
-      if (draftId) {
-        await upsertDraft()
+      let contractData: Record<string, unknown>
+
+      if (resubmitId) {
+        // Delete removed documents before resubmitting
+        for (const docId of removedDocumentIds) {
+          await apiDelete(`/api/documents/${docId}`)
+        }
+
+        // Resubmit path — update existing contract and call BPM updateproperties
+        const result = await apiPut<{ transaction_number: string; id: string }>(
+          `/api/contracts/${resubmitId}/resubmit`,
+          {
+            ...formData,
+            ministryLabel: MINISTRIES.find((m) => m.value === formData.ministry)?.label || formData.ministry,
+          }
+        )
+        if (!result.success) throw new Error(result.error || "Resubmission failed")
+        contractData = (result.data || {}) as Record<string, unknown>
+      } else {
+        // Normal new submission path
+        if (draftId) {
+          await upsertDraft()
+        }
+        const result = await apiPost<{ transaction_number: string }>(
+          "/api/contracts",
+          {
+            ...formData,
+            ministryLabel: MINISTRIES.find((m) => m.value === formData.ministry)?.label || formData.ministry,
+            status: "submitted",
+            draftId: draftId ?? undefined,
+          }
+        )
+        if (!result.success) throw new Error(result.error || "Submission failed")
+        contractData = (result.data || {}) as Record<string, unknown>
       }
-      // Always submit as a new contract submission; draft record stays as the same draft record.
-      const result = await apiPost<{ transaction_number: string }>("/api/contracts", {
-        ...formData,
-        ministryLabel: MINISTRIES.find((m) => m.value === formData.ministry)?.label || formData.ministry,
-        status: "submitted",
-        draftId: draftId ?? undefined,
-      })
-      if (!result.success) throw new Error(result.error || "Submission failed")
-      const contractData = (result.data || {}) as Record<string, unknown>
-      const contractId = typeof contractData.id === "string" ? contractData.id : null
+
+      const contractId = resubmitId || (typeof contractData.id === "string" ? contractData.id : null)
 
       if (contractId && files.length > 0) {
-        for (const uploaded of files) {
+        const uploadPromises = files.map((uploaded) => {
           const form = new FormData()
           form.append("files", uploaded.file)
           form.append("submission_type", "contract")
@@ -781,12 +904,21 @@ function ContractsPageContent() {
           if (uploaded.description?.trim()) {
             form.append("description", uploaded.description.trim())
           }
+          return apiPostFormData("/api/documents/upload", form)
+        })
 
-          const uploadResult = await apiPostFormData("/api/documents/upload", form)
-          if (!uploadResult.success) {
-            throw new Error(uploadResult.error || "Document upload failed")
-          }
+        const uploadResults = await Promise.all(uploadPromises)
+        const failedUpload = uploadResults.find((r) => !r.success)
+        if (failedUpload) {
+          throw new Error(failedUpload.error || "Document upload failed")
         }
+      }
+
+      // After all document changes are persisted, trigger BPM document sync for resubmissions
+      if (resubmitId && (files.length > 0 || removedDocumentIds.size > 0)) {
+        apiPost(`/api/contracts/${resubmitId}/sync-documents-bpm`, {}).catch((err) =>
+          console.error("BPM document sync failed (non-blocking):", err)
+        )
       }
 
       setTransactionNumber(
@@ -795,6 +927,7 @@ function ContractsPageContent() {
       )
 
       setDraftId(null)
+      setResubmitId(null)
       setIsSubmitted(true)
     } catch (error) {
       console.error('[v0] Submission failed:', error)
@@ -969,6 +1102,17 @@ function ContractsPageContent() {
               </span>
             </div>
           </div>
+
+          {/* Resubmit banner */}
+          {resubmitId && (
+            <Alert className="mb-6 bg-amber-50 border-amber-200">
+              <AlertTriangle className="h-4 w-4 text-amber-600" />
+              <AlertDescription className="text-amber-800">
+                <span className="font-medium">You are editing a returned application.</span> Make the necessary
+                corrections and click <span className="font-medium">Resubmit Contract</span> on the final step.
+              </AlertDescription>
+            </Alert>
+          )}
 
           {/* Stepper */}
           <FormStepper steps={STEPS} currentStep={currentStep} className="mb-8" />
@@ -1903,7 +2047,7 @@ function ContractsPageContent() {
                     )}
                     <div className="grid gap-2 sm:grid-cols-2">
                       {documentRequirements.always.map((doc) => {
-                        const isUploaded = files.some(f => f.documentType === doc.value)
+                        const isUploaded = files.some(f => f.documentType === doc.value) || keptExistingDocuments.some(d => d.document_type_code === doc.value)
                         return (
                           <div key={doc.value} className={`flex items-center gap-2 p-2 rounded-lg transition-colors ${isUploaded ? "bg-green-100/50" : "bg-white/50"}`}>
                             {isUploaded ? (
@@ -1960,6 +2104,62 @@ function ContractsPageContent() {
                         />
                       </div>
                     </>
+                  )}
+
+                  {/* Previously uploaded documents (resubmission only) */}
+                  {resubmitId && existingDocuments.length > 0 && (
+                    <div className="space-y-3">
+                      <Label className="text-sm font-medium">Previously Uploaded Documents</Label>
+                      {existingDocuments.map((doc) => {
+                        const isRemoved = removedDocumentIds.has(doc.id)
+                        return (
+                          <div
+                            key={doc.id}
+                            className={`rounded-lg border p-4 flex items-start justify-between gap-3 transition-colors ${
+                              isRemoved ? "bg-red-50/50 border-red-200 opacity-60" : "border-border bg-card"
+                            }`}
+                          >
+                            <div className="flex items-center gap-3 min-w-0">
+                              <FileText className="h-8 w-8 text-primary shrink-0" />
+                              <div className="min-w-0">
+                                <p className={`text-sm font-medium truncate ${isRemoved ? "line-through text-muted-foreground" : "text-foreground"}`}>
+                                  {doc.file_name}
+                                </p>
+                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                  <span>{doc.document_type_label}</span>
+                                  <span>•</span>
+                                  <span>{(doc.file_size / 1024 / 1024).toFixed(2)} MB</span>
+                                </div>
+                              </div>
+                            </div>
+                            {isRemoved ? (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="shrink-0"
+                                onClick={() => setRemovedDocumentIds((prev) => {
+                                  const next = new Set(prev)
+                                  next.delete(doc.id)
+                                  return next
+                                })}
+                              >
+                                Undo
+                              </Button>
+                            ) : (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 shrink-0 text-red-500 hover:text-red-700 hover:bg-red-50"
+                                onClick={() => setRemovedDocumentIds((prev) => new Set(prev).add(doc.id))}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                                <span className="sr-only">Remove document</span>
+                              </Button>
+                            )}
+                          </div>
+                        )
+                      })}
+                    </div>
                   )}
 
                   <FileUpload
@@ -2147,18 +2347,33 @@ function ContractsPageContent() {
                     
                     {/* Documents */}
                     <div className="p-4">
-                      <h4 className="text-sm font-medium text-muted-foreground mb-3">Documents ({files.length})</h4>
-                      {files.length === 0 ? (
+                      <h4 className="text-sm font-medium text-muted-foreground mb-3">
+                        Documents ({keptExistingDocuments.length + files.length})
+                      </h4>
+                      {keptExistingDocuments.length === 0 && files.length === 0 ? (
                         <p className="text-muted-foreground">No documents uploaded</p>
                       ) : (
                         <ul className="space-y-1">
+                          {keptExistingDocuments.map((doc) => (
+                            <li key={doc.id} className="text-sm text-foreground flex items-center gap-2">
+                              <FileText className="h-3 w-3 text-primary" />
+                              {doc.file_name} ({doc.document_type_label})
+                              <Badge variant="outline" className="text-xs">Existing</Badge>
+                            </li>
+                          ))}
                           {files.map((file) => (
                             <li key={file.id} className="text-sm text-foreground flex items-center gap-2">
                               <FileText className="h-3 w-3 text-primary" />
                               {file.file.name} ({allDocumentTypes.find(t => t.value === file.documentType)?.label})
+                              {resubmitId && <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">New</Badge>}
                             </li>
                           ))}
                         </ul>
+                      )}
+                      {removedDocumentIds.size > 0 && (
+                        <p className="text-xs text-muted-foreground mt-2">
+                          {removedDocumentIds.size} previously uploaded document(s) will be removed.
+                        </p>
                       )}
                       {formData.missingDocumentReason && (
                         <div className="mt-3 p-2 bg-amber-50 rounded text-sm">
@@ -2271,17 +2486,17 @@ function ContractsPageContent() {
                   <Button
                     onClick={handleSubmit}
                     disabled={!canProceed() || isSubmitting}
-                    className="bg-emerald-600 hover:bg-emerald-700"
+                    className={resubmitId ? "bg-amber-600 hover:bg-amber-700" : "bg-emerald-600 hover:bg-emerald-700"}
                   >
                     {isSubmitting ? (
                       <>
                         <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent mr-2" />
-                        Submitting...
+                        {resubmitId ? "Resubmitting..." : "Submitting..."}
                       </>
                     ) : (
                       <>
                         <Send className="mr-2 h-4 w-4" />
-                        Submit Contract Request
+                        {resubmitId ? "Resubmit Contract" : "Submit Contract Request"}
                       </>
                     )}
                   </Button>

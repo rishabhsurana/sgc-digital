@@ -32,6 +32,7 @@ export interface ClarificationMessage {
   timestamp: string
   title?: string
   documents?: ClarificationDocument[]
+  is_validated?: boolean | null
 }
 
 export interface Submission {

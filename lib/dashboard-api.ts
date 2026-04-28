@@ -260,6 +260,13 @@ export async function submitContractResponse(
   return apiPut(`/api/contracts/${id}/respond`, body)
 }
 
+export async function resubmitContract(
+  id: string,
+  formData: Record<string, unknown>
+): Promise<ApiResponse<{ transaction_number?: string; id?: string }>> {
+  return apiPut(`/api/contracts/${id}/resubmit`, formData)
+}
+
 function getToken(): string | null {
   if (typeof window === 'undefined') return null
   return localStorage.getItem('sgc_token')
