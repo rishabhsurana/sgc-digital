@@ -49,7 +49,7 @@ import {
   type DashboardSubmissionItem,
 } from "@/lib/dashboard-api"
 import type { Submission } from "@/lib/dashboard-types"
-import { STATUS_CONFIG } from "@/lib/dashboard-types"
+import { STATUS_CONFIG, CONTRACT_STATUS_DISPLAY } from "@/lib/dashboard-types"
 import { DashboardSubmissionDetailDialog } from "@/components/dashboard-submission-detail-dialog"
 import { ContractRegisterTable } from "@/components/dashboard/contract-register-table"
 import { CorrespondenceRegisterTable } from "@/components/dashboard/correspondence-register-table"
@@ -63,6 +63,7 @@ function mapApiItemToSubmission(item: DashboardSubmissionItem): Submission {
     submittedDate: item.submitted_date || "—",
     lastUpdated: item.last_updated,
     status: item.ui_status,
+    rawStatus: item.status,
     ministry: item.ministry || undefined,
     stage: item.stage,
     history: (item.stage_history || []).map((h) => ({ date: h.date, stage: h.stage })),
@@ -104,6 +105,14 @@ const STATUS_TO_STEP: Record<string, number> = {
   approved: 2,
   completed: 3,
   rejected: -1,
+  // Correspondence status code fallbacks
+  NEW: 0,
+  PENDING_REVIEW: 1,
+  ASSIGNED: 1,
+  PENDING_EXTERNAL: 1,
+  ON_HOLD: 1,
+  CLOSED: 3,
+  CANCELLED: -1,
 }
 
 // Maps contract stage names (clean, no number prefix) to progress step index (0-based, 6 steps)
@@ -125,7 +134,20 @@ const CONTRACT_STAGE_TO_STEP: Record<string, number> = {
   "Approved": 3,
   "Completed": 5,
   "Rejected": -1,
-  // Status code fallbacks
+  // Contract status code fallbacks
+  "INTAKE": 0,
+  "ASSIGNED": 1,
+  "DRAFTING": 2,
+  "SUP_REVIEW": 2,
+  "RETURNED_CORR": 2,
+  "SENT_MDA": 2,
+  "RETURNED_MDA": 2,
+  "FINAL_SIG": 3,
+  "EXEC_ADJ": 3,
+  "ADJ_COMP": 4,
+  "REJECTED": -1,
+  "CLOSED": 5,
+  // Legacy status code fallbacks
   "pending": 0,
   "in-review": 2,
   "clarification": 2,
@@ -141,7 +163,9 @@ function SubmissionCard({
   submission: Submission
   onRefresh: () => void
 }) {
-  const status = STATUS_CONFIG[submission.status]
+  const status = submission.type === "contract" && CONTRACT_STATUS_DISPLAY[submission.rawStatus]
+    ? CONTRACT_STATUS_DISPLAY[submission.rawStatus]
+    : STATUS_CONFIG[submission.status]
   const StatusIcon = status.icon
   const [dialogOpen, setDialogOpen] = React.useState(false)
   const [dialogTab, setDialogTab] = React.useState<"details" | "documents" | "respond">("details")
@@ -171,9 +195,11 @@ function SubmissionCard({
     submission.type === "contract"
       ? (CONTRACT_STAGE_TO_STEP[effectiveStage] ?? CONTRACT_STAGE_TO_STEP[submission.status] ?? 0)
       : (STATUS_TO_STEP[submission.status] ?? 0)
-  const isRejected = submission.status === "rejected" ||
+  const isRejected =
+    submission.status === "rejected" ||
     (submission.type === "contract" && effectiveStage === "Reviewed & Rejected")
-  const isClarification = submission.status === "clarification" ||
+  const isClarification =
+    submission.status === "clarification" ||
     (submission.type === "contract" && effectiveStage === "Returned to MDA for Additional Info")
 
   return (

@@ -200,7 +200,7 @@ export default function CorrectionResponsePage({ params }: { params: Promise<{ i
   const allRequiredDocumentsUploaded = () => {
     if (!correctionRequest) return false
     return correctionRequest.affectedDocuments.every(doc => 
-      uploadedFiles.some(f => f.category === doc.documentId)
+      uploadedFiles.some(f => f.documentType === doc.documentId)
     )
   }
   
@@ -595,7 +595,7 @@ export default function CorrectionResponsePage({ params }: { params: Promise<{ i
                             </p>
                             <p className="text-sm text-muted-foreground mt-1">{doc.issue}</p>
                           </div>
-                          {uploadedFiles.some(f => f.category === doc.documentId) && (
+                          {uploadedFiles.some(f => f.documentType === doc.documentId) && (
                             <Badge className="bg-emerald-100 text-emerald-700">
                               <CheckCircle className="h-3 w-3 mr-1" />
                               Uploaded
@@ -604,16 +604,14 @@ export default function CorrectionResponsePage({ params }: { params: Promise<{ i
                         </div>
                         
                         <FileUpload
+                          files={uploadedFiles.filter(f => f.documentType === doc.documentId)}
                           onFilesChange={(files) => {
-                            const updatedFiles = uploadedFiles.filter(f => f.category !== doc.documentId)
-                            const newFiles = files.map(f => ({ ...f, category: doc.documentId }))
+                            const updatedFiles = uploadedFiles.filter(f => f.documentType !== doc.documentId)
+                            const newFiles = files.map(f => ({ ...f, documentType: doc.documentId }))
                             setUploadedFiles([...updatedFiles, ...newFiles])
                           }}
-                          maxFiles={1}
-                          accept={{
-                            'application/pdf': ['.pdf'],
-                            'image/*': ['.jpg', '.jpeg', '.png'],
-                          }}
+                          documentTypes={[{ value: doc.documentId, label: doc.documentName }]}
+                          acceptedTypes={['.pdf', '.jpg', '.jpeg', '.png']}
                         />
                       </div>
                     ))}
@@ -623,18 +621,14 @@ export default function CorrectionResponsePage({ params }: { params: Promise<{ i
                   <div className="space-y-4">
                     <h3 className="font-semibold text-foreground">Additional Supporting Documents (Optional)</h3>
                     <FileUpload
+                      files={uploadedFiles.filter(f => f.documentType === 'additional')}
                       onFilesChange={(files) => {
-                        const additionalFiles = files.map(f => ({ ...f, category: 'additional' }))
-                        const existingRequired = uploadedFiles.filter(f => f.category !== 'additional')
+                        const additionalFiles = files.map(f => ({ ...f, documentType: 'additional' }))
+                        const existingRequired = uploadedFiles.filter(f => f.documentType !== 'additional')
                         setUploadedFiles([...existingRequired, ...additionalFiles])
                       }}
-                      maxFiles={10}
-                      accept={{
-                        'application/pdf': ['.pdf'],
-                        'application/msword': ['.doc'],
-                        'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
-                        'image/*': ['.jpg', '.jpeg', '.png'],
-                      }}
+                      documentTypes={[{ value: 'additional', label: 'Additional Supporting Document' }]}
+                      acceptedTypes={['.pdf', '.doc', '.docx', '.jpg', '.jpeg', '.png']}
                     />
                   </div>
                 </CardContent>

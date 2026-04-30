@@ -77,12 +77,14 @@ const CORRESPONDENCE_DATA = [
 ]
 
 const STATUS_CONFIG = {
-  pending: { label: "Pending", color: "bg-amber-100 text-amber-700 border-amber-200", icon: Clock },
-  "under-review": { label: "Under Review", color: "bg-blue-100 text-blue-700 border-blue-200", icon: Eye },
-  approved: { label: "Approved", color: "bg-green-100 text-green-700 border-green-200", icon: CheckCircle },
-  completed: { label: "Completed", color: "bg-green-100 text-green-700 border-green-200", icon: CheckCircle },
-  rejected: { label: "Rejected", color: "bg-red-100 text-red-700 border-red-200", icon: XCircle },
-  clarification: { label: "Clarification", color: "bg-orange-100 text-orange-700 border-orange-200", icon: MessageSquare },
+  new: { label: "New", color: "bg-amber-100 text-amber-700 border-amber-200", icon: Clock },
+  "pending-review": { label: "Pending SG/DSG Review", color: "bg-blue-100 text-blue-700 border-blue-200", icon: Eye },
+  assigned: { label: "Assigned / In Progress", color: "bg-indigo-100 text-indigo-700 border-indigo-200", icon: User },
+  "returned-corr": { label: "Returned for Correction", color: "bg-yellow-100 text-yellow-700 border-yellow-200", icon: AlertCircle },
+  "pending-external": { label: "Pending External", color: "bg-orange-100 text-orange-700 border-orange-200", icon: Clock },
+  "on-hold": { label: "On Hold", color: "bg-gray-100 text-gray-700 border-gray-200", icon: AlertCircle },
+  closed: { label: "Closed", color: "bg-green-100 text-green-700 border-green-200", icon: CheckCircle },
+  cancelled: { label: "Cancelled", color: "bg-red-100 text-red-700 border-red-200", icon: XCircle },
 }
 
 const DEFAULT_STATUS_CONFIG = { label: "Unknown", color: "bg-gray-100 text-gray-700 border-gray-200", icon: AlertCircle }
@@ -163,7 +165,7 @@ export default function CorrespondenceRegisterPage() {
           ministryFileRef: item.ministry_file_reference ?? "-",
           submitter: item.submitter_name ?? "-",
           date: item.date_received ? String(item.date_received).slice(0, 10) : "-",
-          status: String(item.current_status_code ?? "pending").toLowerCase().replace(/_/g, "-"),
+          status: String(item.current_status_code ?? "NEW").toLowerCase().replace(/_/g, "-"),
           priority: String(item.priority_level ?? "medium").toLowerCase(),
         })),
     [rows, typeFilter]
@@ -266,15 +268,19 @@ export default function CorrespondenceRegisterPage() {
                   void loadRegisters(1, limit, v)
                 }}
               >
-                <SelectTrigger className="w-full sm:w-[150px]">
+                <SelectTrigger className="w-full sm:w-[180px]">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="under-review">Under Review</SelectItem>
-                  <SelectItem value="completed">Completed</SelectItem>
-                  <SelectItem value="rejected">Rejected</SelectItem>
+                  <SelectItem value="new">New</SelectItem>
+                  <SelectItem value="pending-review">Pending SG/DSG Review</SelectItem>
+                  <SelectItem value="assigned">Assigned / In Progress</SelectItem>
+                  <SelectItem value="returned-corr">Returned for Correction</SelectItem>
+                  <SelectItem value="pending-external">Pending External</SelectItem>
+                  <SelectItem value="on-hold">On Hold</SelectItem>
+                  <SelectItem value="closed">Closed</SelectItem>
+                  <SelectItem value="cancelled">Cancelled</SelectItem>
                 </SelectContent>
               </Select>
               <Select value={typeFilter} onValueChange={setTypeFilter}>
@@ -328,13 +334,13 @@ export default function CorrespondenceRegisterPage() {
       </Card>
 
       {/* Summary Stats */}
-      <div className="grid gap-4 sm:grid-cols-4 mb-6">
+      <div className="grid gap-4 sm:grid-cols-4 lg:grid-cols-7 mb-6">
         <Card className="bg-amber-50 border-amber-200">
           <CardContent className="pt-4 pb-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-medium text-amber-700">Pending</p>
-                <p className="text-2xl font-bold text-amber-900">{rows.filter(i => String(i.current_status_code ?? '').toLowerCase() === 'pending').length}</p>
+                <p className="text-xs font-medium text-amber-700">New</p>
+                <p className="text-2xl font-bold text-amber-900">{rows.filter(i => String(i.current_status_code ?? '').toUpperCase() === 'NEW').length}</p>
               </div>
               <Clock className="h-8 w-8 text-amber-500" />
             </div>
@@ -344,10 +350,43 @@ export default function CorrespondenceRegisterPage() {
           <CardContent className="pt-4 pb-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-medium text-blue-700">Under Review</p>
-                <p className="text-2xl font-bold text-blue-900">{rows.filter(i => String(i.current_status_code ?? '').toLowerCase() === 'under_review').length}</p>
+                <p className="text-xs font-medium text-blue-700">Pending Review</p>
+                <p className="text-2xl font-bold text-blue-900">{rows.filter(i => String(i.current_status_code ?? '').toUpperCase() === 'PENDING_REVIEW').length}</p>
               </div>
               <Eye className="h-8 w-8 text-blue-500" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="bg-indigo-50 border-indigo-200">
+          <CardContent className="pt-4 pb-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium text-indigo-700">Assigned</p>
+                <p className="text-2xl font-bold text-indigo-900">{rows.filter(i => String(i.current_status_code ?? '').toUpperCase() === 'ASSIGNED').length}</p>
+              </div>
+              <User className="h-8 w-8 text-indigo-500" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="bg-orange-50 border-orange-200">
+          <CardContent className="pt-4 pb-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium text-orange-700">Pending External</p>
+                <p className="text-2xl font-bold text-orange-900">{rows.filter(i => String(i.current_status_code ?? '').toUpperCase() === 'PENDING_EXTERNAL').length}</p>
+              </div>
+              <Clock className="h-8 w-8 text-orange-500" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="bg-gray-50 border-gray-200">
+          <CardContent className="pt-4 pb-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium text-gray-700">On Hold</p>
+                <p className="text-2xl font-bold text-gray-900">{rows.filter(i => String(i.current_status_code ?? '').toUpperCase() === 'ON_HOLD').length}</p>
+              </div>
+              <AlertCircle className="h-8 w-8 text-gray-500" />
             </div>
           </CardContent>
         </Card>
@@ -355,8 +394,8 @@ export default function CorrespondenceRegisterPage() {
           <CardContent className="pt-4 pb-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-medium text-green-700">Completed</p>
-                <p className="text-2xl font-bold text-green-900">{rows.filter(i => String(i.current_status_code ?? '').toLowerCase() === 'completed').length}</p>
+                <p className="text-xs font-medium text-green-700">Closed</p>
+                <p className="text-2xl font-bold text-green-900">{rows.filter(i => String(i.current_status_code ?? '').toUpperCase() === 'CLOSED').length}</p>
               </div>
               <CheckCircle className="h-8 w-8 text-green-500" />
             </div>
@@ -366,8 +405,8 @@ export default function CorrespondenceRegisterPage() {
           <CardContent className="pt-4 pb-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-medium text-red-700">Rejected</p>
-                <p className="text-2xl font-bold text-red-900">{rows.filter(i => String(i.current_status_code ?? '').toLowerCase() === 'rejected').length}</p>
+                <p className="text-xs font-medium text-red-700">Cancelled</p>
+                <p className="text-2xl font-bold text-red-900">{rows.filter(i => String(i.current_status_code ?? '').toUpperCase() === 'CANCELLED').length}</p>
               </div>
               <XCircle className="h-8 w-8 text-red-500" />
             </div>

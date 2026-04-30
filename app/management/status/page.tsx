@@ -26,20 +26,56 @@ import {
 type Trend = "up" | "down"
 type StatusItem = { status: string; count: number; percentage: number; color: string }
 
-const STATUS_COLOR_MAP: Record<string, string> = {
-  approved: "bg-green-500",
-  completed: "bg-green-500",
-  pending: "bg-amber-500",
-  under_review: "bg-blue-500",
-  rejected: "bg-red-500",
+const CORR_STATUS_COLOR: Record<string, string> = {
+  NEW: "bg-blue-500",
+  PENDING_REVIEW: "bg-amber-500",
+  ASSIGNED: "bg-purple-500",
+  PENDING_EXTERNAL: "bg-orange-500",
+  RETURNED_CORR: "bg-orange-500",
+  ON_HOLD: "bg-slate-500",
+  CLOSED: "bg-green-500",
+  CANCELLED: "bg-red-500",
 }
 
-const STATUS_LABEL_MAP: Record<string, string> = {
-  approved: "Approved",
-  completed: "Completed",
-  pending: "Pending",
-  under_review: "Under Review",
-  rejected: "Rejected",
+const CORR_STATUS_LABEL: Record<string, string> = {
+  NEW: "New",
+  PENDING_REVIEW: "Pending SG/DSG Review",
+  ASSIGNED: "Assigned / In Progress",
+  PENDING_EXTERNAL: "Pending External",
+  RETURNED_CORR: "Returned for Correction",
+  ON_HOLD: "On Hold",
+  CLOSED: "Closed",
+  CANCELLED: "Cancelled",
+}
+
+const CONTRACT_STATUS_COLOR: Record<string, string> = {
+  INTAKE: "bg-blue-500",
+  ASSIGNED: "bg-purple-500",
+  DRAFTING: "bg-indigo-500",
+  SUP_REVIEW: "bg-violet-500",
+  RETURNED_CORR: "bg-orange-500",
+  SENT_MDA: "bg-amber-500",
+  RETURNED_MDA: "bg-teal-500",
+  FINAL_SIG: "bg-cyan-500",
+  EXEC_ADJ: "bg-pink-500",
+  ADJ_COMP: "bg-emerald-500",
+  REJECTED: "bg-red-500",
+  CLOSED: "bg-green-500",
+}
+
+const CONTRACT_STATUS_LABEL: Record<string, string> = {
+  INTAKE: "New / Intake Validation",
+  ASSIGNED: "Assigned to Officer",
+  DRAFTING: "Drafting",
+  SUP_REVIEW: "With DSG/Supervisor Review",
+  RETURNED_CORR: "Returned for Correction",
+  SENT_MDA: "Sent to Ministry",
+  RETURNED_MDA: "Returned from Ministry",
+  FINAL_SIG: "Finalization / Signature",
+  EXEC_ADJ: "Execution / Adjudication",
+  ADJ_COMP: "Adjudicated/Completed",
+  REJECTED: "Rejected",
+  CLOSED: "Closed",
 }
 
 function formatMetric(value?: number): string {
@@ -57,15 +93,16 @@ function formatChange(change?: number): { label: string; trend?: Trend } {
 }
 
 function normalizeStatus(status: string): string {
-  if (status === "submitted" || status === "returned_for_clarification") return "pending"
-  if (status === "under_review") return "under_review"
-  if (status === "completed") return "completed"
-  if (status === "approved") return "approved"
-  if (status === "rejected") return "rejected"
+  // Both correspondence and contract statuses now use uppercase codes
+  // Pass through as-is — they have their own color/label maps
   return status
 }
 
-function buildStatusItems(rows: Array<{ status: string; count: string | number }>): StatusItem[] {
+function buildStatusItems(
+  rows: Array<{ status: string; count: string | number }>,
+  labelMap: Record<string, string>,
+  colorMap: Record<string, string>,
+): StatusItem[] {
   const grouped = new Map<string, number>()
   for (const row of rows) {
     const key = normalizeStatus(String(row.status || ""))
@@ -73,17 +110,14 @@ function buildStatusItems(rows: Array<{ status: string; count: string | number }
     grouped.set(key, (grouped.get(key) || 0) + (Number.isFinite(count) ? count : 0))
   }
 
-  const preferredOrder = ["approved", "completed", "pending", "under_review", "rejected"]
   const total = [...grouped.values()].reduce((sum, count) => sum + count, 0)
-  const entries = [...grouped.entries()].sort(
-    ([statusA], [statusB]) => preferredOrder.indexOf(statusA) - preferredOrder.indexOf(statusB)
-  )
+  const entries = [...grouped.entries()].sort(([, a], [, b]) => b - a)
 
   return entries.map(([status, count]) => ({
-    status: STATUS_LABEL_MAP[status] || status.replace(/_/g, " "),
+    status: labelMap[status] || status.replace(/_/g, " "),
     count,
     percentage: total ? Math.round((count / total) * 100) : 0,
-    color: STATUS_COLOR_MAP[status] || "bg-slate-500",
+    color: colorMap[status] || "bg-slate-500",
   }))
 }
 
@@ -188,8 +222,8 @@ export default function StatusOverviewPage() {
 
   const statusBreakdown = useMemo(
     () => ({
-      correspondence: buildStatusItems(statusOverview?.correspondence || []),
-      contracts: buildStatusItems(statusOverview?.contracts || []),
+      correspondence: buildStatusItems(statusOverview?.correspondence || [], CORR_STATUS_LABEL, CORR_STATUS_COLOR),
+      contracts: buildStatusItems(statusOverview?.contracts || [], CONTRACT_STATUS_LABEL, CONTRACT_STATUS_COLOR),
     }),
     [statusOverview]
   )

@@ -46,8 +46,8 @@ import {
 import Link from "next/link"
 
 interface DocumentRow {
-  document_id: string
-  document_name: string
+  id: string
+  file_name: string
   document_type_label?: string
   file_size?: number
 }
@@ -167,7 +167,7 @@ export function ContractRegisterTable() {
     try {
       const res = await fetchContractDetail(contractId)
       if (res.success && res.data) {
-        setDownloadDocuments((res.data.documents as DocumentRow[]) ?? [])
+        setDownloadDocuments((res.data.documents ?? []) as DocumentRow[])
       }
     } finally {
       setDownloadLoading(false)
@@ -175,9 +175,9 @@ export function ContractRegisterTable() {
   }
 
   const handleDownloadDoc = async (doc: DocumentRow) => {
-    setDownloadingDocId(doc.document_id)
+    setDownloadingDocId(doc.id)
     try {
-      await downloadDocumentAuthorized(doc.document_id, doc.document_name)
+      await downloadDocumentAuthorized(doc.id, doc.file_name)
     } finally {
       setDownloadingDocId(null)
     }
@@ -445,13 +445,13 @@ export function ContractRegisterTable() {
             )}
             {!downloadLoading && downloadDocuments.map((doc) => (
               <div
-                key={doc.document_id}
+                key={doc.id}
                 className="flex items-center justify-between gap-3 rounded-lg border border-border p-3 hover:bg-muted/30"
               >
                 <div className="flex items-center gap-2 min-w-0">
                   <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
                   <div className="min-w-0">
-                    <p className="text-sm font-medium truncate">{doc.document_name}</p>
+                    <p className="text-sm font-medium truncate">{doc.file_name}</p>
                     {doc.document_type_label && (
                       <p className="text-xs text-muted-foreground">{doc.document_type_label}</p>
                     )}
@@ -461,10 +461,10 @@ export function ContractRegisterTable() {
                   variant="outline"
                   size="sm"
                   className="h-8 shrink-0"
-                  disabled={downloadingDocId === doc.document_id}
+                  disabled={downloadingDocId === doc.id}
                   onClick={() => void handleDownloadDoc(doc)}
                 >
-                  {downloadingDocId === doc.document_id ? (
+                  {downloadingDocId === doc.id ? (
                     <RefreshCw className="h-3 w-3 animate-spin" />
                   ) : (
                     <Download className="h-3 w-3" />

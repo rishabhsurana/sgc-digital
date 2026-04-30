@@ -91,6 +91,15 @@ type DetailData = {
 }
 
 const STATUS_CONFIG: Record<string, string> = {
+  "New": "bg-blue-100 text-blue-700 border-blue-200",
+  "Pending SG/DSG Review": "bg-amber-100 text-amber-700 border-amber-200",
+  "Assigned / In Progress": "bg-purple-100 text-purple-700 border-purple-200",
+  "Pending External": "bg-orange-100 text-orange-700 border-orange-200",
+  "Returned for Correction": "bg-orange-100 text-orange-700 border-orange-200",
+  "On Hold": "bg-slate-100 text-slate-700 border-slate-200",
+  "Closed": "bg-green-100 text-green-700 border-green-200",
+  "Cancelled": "bg-red-100 text-red-700 border-red-200",
+  // Legacy
   Pending: "bg-amber-100 text-amber-700 border-amber-200",
   "Under Review": "bg-blue-100 text-blue-700 border-blue-200",
   Completed: "bg-green-100 text-green-700 border-green-200",

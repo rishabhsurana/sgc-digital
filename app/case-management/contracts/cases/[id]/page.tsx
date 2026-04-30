@@ -231,15 +231,15 @@ const initialCaseData = {
   securityLevel: "INTERNAL", // SecurityLevel: PUBLIC, INTERNAL, CONF, LEGAL_PRIV
   
   // Approval/Review Properties (ApprovalDecision)
-  approvalDecision: null, // ApprovalDecision: Approved, Rejected, Returned for Correction, etc.
+  approvalDecision: "", // ApprovalDecision: Approved, Rejected, Returned for Correction, etc.
   approvalComments: "",
-  dateSubmittedForApproval: null,
-  dateApprovedOrReturned: null,
-  approvedBy: null,
+  dateSubmittedForApproval: "",
+  dateApprovedOrReturned: "",
+  approvedBy: "",
   
   // External Loop / Ministry Interaction (DateSentToMinistry, DateReturnedFromMinistry)
-  dateSentToMinistry: null, // DateSentToMinistry - duration reporting
-  dateReturnedFromMinistry: null, // DateReturnedFromMinistry
+  dateSentToMinistry: "", // DateSentToMinistry - duration reporting
+  dateReturnedFromMinistry: "", // DateReturnedFromMinistry
   additionalInfoRequestedFlag: false,
   returnToMDAReason: "", // ReturnToMDAReason from RETURN_TO_MDA_REASONS
   returnToMDANotes: "",
@@ -247,10 +247,10 @@ const initialCaseData = {
   dateAdditionalInfoReceived: null,
   
   // Adjudication Handling (DateAdjudicated - Supreme Court Registration)
-  dateSentToLegalAssistant: null,
+  dateSentToLegalAssistant: "",
   dateReturnedFromRegistryStamp: null,
   outToAdjudicationFlag: false,
-  dateAdjudicated: null, // DateAdjudicated - when Legal Assistant uploads stamped contract
+  dateAdjudicated: "", // DateAdjudicated - when Legal Assistant uploads stamped contract
   adjudicationNotes: "",
   
   // Parent/Prior Contract (for Supplemental/Renewal)
@@ -446,11 +446,11 @@ export default function ContractCaseDetailPage() {
       setCaseData({
         ...caseData,
         assignedLegalOfficerId: officer.code,
-        assignedLegalOfficer: officer.label,
-        assignedLegalOfficerEmail: officer.email,
+        assignedLegalOfficer: officer.name,
+        assignedLegalOfficerEmail: caseData.assignedLegalOfficerEmail,
         contractStatus: "ASSIGNED",
       })
-      addActivity(`Case assigned to ${officer.label}`)
+      addActivity(`Case assigned to ${officer.name}`)
       setAssignDialogOpen(false)
       setSelectedOfficer("")
     }

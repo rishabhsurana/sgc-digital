@@ -153,8 +153,8 @@ const getMockCaseData = (id: string) => ({
   dueDate: "2026-03-28",
   bringUpDate: "2026-03-21", // regBringUpDate
   targetCompletionDate: "2026-03-26",
-  dispatchDate: null, // regDispatchDate
-  closureDate: null, // regClosureDate
+  dispatchDate: "", // regDispatchDate
+  closureDate: "", // regClosureDate
   
   // SLA Tracking
   slaDays: 14,
@@ -192,16 +192,17 @@ const getMockCaseData = (id: string) => ({
   registryFileAssocStatus: "IN_PROGRESS", // CL_RegistryFileAssocStatus
   
   // Assignment (null until assigned by SG/DSG via Daily Mail review)
-  assignedOfficerId: null, // regAssignedOfficer
-  assignedOfficerName: null,
-  dateAssigned: null,
+  assignedOfficerId: "", // regAssignedOfficer
+  assignedOfficerName: "",
+  dateAssigned: "",
   
   // SG/DSG Directive (per TAB: regDirectiveSummary)
-  sgDirective: null, // regDirectiveSummary
-  sgDirectiveDate: null,
+  sgDirective: "", // regDirectiveSummary
+  sgDirectiveDate: "",
+  returnToRegistryDirective: "",
   // Dispatch Details (per TAB: regDispatchMethod, regDispatchTo)
-  dispatchMethod: null, // CL_DispatchMethod: EMAIL, POST, COURIER, PORTAL
-  dispatchTo: null, // regDispatchTo
+  dispatchMethod: "", // CL_DispatchMethod: EMAIL, POST, COURIER, PORTAL
+  dispatchTo: "", // regDispatchTo
   
   // External Liaisons
   liaiseAgencies: [],
@@ -313,7 +314,7 @@ export default function CorrespondenceCaseDetailPage() {
   
   // Handlers
   const handleAssignOfficer = () => {
-    const officer = LEGAL_OFFICERS.find(o => o.id === assignForm.officerId)
+    const officer = ALL_LEGAL_OFFICERS.find(o => o.id === assignForm.officerId)
     if (!officer) return
     
     setCaseData(prev => ({

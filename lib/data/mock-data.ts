@@ -402,9 +402,7 @@ export const MOCK_CORRESPONDENCE: Correspondence[] = [
     correspondenceTypeName: 'General Inquiry',
     priorityName: 'Low',
     statusName: 'Submitted',
-    statusCategory: 'open',
-    assignedToName: null,
-    assignedDepartmentName: null
+    statusCategory: 'open'
   },
 ]
 
@@ -831,7 +829,6 @@ export const MOCK_CONTRACT_RENEWALS: ContractRenewal[] = [
     renewalStatusName: 'Pending Validation',
     priorityName: 'Medium',
     requestingDepartmentName: 'Ministry of Finance',
-    assignedToName: null,
     currencyCode: 'BBD',
     currencySymbol: '$'
   }

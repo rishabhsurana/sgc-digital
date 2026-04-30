@@ -53,10 +53,20 @@ import { apiDownloadFile, apiGet } from "@/lib/api-client"
 import { ManagementPaginationBar } from "@/components/management/management-pagination-bar"
 import { MINISTRIES_DEPARTMENTS_AGENCIES } from "@/lib/constants"
 
+import { FileCheck, Briefcase, Send, RotateCcw, PenTool, Stamp, Building2, User } from "lucide-react"
+
 const STATUS_CONFIG = {
-  pending: { label: "Pending", color: "bg-amber-100 text-amber-700 border-amber-200", icon: Clock },
-  "under-review": { label: "Under Review", color: "bg-blue-100 text-blue-700 border-blue-200", icon: Eye },
-  approved: { label: "Approved", color: "bg-green-100 text-green-700 border-green-200", icon: CheckCircle },
+  intake: { label: "New / Intake", color: "bg-amber-100 text-amber-700 border-amber-200", icon: Clock },
+  assigned: { label: "Assigned", color: "bg-blue-100 text-blue-700 border-blue-200", icon: User },
+  drafting: { label: "Drafting", color: "bg-indigo-100 text-indigo-700 border-indigo-200", icon: PenTool },
+  "sup-review": { label: "DSG/Supervisor Review", color: "bg-purple-100 text-purple-700 border-purple-200", icon: Eye },
+  "sent-mda": { label: "Sent to Ministry", color: "bg-cyan-100 text-cyan-700 border-cyan-200", icon: Send },
+  "returned-mda": { label: "Returned from Ministry", color: "bg-orange-100 text-orange-700 border-orange-200", icon: RotateCcw },
+  "final-sig": { label: "Finalization / Signature", color: "bg-teal-100 text-teal-700 border-teal-200", icon: FileCheck },
+  "exec-adj": { label: "Execution / Adjudication", color: "bg-sky-100 text-sky-700 border-sky-200", icon: Stamp },
+  "adj-comp": { label: "Adjudicated/Completed", color: "bg-emerald-100 text-emerald-700 border-emerald-200", icon: CheckCircle },
+  closed: { label: "Closed", color: "bg-green-100 text-green-700 border-green-200", icon: CheckCircle },
+  "returned-corr": { label: "Returned for Correction", color: "bg-yellow-100 text-yellow-700 border-yellow-200", icon: RotateCcw },
   rejected: { label: "Rejected", color: "bg-red-100 text-red-700 border-red-200", icon: XCircle },
 }
 
@@ -192,7 +202,7 @@ export default function ContractsRegisterPage() {
         category: CATEGORY_LABELS[item.category ?? ""] ?? item.category ?? "-",
         ref: item.contract_number ?? "-",
         contractType: item.contract_type ?? "-",
-        status: String(item.current_status_code ?? "pending").toLowerCase().replace(/_/g, "-"),
+        status: String(item.current_status_code ?? "INTAKE").toLowerCase().replace(/_/g, "-"),
         contractor: item.contractor_name ?? "-",
         value: Number(item.contract_value ?? 0),
         currency: item.contract_currency ?? "BBD",
@@ -298,14 +308,22 @@ export default function ContractsRegisterPage() {
                   void loadRegisters(1, limit, v)
                 }}
               >
-                <SelectTrigger className="w-[150px]">
+                <SelectTrigger className="w-[200px]">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="under-review">Under Review</SelectItem>
-                  <SelectItem value="approved">Approved</SelectItem>
+                  <SelectItem value="intake">New / Intake</SelectItem>
+                  <SelectItem value="assigned">Assigned</SelectItem>
+                  <SelectItem value="drafting">Drafting</SelectItem>
+                  <SelectItem value="sup-review">DSG/Supervisor Review</SelectItem>
+                  <SelectItem value="sent-mda">Sent to Ministry</SelectItem>
+                  <SelectItem value="returned-mda">Returned from Ministry</SelectItem>
+                  <SelectItem value="final-sig">Finalization / Signature</SelectItem>
+                  <SelectItem value="exec-adj">Execution / Adjudication</SelectItem>
+                  <SelectItem value="adj-comp">Adjudicated/Completed</SelectItem>
+                  <SelectItem value="closed">Closed</SelectItem>
+                  <SelectItem value="returned-corr">Returned for Correction</SelectItem>
                   <SelectItem value="rejected">Rejected</SelectItem>
                 </SelectContent>
               </Select>
@@ -382,14 +400,14 @@ export default function ContractsRegisterPage() {
       </Card>
 
       {/* Summary Stats */}
-      <div className="grid gap-4 sm:grid-cols-5 mb-6">
+      <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 mb-6">
         <Card className="bg-amber-50 border-amber-200">
           <CardContent className="pt-4 pb-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-medium text-amber-700">Pending</p>
+                <p className="text-xs font-medium text-amber-700">Intake</p>
                 <p className="text-2xl font-bold text-amber-900">
-                  {rows.filter(i => String(i.current_status_code ?? "").toLowerCase() === "pending").length}
+                  {rows.filter(i => String(i.current_status_code ?? "").toUpperCase() === "INTAKE").length}
                 </p>
               </div>
               <Clock className="h-8 w-8 text-amber-500" />
@@ -400,25 +418,38 @@ export default function ContractsRegisterPage() {
           <CardContent className="pt-4 pb-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-medium text-blue-700">Under Review</p>
+                <p className="text-xs font-medium text-blue-700">Assigned</p>
                 <p className="text-2xl font-bold text-blue-900">
-                  {rows.filter(i => String(i.current_status_code ?? "").toLowerCase() === "under_review").length}
+                  {rows.filter(i => String(i.current_status_code ?? "").toUpperCase() === "ASSIGNED").length}
                 </p>
               </div>
-              <Eye className="h-8 w-8 text-blue-500" />
+              <User className="h-8 w-8 text-blue-500" />
             </div>
           </CardContent>
         </Card>
-        <Card className="bg-green-50 border-green-200">
+        <Card className="bg-indigo-50 border-indigo-200">
           <CardContent className="pt-4 pb-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-medium text-green-700">Approved</p>
-                <p className="text-2xl font-bold text-green-900">
-                  {rows.filter(i => String(i.current_status_code ?? "").toLowerCase() === "approved").length}
+                <p className="text-xs font-medium text-indigo-700">In Progress</p>
+                <p className="text-2xl font-bold text-indigo-900">
+                  {rows.filter(i => ["DRAFTING", "SUP_REVIEW", "SENT_MDA", "RETURNED_MDA", "FINAL_SIG", "EXEC_ADJ"].includes(String(i.current_status_code ?? "").toUpperCase())).length}
                 </p>
               </div>
-              <CheckCircle className="h-8 w-8 text-green-500" />
+              <PenTool className="h-8 w-8 text-indigo-500" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="bg-emerald-50 border-emerald-200">
+          <CardContent className="pt-4 pb-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium text-emerald-700">Completed</p>
+                <p className="text-2xl font-bold text-emerald-900">
+                  {rows.filter(i => ["ADJ_COMP", "CLOSED"].includes(String(i.current_status_code ?? "").toUpperCase())).length}
+                </p>
+              </div>
+              <CheckCircle className="h-8 w-8 text-emerald-500" />
             </div>
           </CardContent>
         </Card>
@@ -428,7 +459,7 @@ export default function ContractsRegisterPage() {
               <div>
                 <p className="text-xs font-medium text-red-700">Rejected</p>
                 <p className="text-2xl font-bold text-red-900">
-                  {rows.filter(i => String(i.current_status_code ?? "").toLowerCase() === "rejected").length}
+                  {rows.filter(i => String(i.current_status_code ?? "").toUpperCase() === "REJECTED").length}
                 </p>
               </div>
               <XCircle className="h-8 w-8 text-red-500" />
@@ -633,8 +664,8 @@ export default function ContractsRegisterPage() {
                   </div>
                   <div>
                     <Label className="text-xs text-muted-foreground">Status/Stage</Label>
-                    <Badge className={STATUS_CONFIG[selectedItem.status as keyof typeof STATUS_CONFIG].color}>
-                      {STATUS_CONFIG[selectedItem.status as keyof typeof STATUS_CONFIG].label}
+                    <Badge className={(STATUS_CONFIG[selectedItem.status as keyof typeof STATUS_CONFIG] ?? { color: "bg-gray-100 text-gray-700 border-gray-200", label: selectedItem.status }).color}>
+                      {(STATUS_CONFIG[selectedItem.status as keyof typeof STATUS_CONFIG] ?? { label: selectedItem.status }).label}
                     </Badge>
                   </div>
                 </div>

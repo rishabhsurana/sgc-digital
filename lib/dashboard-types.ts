@@ -43,11 +43,27 @@ export interface Submission {
   submittedDate: string
   lastUpdated: string
   status: SubmissionStatus
+  rawStatus: string
   ministry?: string
   stage: string
   history: { date: string; stage: string; note?: string }[]
   sgcDocuments?: SGCDocument[]
   clarificationTrail?: ClarificationMessage[]
+}
+
+export const CONTRACT_STATUS_DISPLAY: Record<string, { label: string; color: string; icon: LucideIcon }> = {
+  INTAKE: { label: "New / Intake Validation", color: "bg-blue-100 text-blue-800 border-blue-200", icon: Clock },
+  ASSIGNED: { label: "Assigned to Officer", color: "bg-purple-100 text-purple-800 border-purple-200", icon: Eye },
+  DRAFTING: { label: "Drafting", color: "bg-indigo-100 text-indigo-800 border-indigo-200", icon: Eye },
+  SUP_REVIEW: { label: "With DSG/Supervisor Review", color: "bg-violet-100 text-violet-800 border-violet-200", icon: Eye },
+  RETURNED_CORR: { label: "Returned for Correction", color: "bg-orange-100 text-orange-800 border-orange-200", icon: AlertCircle },
+  SENT_MDA: { label: "Sent to Ministry", color: "bg-amber-100 text-amber-800 border-amber-200", icon: Eye },
+  RETURNED_MDA: { label: "Returned from Ministry", color: "bg-teal-100 text-teal-800 border-teal-200", icon: Eye },
+  FINAL_SIG: { label: "Finalization / Signature", color: "bg-cyan-100 text-cyan-800 border-cyan-200", icon: Eye },
+  EXEC_ADJ: { label: "Execution / Adjudication", color: "bg-pink-100 text-pink-800 border-pink-200", icon: Eye },
+  ADJ_COMP: { label: "Adjudicated/Completed", color: "bg-emerald-100 text-emerald-800 border-emerald-200", icon: CheckCircle },
+  REJECTED: { label: "Rejected", color: "bg-red-100 text-red-800 border-red-200", icon: AlertCircle },
+  CLOSED: { label: "Closed", color: "bg-green-100 text-green-800 border-green-200", icon: CheckCircle },
 }
 
 export const STATUS_CONFIG: Record<
