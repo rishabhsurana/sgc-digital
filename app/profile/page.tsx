@@ -420,10 +420,11 @@ function ProfilePageInner() {
 
   const displayProfile = profile || (localUser as unknown as ProfileData)
 
-  // Only entity admins can provision additional users within their entity.
-  // Matches the backend guard in POST /api/profile/add-user.
-  const canManageEntityUsers =
-    (displayProfile?.role || "").toLowerCase() === "admin"
+  // [COMMENTED OUT] Previously only admins could add users.
+  // const canManageEntityUsers =
+  //   localUser?.role === "admin" || localUser?.role === "entity_admin"
+  // Now all users can add users to their entity.
+  const canManageEntityUsers = true
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100/50">
