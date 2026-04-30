@@ -89,8 +89,6 @@ const EMPTY_STATUS: ReportsStatusOverviewPayload = {
     inProgress: 0,
     completed: 0,
     requiresAction: 0,
-    approved: 0,
-    rejected: 0,
   },
 }
 

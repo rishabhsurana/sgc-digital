@@ -31,10 +31,11 @@ const CORR_STATUS_COLOR: Record<string, string> = {
   PENDING_REVIEW: "bg-amber-500",
   ASSIGNED: "bg-purple-500",
   PENDING_EXTERNAL: "bg-orange-500",
-  RETURNED_CORR: "bg-orange-500",
   ON_HOLD: "bg-slate-500",
   CLOSED: "bg-green-500",
   CANCELLED: "bg-red-500",
+  // Legacy fallback
+  RETURNED_CORR: "bg-orange-500",
 }
 
 const CORR_STATUS_LABEL: Record<string, string> = {
@@ -64,7 +65,7 @@ const CONTRACT_STATUS_COLOR: Record<string, string> = {
 }
 
 const CONTRACT_STATUS_LABEL: Record<string, string> = {
-  INTAKE: "New / Intake Validation",
+  INTAKE: "New / Intake",
   ASSIGNED: "Assigned to Officer",
   DRAFTING: "Drafting",
   SUP_REVIEW: "With DSG/Supervisor Review",
@@ -76,6 +77,20 @@ const CONTRACT_STATUS_LABEL: Record<string, string> = {
   ADJ_COMP: "Adjudicated/Completed",
   REJECTED: "Rejected",
   CLOSED: "Closed",
+}
+
+const LEGACY_STATUS_MAP: Record<string, string> = {
+  // correspondence legacy
+  SUBMITTED: "NEW",
+  PENDING: "NEW",
+  UNDER_REVIEW: "PENDING_REVIEW",
+  RETURNED_FOR_CLARIFICATION: "PENDING_REVIEW",
+  APPROVED: "CLOSED",
+  COMPLETED: "CLOSED",
+  REJECTED: "CANCELLED",
+  // contracts legacy
+  RESUBMITTED: "INTAKE",
+  CLARIFICATION_SUBMITTED: "INTAKE",
 }
 
 function formatMetric(value?: number): string {
@@ -93,9 +108,10 @@ function formatChange(change?: number): { label: string; trend?: Trend } {
 }
 
 function normalizeStatus(status: string): string {
-  // Both correspondence and contract statuses now use uppercase codes
-  // Pass through as-is — they have their own color/label maps
-  return status
+  const raw = String(status || "").trim()
+  if (!raw) return ""
+  const normalized = raw.toUpperCase().replace(/[\s-]+/g, "_")
+  return LEGACY_STATUS_MAP[normalized] ?? normalized
 }
 
 function buildStatusItems(
@@ -191,7 +207,7 @@ export default function StatusOverviewPage() {
         bgColor: "bg-amber-50",
       },
       {
-        title: "Approved This Month",
+        title: "Completed This Month",
         value: "—",
         change: "—",
         trend: undefined,

@@ -377,8 +377,6 @@ export interface ReportsStatusOverviewSummary {
   inProgress: number
   completed: number
   requiresAction: number
-  approved: number
-  rejected: number
 }
 
 export interface ReportsStatusOverviewPayload {
