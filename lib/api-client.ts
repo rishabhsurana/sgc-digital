@@ -9,6 +9,12 @@ export interface ApiResponse<T = unknown> {
   error?: string;
 }
 
+function normalizeApiError(errorValue: unknown, messageValue: unknown, status: number): string {
+  if (typeof errorValue === 'string' && errorValue.trim()) return errorValue;
+  if (typeof messageValue === 'string' && messageValue.trim()) return messageValue;
+  return `Request failed (${status})`;
+}
+
 function getToken(): string | null {
   if (typeof window === 'undefined') return null;
   return localStorage.getItem('sgc_token');
@@ -84,9 +90,11 @@ export async function apiRequest<T = unknown>(
   if (!res.ok) {
     return {
       success: false,
-      error: (json as { error?: string; message?: string }).error
-        || (json as { error?: string; message?: string }).message
-        || `Request failed (${res.status})`,
+      error: normalizeApiError(
+        (json as { error?: unknown }).error,
+        (json as { message?: unknown }).message,
+        res.status
+      ),
     };
   }
 
@@ -136,9 +144,11 @@ export async function apiPostFormData<T = unknown>(path: string, body: FormData)
   if (!res.ok) {
     return {
       success: false,
-      error: (json as { error?: string; message?: string }).error
-        || (json as { error?: string; message?: string }).message
-        || `Request failed (${res.status})`,
+      error: normalizeApiError(
+        (json as { error?: unknown }).error,
+        (json as { message?: unknown }).message,
+        res.status
+      ),
     };
   }
 

@@ -136,85 +136,87 @@ export interface LoginResult {
   }
 }
 
-export async function loginUser(
-  formData: FormData
-): Promise<LoginResult> {
-  const email = formData.get('email') as string
-  const password = formData.get('password') as string
+// export async function loginUser(
+//   formData: FormData
+// ): Promise<LoginResult> {
+//   const email = formData.get('email') as string
+//   const password = formData.get('password') as string
   
-  if (!email || !password) {
-    return { success: false, error: 'Email and password are required' }
-  }
+//   if (!email || !password) {
+//     return { success: false, error: 'Email and password are required' }
+//   }
   
-  const result = await authenticateUser(email, password)
+//   const result = await authenticateUser(email, password)
   
-  if (!result.success || !result.user) {
-    return { success: false, error: result.error || 'Authentication failed' }
-  }
+//   debugger
+//   if (!result.success || !result.user) {
+//     return { success: false, error: result.error || 'Authentication failed' }
+//   }
   
-  await createSession(result.user)
+//   await createSession(result.user)
   
-  // Check if user is staff (Staff, Supervisor, Admin, Super Admin)
-  const isStaffUser = [5, 6, 7, 8].includes(result.user.roleId)
+//   // Check if user is staff (Staff, Supervisor, Admin, Super Admin)
+//   const isStaffUser = [5, 6, 7, 8].includes(result.user.roleId)
   
-  // Log the activity
-  await logActivity({
-    userId: result.user.userId,
-    userName: `${result.user.firstName} ${result.user.lastName}`,
-    userRole: result.user.roleName,
-    activityType: 'login',
-    activityDescription: isStaffUser 
-      ? 'Staff user logged into Portal' 
-      : 'User logged into Client Portal',
-    entityType: 'User',
-    entityId: result.user.userId
-  })
+//   // Log the activity
+//   await logActivity({
+//     userId: result.user.userId,
+//     userName: `${result.user.firstName} ${result.user.lastName}`,
+//     userRole: result.user.roleName,
+//     activityType: 'login',
+//     activityDescription: isStaffUser 
+//       ? 'Staff user logged into Portal' 
+//       : 'User logged into Client Portal',
+//     entityType: 'User',
+//     entityId: result.user.userId
+//   })
   
-  // Determine redirect based on user type and redirect server-side
-  if (isStaffUser) {
-    redirect('/management')
-  } else if (result.user.entityTypeId === 5) {
-    redirect('/attorney/dashboard')
-  } else if (result.user.entityTypeId === 6) {
-    redirect('/company/dashboard')
-  }
+//   // Determine redirect based on user type and redirect server-side
+//   if (isStaffUser) {
+//     redirect('/management')
+//   } else if (result.user.entityTypeId === 5) {
+//     redirect('/attorney/dashboard')
+//   } else if (result.user.entityTypeId === 6) {
+//     debugger;
+//     redirect('/company/dashboard')
+//   }
   
-  // Default: regular user dashboard
-  redirect('/dashboard')
-}
+//   // Default: regular user dashboard
+//   redirect('/dashboard')
+// }
 
-export async function loginStaff(
-  formData: FormData
-): Promise<LoginResult> {
-  const email = formData.get('email') as string
-  const password = formData.get('password') as string
+// export async function loginStaff(
+//   formData: FormData
+// ): Promise<LoginResult> {
+//   const email = formData.get('email') as string
+//   const password = formData.get('password') as string
   
-  if (!email || !password) {
-    return { success: false, error: 'Email and password are required' }
-  }
+//   if (!email || !password) {
+//     return { success: false, error: 'Email and password are required' }
+//   }
   
-  const result = await authenticateStaff(email, password)
+//   const result = await authenticateStaff(email, password)
   
-  if (!result.success || !result.user) {
-    return { success: false, error: result.error || 'Authentication failed' }
-  }
+//   if (!result.success || !result.user) {
+//     return { success: false, error: result.error || 'Authentication failed' }
+//   }
   
-  await createSession(result.user)
+//   await createSession(result.user)
   
-  // Log the activity
-  await logActivity({
-    userId: result.user.userId,
-    userName: `${result.user.firstName} ${result.user.lastName}`,
-    userRole: result.user.roleName,
-    activityType: 'login',
-    activityDescription: 'Staff logged into Management Portal',
-    entityType: 'User',
-    entityId: result.user.userId
-  })
+//   // Log the activity
+//   await logActivity({
+//     userId: result.user.userId,
+//     userName: `${result.user.firstName} ${result.user.lastName}`,
+//     userRole: result.user.roleName,
+//     activityType: 'login',
+//     activityDescription: 'Staff logged into Management Portal',
+//     entityType: 'User',
+//     entityId: result.user.userId
+//   })
   
-  // Use server-side redirect to ensure cookie is sent with the request
-  redirect('/management')
-}
+//   // Use server-side redirect to ensure cookie is sent with the request
+//   redirect('/management')
+// }
 
 export async function logout(): Promise<void> {
   const session = await getSession()
