@@ -106,6 +106,16 @@ const STATUS_CONFIG: Record<string, string> = {
   Rejected: "bg-red-100 text-red-700 border-red-200",
 }
 
+const STATUS_LABEL_BY_CODE: Record<string, string> = {
+  new: "New",
+  "pending-review": "Pending SG/DSG Review",
+  assigned: "Assigned / In Progress",
+  "pending-external": "Pending External",
+  "on-hold": "On Hold",
+  closed: "Closed",
+  cancelled: "Cancelled",
+}
+
 const CORRESPONDENCE_HISTORY_COLUMNS = [
   { id: "date_received", label: "Date" },
   { id: "reference_number", label: "Reference #" },
@@ -223,6 +233,21 @@ export default function CorrespondenceHistoryPage() {
   const isFiltered =
     searchInput.trim() !== "" || statusFilter !== "all" || dateFilter !== "all"
 
+  const summaryCounts = rows.reduce(
+    (acc, row) => {
+      const normalizedStatus = String(row.status ?? "").toLowerCase().replace(/_/g, "-")
+      if (normalizedStatus === "new") acc.new += 1
+      else if (normalizedStatus === "pending-review") acc.pendingReview += 1
+      else if (normalizedStatus === "assigned") acc.assigned += 1
+      else if (normalizedStatus === "pending-external") acc.pendingExternal += 1
+      else if (normalizedStatus === "on-hold") acc.onHold += 1
+      else if (normalizedStatus === "closed") acc.closed += 1
+      else if (normalizedStatus === "cancelled") acc.cancelled += 1
+      return acc
+    },
+    { new: 0, pendingReview: 0, assigned: 0, pendingExternal: 0, onHold: 0, closed: 0, cancelled: 0 }
+  )
+
   const handleExport = useCallback(async () => {
     setExporting(true)
     try {
@@ -307,15 +332,18 @@ export default function CorrespondenceHistoryPage() {
             </div>
             <div className="flex flex-wrap gap-2 lg:justify-end">
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-full sm:w-[150px]">
+                <SelectTrigger className="w-full sm:w-[190px]">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="under_review">Under Review</SelectItem>
-                  <SelectItem value="completed">Completed</SelectItem>
-                  <SelectItem value="rejected">Rejected</SelectItem>
+                  <SelectItem value="new">New</SelectItem>
+                  <SelectItem value="pending-review">Pending SG/DSG Review</SelectItem>
+                  <SelectItem value="assigned">Assigned / In Progress</SelectItem>
+                  <SelectItem value="pending-external">Pending External</SelectItem>
+                  <SelectItem value="on-hold">On Hold</SelectItem>
+                  <SelectItem value="closed">Closed</SelectItem>
+                  <SelectItem value="cancelled">Cancelled</SelectItem>
                 </SelectContent>
               </Select>
               <Select value={dateFilter} onValueChange={setDateFilter}>
@@ -368,7 +396,7 @@ export default function CorrespondenceHistoryPage() {
         </CardContent>
       </Card>
 
-      <div className="grid gap-4 sm:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-4 lg:grid-cols-8">
         <Card className="bg-muted/50 border-primary/10">
           <CardContent className="pt-4 pb-4">
             <div className="flex items-center justify-between">
@@ -386,9 +414,9 @@ export default function CorrespondenceHistoryPage() {
           <CardContent className="pt-4 pb-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-medium text-amber-700">Pending</p>
+                <p className="text-xs font-medium text-amber-700">New</p>
                 <p className="text-2xl font-bold text-amber-900">
-                  {loading ? "—" : summary.pending}
+                  {loading ? "—" : summaryCounts.new}
                 </p>
               </div>
               <Calendar className="h-8 w-8 text-amber-500" />
@@ -399,12 +427,51 @@ export default function CorrespondenceHistoryPage() {
           <CardContent className="pt-4 pb-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-medium text-blue-700">Under Review</p>
+                <p className="text-xs font-medium text-blue-700">Pending Review</p>
                 <p className="text-2xl font-bold text-blue-900">
-                  {loading ? "—" : summary.underReview}
+                  {loading ? "—" : summaryCounts.pendingReview}
                 </p>
               </div>
               <RefreshCw className="h-8 w-8 text-blue-500" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="bg-indigo-50 border-indigo-200">
+          <CardContent className="pt-4 pb-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium text-indigo-700">Assigned</p>
+                <p className="text-2xl font-bold text-indigo-900">
+                  {loading ? "—" : summaryCounts.assigned}
+                </p>
+              </div>
+              <History className="h-8 w-8 text-indigo-500" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="bg-orange-50 border-orange-200">
+          <CardContent className="pt-4 pb-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium text-orange-700">Pending External</p>
+                <p className="text-2xl font-bold text-orange-900">
+                  {loading ? "—" : summaryCounts.pendingExternal}
+                </p>
+              </div>
+              <FileText className="h-8 w-8 text-orange-500" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="bg-slate-50 border-slate-200">
+          <CardContent className="pt-4 pb-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium text-slate-700">On Hold</p>
+                <p className="text-2xl font-bold text-slate-900">
+                  {loading ? "—" : summaryCounts.onHold}
+                </p>
+              </div>
+              <Calendar className="h-8 w-8 text-slate-500" />
             </div>
           </CardContent>
         </Card>
@@ -412,12 +479,25 @@ export default function CorrespondenceHistoryPage() {
           <CardContent className="pt-4 pb-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-medium text-green-700">Completed</p>
+                <p className="text-xs font-medium text-green-700">Closed</p>
                 <p className="text-2xl font-bold text-green-900">
-                  {loading ? "—" : summary.completed}
+                  {loading ? "—" : summaryCounts.closed}
                 </p>
               </div>
               <FileText className="h-8 w-8 text-green-500" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="bg-red-50 border-red-200">
+          <CardContent className="pt-4 pb-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium text-red-700">Cancelled</p>
+                <p className="text-2xl font-bold text-red-900">
+                  {loading ? "—" : summaryCounts.cancelled}
+                </p>
+              </div>
+              <History className="h-8 w-8 text-red-500" />
             </div>
           </CardContent>
         </Card>
@@ -467,7 +547,11 @@ export default function CorrespondenceHistoryPage() {
                     <TableCell className="text-sm">{item.submitter || "—"}</TableCell>
                     <TableCell>
                       <Badge
-                        className={STATUS_CONFIG[item.statusLabel] ?? "bg-muted"}
+                        className={
+                          STATUS_CONFIG[item.statusLabel] ??
+                          STATUS_CONFIG[STATUS_LABEL_BY_CODE[String(item.status ?? "").toLowerCase().replace(/_/g, "-")] ?? ""] ??
+                          "bg-muted"
+                        }
                         variant="secondary"
                       >
                         {item.statusLabel}
@@ -578,7 +662,13 @@ export default function CorrespondenceHistoryPage() {
                     </div>
                     <div className="space-y-1">
                       <p className="text-xs font-medium text-muted-foreground">Status</p>
-                      <Badge className={STATUS_CONFIG[detail.statusLabel] ?? "bg-muted"}>
+                      <Badge
+                        className={
+                          STATUS_CONFIG[detail.statusLabel] ??
+                          STATUS_CONFIG[STATUS_LABEL_BY_CODE[String(detail.status ?? "").toLowerCase().replace(/_/g, "-")] ?? ""] ??
+                          "bg-muted"
+                        }
+                      >
                         {detail.statusLabel}
                       </Badge>
                     </div>

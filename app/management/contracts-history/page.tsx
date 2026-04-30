@@ -99,6 +99,7 @@ type DetailData = {
 }
 
 const STATUS_CONFIG: Record<string, string> = {
+  "New / Intake": "bg-amber-100 text-amber-700 border-amber-200",
   "New / Intake Validation": "bg-blue-100 text-blue-700 border-blue-200",
   "Assigned to Officer": "bg-purple-100 text-purple-700 border-purple-200",
   "Drafting": "bg-indigo-100 text-indigo-700 border-indigo-200",
@@ -115,6 +116,21 @@ const STATUS_CONFIG: Record<string, string> = {
   Pending: "bg-amber-100 text-amber-700 border-amber-200",
   "Under Review": "bg-blue-100 text-blue-700 border-blue-200",
   Approved: "bg-green-100 text-green-700 border-green-200",
+}
+
+const STATUS_LABEL_BY_CODE: Record<string, string> = {
+  intake: "New / Intake",
+  assigned: "Assigned to Officer",
+  drafting: "Drafting",
+  "sup-review": "With DSG/Supervisor Review",
+  "sent-mda": "Sent to Ministry",
+  "returned-mda": "Returned from Ministry",
+  "final-sig": "Finalization / Signature",
+  "exec-adj": "Execution / Adjudication",
+  "adj-comp": "Adjudicated/Completed",
+  closed: "Closed",
+  "returned-corr": "Returned for Correction",
+  rejected: "Rejected",
 }
 
 const CONTRACT_TYPE_CONFIG: Record<string, string> = {
@@ -248,6 +264,22 @@ export default function ContractsHistoryPage() {
 
   const isFiltered = searchInput.trim() !== "" || statusFilter !== "all" || typeFilter !== "all"
 
+  const summaryCounts = rows.reduce(
+    (acc, row) => {
+      const normalizedStatus = String(row.status ?? "").toLowerCase().replace(/_/g, "-")
+      if (normalizedStatus === "intake") acc.intake += 1
+      else if (normalizedStatus === "assigned") acc.assigned += 1
+      else if (
+        ["drafting", "sup-review", "sent-mda", "returned-mda", "final-sig", "exec-adj"].includes(normalizedStatus)
+      ) {
+        acc.inProgress += 1
+      } else if (["adj-comp", "closed"].includes(normalizedStatus)) acc.completed += 1
+      else if (normalizedStatus === "rejected") acc.rejected += 1
+      return acc
+    },
+    { intake: 0, assigned: 0, inProgress: 0, completed: 0, rejected: 0 }
+  )
+
   const handleExport = useCallback(async () => {
     setExporting(true)
     try {
@@ -332,14 +364,22 @@ export default function ContractsHistoryPage() {
             </div>
             <div className="flex flex-wrap gap-2 lg:justify-end">
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-full sm:w-[150px]">
+                <SelectTrigger className="w-full sm:w-[200px]">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="under_review">Under Review</SelectItem>
-                  <SelectItem value="approved">Approved</SelectItem>
+                  <SelectItem value="intake">New / Intake</SelectItem>
+                  <SelectItem value="assigned">Assigned</SelectItem>
+                  <SelectItem value="drafting">Drafting</SelectItem>
+                  <SelectItem value="sup-review">DSG/Supervisor Review</SelectItem>
+                  <SelectItem value="sent-mda">Sent to Ministry</SelectItem>
+                  <SelectItem value="returned-mda">Returned from Ministry</SelectItem>
+                  <SelectItem value="final-sig">Finalization / Signature</SelectItem>
+                  <SelectItem value="exec-adj">Execution / Adjudication</SelectItem>
+                  <SelectItem value="adj-comp">Adjudicated/Completed</SelectItem>
+                  <SelectItem value="closed">Closed</SelectItem>
+                  <SelectItem value="returned-corr">Returned for Correction</SelectItem>
                   <SelectItem value="rejected">Rejected</SelectItem>
                 </SelectContent>
               </Select>
@@ -386,7 +426,7 @@ export default function ContractsHistoryPage() {
         </CardContent>
       </Card>
 
-      <div className="grid gap-4 sm:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-6">
         <Card className="bg-muted/50 border-primary/10">
           <CardContent className="pt-4 pb-4">
             <div className="flex items-center justify-between">
@@ -404,9 +444,9 @@ export default function ContractsHistoryPage() {
           <CardContent className="pt-4 pb-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-medium text-amber-700">Pending</p>
+                <p className="text-xs font-medium text-amber-700">Intake</p>
                 <p className="text-2xl font-bold text-amber-900">
-                  {loading ? "—" : summary.pending}
+                  {loading ? "—" : summaryCounts.intake}
                 </p>
               </div>
               <Calendar className="h-8 w-8 text-amber-500" />
@@ -417,12 +457,25 @@ export default function ContractsHistoryPage() {
           <CardContent className="pt-4 pb-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-medium text-blue-700">Under Review</p>
+                <p className="text-xs font-medium text-blue-700">Assigned</p>
                 <p className="text-2xl font-bold text-blue-900">
-                  {loading ? "—" : summary.underReview}
+                  {loading ? "—" : summaryCounts.assigned}
                 </p>
               </div>
               <RefreshCw className="h-8 w-8 text-blue-500" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="bg-indigo-50 border-indigo-200">
+          <CardContent className="pt-4 pb-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium text-indigo-700">In Progress</p>
+                <p className="text-2xl font-bold text-indigo-900">
+                  {loading ? "—" : summaryCounts.inProgress}
+                </p>
+              </div>
+              <History className="h-8 w-8 text-indigo-500" />
             </div>
           </CardContent>
         </Card>
@@ -430,12 +483,25 @@ export default function ContractsHistoryPage() {
           <CardContent className="pt-4 pb-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-medium text-green-700">Approved</p>
+                <p className="text-xs font-medium text-green-700">Completed</p>
                 <p className="text-2xl font-bold text-green-900">
-                  {loading ? "—" : summary.approved}
+                  {loading ? "—" : summaryCounts.completed}
                 </p>
               </div>
               <DollarSign className="h-8 w-8 text-green-500" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="bg-red-50 border-red-200">
+          <CardContent className="pt-4 pb-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium text-red-700">Rejected</p>
+                <p className="text-2xl font-bold text-red-900">
+                  {loading ? "—" : summaryCounts.rejected}
+                </p>
+              </div>
+              <FileSignature className="h-8 w-8 text-red-500" />
             </div>
           </CardContent>
         </Card>
@@ -486,7 +552,11 @@ export default function ContractsHistoryPage() {
                     <TableCell className="text-sm font-medium">{item.contractValue}</TableCell>
                     <TableCell>
                       <Badge
-                        className={STATUS_CONFIG[item.statusLabel] ?? "bg-muted"}
+                        className={
+                          STATUS_CONFIG[item.statusLabel] ??
+                          STATUS_CONFIG[STATUS_LABEL_BY_CODE[String(item.status ?? "").toLowerCase().replace(/_/g, "-")] ?? ""] ??
+                          "bg-muted"
+                        }
                         variant="secondary"
                       >
                         {item.statusLabel}
@@ -597,7 +667,13 @@ export default function ContractsHistoryPage() {
                     </div>
                     <div className="space-y-1">
                       <p className="text-xs font-medium text-muted-foreground">Status</p>
-                      <Badge className={STATUS_CONFIG[detail.statusLabel] ?? "bg-muted"}>
+                      <Badge
+                        className={
+                          STATUS_CONFIG[detail.statusLabel] ??
+                          STATUS_CONFIG[STATUS_LABEL_BY_CODE[String(detail.status ?? "").toLowerCase().replace(/_/g, "-")] ?? ""] ??
+                          "bg-muted"
+                        }
+                      >
                         {detail.statusLabel}
                       </Badge>
                     </div>
