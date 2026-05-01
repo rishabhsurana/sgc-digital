@@ -34,6 +34,9 @@ export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [isRegistered, setIsRegistered] = useState(false)
   const [entityNumber, setEntityNumber] = useState("")
+  const [createdAdditionalUsers, setCreatedAdditionalUsers] = useState<
+    Array<{ name: string; email: string; temp_password: string }>
+  >([])
   const [existingUserError, setExistingUserError] = useState<{
     isStaff: boolean
     message: string
@@ -64,6 +67,7 @@ export default function RegisterPage() {
     barNumber: "",
     
     // Primary contact (always required)
+    contactName: "",
     contactEmail: "",
     contactPhone: "",
     password: "",
@@ -131,6 +135,12 @@ export default function RegisterPage() {
     setIsLoading(true)
     setExistingUserError(null)
 
+    const entityTypes = ["ministry", "court", "statutory", "company"]
+    if (entityTypes.includes(formData.submitterType) && !formData.contactName.trim()) {
+      setExistingUserError({ isStaff: false, message: "Contact person's full name is required." })
+      setIsLoading(false)
+      return
+    }
     if (formData.password !== formData.confirmPassword) {
       setExistingUserError({ isStaff: false, message: 'Passwords do not match.' })
       setIsLoading(false)
@@ -143,8 +153,18 @@ export default function RegisterPage() {
     }
 
     try {
+      // Determine full_name for the user record.
+      // Entity-type submitters (ministry/court/statutory/company) provide an
+      // explicit contact person name. All others derive it from the name
+      // fields captured under their entity/personal info section.
+      const entityTypes = ["ministry", "court", "statutory", "company"]
+      const full_name = entityTypes.includes(formData.submitterType)
+        ? formData.contactName.trim()
+        : getDisplayName()
+
       const result = await apiPost<{ token: string; user: AuthUser }>('/api/auth/register', {
         submitterType: formData.submitterType,
+        full_name,
         displayName: getDisplayName(),
         contactEmail: formData.contactEmail,
         contactPhone: formData.contactPhone,
@@ -180,6 +200,10 @@ export default function RegisterPage() {
       const { token, user } = result.data
       setAuth(token, user)
       setEntityNumber(user.entity_number)
+      const addedUsers = (result.data as any).additional_users_created
+      if (Array.isArray(addedUsers)) {
+        setCreatedAdditionalUsers(addedUsers)
+      }
       setIsRegistered(true)
     } catch (error) {
       console.error('Registration error:', error)
@@ -234,16 +258,18 @@ export default function RegisterPage() {
                         <span className="font-medium text-foreground">{formData.companyNumber}</span>
                       </div>
                     )}
-                    {supportsMultipleUsers && formData.additionalUsers.length > 0 && (
+                    {createdAdditionalUsers.length > 0 && (
                       <div className="pt-2 border-t mt-2">
-                        <span className="text-muted-foreground text-xs">Additional Authorized Users:</span>
-                        <div className="mt-1 space-y-1">
-                          {formData.additionalUsers.map((user, i) => (
-                            <div key={i} className="text-xs bg-muted px-2 py-1 rounded">
-                              {user.name} ({user.email})
+                        <span className="text-muted-foreground text-xs font-medium">Additional Authorized Users:</span>
+                        <div className="mt-1 space-y-1.5">
+                          {createdAdditionalUsers.map((u, i) => (
+                            <div key={i} className="text-xs bg-muted px-2 py-1.5 rounded space-y-0.5">
+                              <p className="font-medium text-foreground">{u.name} — {u.email}</p>
+                              <p className="text-muted-foreground">Temp password: <span className="font-mono font-semibold text-foreground">{u.temp_password}</span></p>
                             </div>
                           ))}
                         </div>
+                        <p className="mt-1.5 text-xs text-amber-600">Share these passwords securely. Users can change them after first login.</p>
                       </div>
                     )}
                   </div>
@@ -349,14 +375,15 @@ export default function RegisterPage() {
                         <button
                           type="button"
                           key={type.value}
-                          onClick={() => setFormData(prev => ({ 
-                            ...prev, 
+                          onClick={() => setFormData(prev => ({
+                            ...prev,
                             submitterType: type.value,
                             // Reset type-specific fields
                             firstName: "", middleName: "", lastName: "",
                             companyName: "", companyNumber: "", tradingName: "",
                             selectedMDA: "", courtName: "",
                             lawFirmName: "", barNumber: "",
+                            contactName: "",
                             additionalUsers: []
                           }))}
                           className={`flex flex-col items-start gap-2 p-3 rounded-lg border-2 text-left transition-all ${
@@ -598,7 +625,21 @@ export default function RegisterPage() {
                     <h3 className="text-sm font-semibold text-foreground">
                       {supportsMultipleUsers ? "Primary Contact / Administrator" : "Contact Information"}
                     </h3>
-                    
+
+                    {/* Full name for entity-type submitters (ministry/court/statutory/company) */}
+                    {["ministry", "court", "statutory", "company"].includes(formData.submitterType) && (
+                      <div className="space-y-2">
+                        <Label htmlFor="contactName">Contact Person's Full Name <span className="text-destructive">*</span></Label>
+                        <Input
+                          id="contactName"
+                          value={formData.contactName}
+                          onChange={(e) => setFormData(prev => ({ ...prev, contactName: e.target.value }))}
+                          placeholder="Full name of the primary contact"
+                          required
+                        />
+                      </div>
+                    )}
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="contactEmail">Email Address <span className="text-destructive">*</span></Label>

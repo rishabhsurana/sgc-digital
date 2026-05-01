@@ -104,11 +104,11 @@ const PORTAL_STATUSES = [
 ]
 
 const PORTAL_ROLE_OPTIONS = [
-  { value: "submitter", label: "Submitter" },
+  { value: "secondary", label: "Secondary" },
+  { value: "primary", label: "Primary" },
   { value: "reviewer", label: "Reviewer" },
   { value: "user", label: "User" },
   { value: "manager", label: "Manager" },
-  { value: "admin", label: "Admin" },
   { value: "super_admin", label: "Super Admin" },
 ]
 
@@ -257,7 +257,7 @@ export default function UserManagementPage() {
     mdaId: "",
     department: "",
     position: "",
-    role: "submitter",
+    role: "secondary",
   })
 
   const [newMgmtUserForm, setNewMgmtUserForm] = useState({
@@ -269,7 +269,7 @@ export default function UserManagementPage() {
   })
 
   const [editPortalForm, setEditPortalForm] = useState({
-    role: "submitter",
+    role: "secondary",
     status: "active",
     department: "",
     phone: "",
@@ -387,11 +387,19 @@ export default function UserManagementPage() {
 
   const getPortalRoleBadge = (role: string, submitterType?: string) => {
     const r = String(role || "").toLowerCase()
-    if (r === "super_admin" || r === "admin") {
+    if (r === "primary") {
       return (
         <Badge className="bg-purple-100 text-purple-800">
           <ShieldCheck className="h-3 w-3 mr-1" />
-          {role}
+          Primary
+        </Badge>
+      )
+    }
+    if (r === "super_admin") {
+      return (
+        <Badge className="bg-purple-100 text-purple-800">
+          <ShieldCheck className="h-3 w-3 mr-1" />
+          Super Admin
         </Badge>
       )
     }
@@ -403,7 +411,7 @@ export default function UserManagementPage() {
         </Badge>
       )
     }
-    if (r === "submitter") {
+    if (r === "secondary") {
       return <Badge className="bg-slate-100 text-slate-800">{submitterTypeLabel(String(submitterType || ""))}</Badge>
     }
     return <Badge variant="outline">{role || "—"}</Badge>
@@ -572,7 +580,7 @@ export default function UserManagementPage() {
           mdaId: "",
           department: "",
           position: "",
-          role: "submitter",
+          role: "secondary",
         })
       } else {
         setCreateUserError(res.error || "Failed to create user.")
