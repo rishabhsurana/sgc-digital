@@ -450,9 +450,9 @@ function CorrespondencePageContent() {
                 <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 mb-6">
                   <h4 className="font-semibold text-sm text-blue-900 mb-2">What Happens Next?</h4>
                   <ol className="text-sm text-blue-800 space-y-1 list-decimal list-inside">
-                    <li>Your submission will be reviewed by the SGC Registry</li>
-                    <li>You will receive email updates as your submission progresses</li>
-                    <li>Track status anytime from your Dashboard</li>
+                    <li>Your correspondence request will be reviewed by the SGC</li>
+                    <li>You may be contacted for additional documents if needed</li>
+                    <li>Track progress anytime from your Dashboard</li>
                   </ol>
                 </div>
                 
