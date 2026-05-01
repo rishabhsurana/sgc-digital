@@ -13,23 +13,28 @@ export interface UploadedFile {
   id: string
   file: File
   documentType: string
+  category?: string
   description?: string
 }
 
 interface FileUploadProps {
   onFilesChange: (files: UploadedFile[]) => void
-  files: UploadedFile[]
-  documentTypes: { value: string; label: string }[]
+  files?: UploadedFile[]
+  documentTypes?: { value: string; label: string }[]
   maxSize?: number // in MB
+  maxFiles?: number
+  accept?: Record<string, string[]>
   acceptedTypes?: string[]
   className?: string
 }
 
 export function FileUpload({
   onFilesChange,
-  files,
-  documentTypes,
+  files = [],
+  documentTypes = [],
   maxSize = 10,
+  maxFiles,
+  accept,
   acceptedTypes = [".pdf", ".doc", ".docx", ".xls", ".xlsx", ".jpg", ".jpeg", ".png"],
   className
 }: FileUploadProps) {
@@ -46,12 +51,20 @@ export function FileUpload({
     }
   }, [])
 
+  const acceptedTypeList = accept
+    ? Array.from(
+        new Set(
+          Object.entries(accept).flatMap(([mimeType, extensions]) => [mimeType, ...extensions])
+        )
+      )
+    : acceptedTypes
+
   const validateFile = (file: File): string | null => {
     if (file.size > maxSize * 1024 * 1024) {
       return `File "${file.name}" exceeds ${maxSize}MB limit`
     }
     const extension = "." + file.name.split(".").pop()?.toLowerCase()
-    if (!acceptedTypes.includes(extension)) {
+    if (!acceptedTypeList.includes(extension)) {
       return `File type "${extension}" is not supported`
     }
     return null
@@ -64,6 +77,7 @@ export function FileUpload({
     const validFiles: UploadedFile[] = []
     
     Array.from(newFiles).forEach(file => {
+      if (typeof maxFiles === "number" && [...files, ...validFiles].length >= maxFiles) return
       const validationError = validateFile(file)
       if (validationError) {
         setError(validationError)
@@ -78,7 +92,7 @@ export function FileUpload({
     })
     
     onFilesChange([...files, ...validFiles])
-  }, [files, onFilesChange, maxSize, acceptedTypes])
+  }, [files, onFilesChange, maxSize, maxFiles, acceptedTypeList])
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault()
@@ -114,7 +128,7 @@ export function FileUpload({
         <input
           type="file"
           multiple
-          accept={acceptedTypes.join(",")}
+          accept={acceptedTypeList.join(",")}
           onChange={(e) => addFiles(e.target.files)}
           className="absolute inset-0 cursor-pointer opacity-0"
         />

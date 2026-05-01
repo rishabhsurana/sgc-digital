@@ -196,13 +196,13 @@ export default function CorrectionResponsePage({ params }: { params: Promise<{ i
     })
   }
   
-  // Check if required documents are uploaded
-  const allRequiredDocumentsUploaded = () => {
-    if (!correctionRequest) return false
-    return correctionRequest.affectedDocuments.every(doc => 
-      uploadedFiles.some(f => f.category === doc.documentId)
-    )
-  }
+  // // Check if required documents are uploaded
+  // const allRequiredDocumentsUploaded = () => {
+  //   if (!correctionRequest) return false
+  //   return correctionRequest.affectedDocuments.every(doc => 
+  //     uploadedFiles.some(f => f.category === doc.documentId)
+  //   )
+  // }
   
   if (isLoading) {
     return (
@@ -625,10 +625,9 @@ export default function CorrectionResponsePage({ params }: { params: Promise<{ i
                     <FileUpload
                       onFilesChange={(files) => {
                         const additionalFiles = files.map(f => ({ ...f, category: 'additional' }))
-                        const existingRequired = uploadedFiles.filter(f => f.category !== 'additional')
+                        const existingRequired = uploadedFiles.filter(f => f.documentType !== 'additional')
                         setUploadedFiles([...existingRequired, ...additionalFiles])
                       }}
-                      maxFiles={10}
                       accept={{
                         'application/pdf': ['.pdf'],
                         'application/msword': ['.doc'],
