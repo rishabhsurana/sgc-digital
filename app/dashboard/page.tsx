@@ -598,90 +598,85 @@ function DashboardPageInner() {
           )}
 
           {/* Saved Drafts Section */}
-          <Card className="mb-8 border-amber-200 bg-amber-50/50">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="h-8 w-8 rounded-lg bg-amber-200 flex items-center justify-center">
-                    <Pencil className="h-4 w-4 text-amber-700" />
+          {!draftsLoading && userDrafts.length > 0 && (
+            <Card className="mb-8 border-amber-200 bg-amber-50/50">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="h-8 w-8 rounded-lg bg-amber-200 flex items-center justify-center">
+                      <Pencil className="h-4 w-4 text-amber-700" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-lg text-amber-900">Saved Drafts</CardTitle>
+                      <CardDescription className="text-amber-700">
+                        Continue where you left off
+                      </CardDescription>
+                    </div>
                   </div>
-                  <div>
-                    <CardTitle className="text-lg text-amber-900">Saved Drafts</CardTitle>
-                    <CardDescription className="text-amber-700">
-                      Continue where you left off
-                    </CardDescription>
-                  </div>
+                  <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-300">
+                    {userDrafts.length} draft{userDrafts.length !== 1 ? "s" : ""}
+                  </Badge>
                 </div>
-                <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-300">
-                  {userDrafts.length} draft{userDrafts.length !== 1 ? "s" : ""}
-                </Badge>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {draftsLoading ? (
-                <p className="text-sm text-muted-foreground flex items-center gap-2">
-                  <RefreshCw className="h-4 w-4 animate-spin" />
-                  Loading drafts…
-                </p>
-              ) : draftsError ? (
-                <p className="text-sm text-destructive">{draftsError}</p>
-              ) : userDrafts.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No saved drafts yet.</p>
-              ) : (
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                  {userDrafts.map((draft) => (
-                    <div 
-                      key={draft.draftId}
-                      className="flex items-center justify-between p-3 rounded-lg border border-amber-200 bg-white hover:border-amber-400 transition-colors"
-                    >
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div className={`h-9 w-9 rounded-lg flex items-center justify-center ${
-                          draft.draftType === 'contract' 
-                            ? 'bg-emerald-100 text-emerald-700' 
-                            : 'bg-blue-100 text-blue-700'
-                        }`}>
-                          {draft.draftType === 'contract' 
-                            ? <FileSignature className="h-4 w-4" />
-                            : <FileText className="h-4 w-4" />
-                          }
-                        </div>
-                        <div className="min-w-0">
-                          <p className="font-medium text-sm truncate">{draft.title}</p>
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                            <span className="capitalize">{draft.draftType}</span>
-                            <span>•</span>
-                            <span>{draft.progressPercentage}% complete</span>
+              </CardHeader>
+              <CardContent>
+                {draftsError ? (
+                  <p className="text-sm text-destructive">{draftsError}</p>
+                ) : (
+                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    {userDrafts.map((draft) => (
+                      <div
+                        key={draft.draftId}
+                        className="flex items-center justify-between p-3 rounded-lg border border-amber-200 bg-white hover:border-amber-400 transition-colors"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className={`h-9 w-9 rounded-lg flex items-center justify-center ${
+                            draft.draftType === 'contract'
+                              ? 'bg-emerald-100 text-emerald-700'
+                              : 'bg-blue-100 text-blue-700'
+                          }`}>
+                            {draft.draftType === 'contract'
+                              ? <FileSignature className="h-4 w-4" />
+                              : <FileText className="h-4 w-4" />
+                            }
+                          </div>
+                          <div className="min-w-0">
+                            <p className="font-medium text-sm truncate">{draft.title}</p>
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                              <span className="capitalize">{draft.draftType}</span>
+                              <span>•</span>
+                              <span>{draft.progressPercentage}% complete</span>
+                            </div>
                           </div>
                         </div>
+                        <div className="flex items-center gap-1 ml-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0 text-amber-700 hover:text-amber-900 hover:bg-amber-100"
+                            asChild
+                          >
+                            <Link href={`/${draft.draftType === 'contract' ? 'contracts' : 'correspondence'}?draft=${draft.draftId}`}>
+                              <ArrowRight className="h-4 w-4" />
+                              <span className="sr-only">Continue</span>
+                            </Link>
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
+                            onClick={() => handleDeleteDraft(draft.draftId)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                            <span className="sr-only">Delete</span>
+                          </Button>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-1 ml-2">
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          className="h-8 w-8 p-0 text-amber-700 hover:text-amber-900 hover:bg-amber-100"
-                          asChild
-                        >
-                          <Link href={`/${draft.draftType === 'contract' ? 'contracts' : 'correspondence'}?draft=${draft.draftId}`}>
-                            <ArrowRight className="h-4 w-4" />
-                            <span className="sr-only">Continue</span>
-                          </Link>
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          className="h-8 w-8 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
-                          onClick={() => handleDeleteDraft(draft.draftId)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                          <span className="sr-only">Delete</span>
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
 
           {/* Filters */}
           <div className="flex flex-col sm:flex-row gap-4 mb-6">
