@@ -390,7 +390,7 @@ export default function RegisterPage() {
                             contactName: "",
                             additionalUsers: []
                           }))}
-                          className={`flex flex-col items-start gap-2 p-3 rounded-lg border-2 text-left transition-all ${
+                          className={`cursor-pointer flex flex-col items-start gap-2 p-3 rounded-lg border-2 text-left transition-all ${
                             isSelected 
                               ? `border-primary ${type.bgColor} shadow-sm` 
                               : "border-border hover:border-muted-foreground/30 hover:bg-muted/50"

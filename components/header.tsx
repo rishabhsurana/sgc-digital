@@ -394,7 +394,7 @@ export function Header({ isStaff: isStaffProp = false }: HeaderProps) {
                       </div>
                       <button 
                         onClick={() => { handleLogout(); setIsOpen(false); }}
-                        className="flex items-center justify-center gap-2 px-4 py-3 text-red-600 border border-red-200 rounded-xl hover:bg-red-50 transition-all font-medium w-full"
+                        className="cursor-pointer flex items-center justify-center gap-2 px-4 py-3 text-red-600 border border-red-200 rounded-xl hover:bg-red-50 transition-all font-medium w-full"
                       >
                         <LogOut className="h-4 w-4" />
                         Sign Out

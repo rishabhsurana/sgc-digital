@@ -2421,7 +2421,7 @@ function ContractsPageContent() {
                       Your application has been saved. You can{' '}
                       <button 
                         onClick={handleSubmit}
-                        className="underline font-medium hover:no-underline"
+                        className="cursor-pointer underline font-medium hover:no-underline"
                       >
                         try again now
                       </button>
