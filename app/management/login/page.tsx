@@ -62,7 +62,6 @@ function ManagementLoginContent() {
         role: admin.role,
         submitter_type: "management_user",
         organization: null,
-        entity_number: "",
         entity_id: null,
         mda_id: null,
         can_submit_contracts: true,

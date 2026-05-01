@@ -19,6 +19,7 @@ import {
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { getUser, logout, type AuthUser } from "@/lib/auth"
+import { apiGet } from "@/lib/api-client"
 
 interface HeaderProps {
   isStaff?: boolean
@@ -28,6 +29,7 @@ export function Header({ isStaff: isStaffProp = false }: HeaderProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [isStaff, setIsStaff] = useState(isStaffProp)
   const [userSession, setUserSession] = useState<AuthUser | null>(null)
+  const [entityName, setEntityName] = useState<string | null>(null)
   const pathname = usePathname()
 
   useEffect(() => {
@@ -62,6 +64,21 @@ export function Header({ isStaff: isStaffProp = false }: HeaderProps) {
     
     checkUserSession()
     checkStaffStatus()
+
+    const userData = getUser()
+    if (userData) {
+      void apiGet<{ entity?: { entity_name: string } | null; mda?: { name: string } | null; organization?: string | null }>('/api/profile')
+        .then((res) => {
+          if (res.success && res.data) {
+            const name =
+              res.data.entity?.entity_name ||
+              res.data.mda?.name ||
+              res.data.organization ||
+              null
+            setEntityName(name)
+          }
+        })
+    }
   }, [isStaffProp])
   
   const handleLogout = () => {
@@ -194,10 +211,10 @@ export function Header({ isStaff: isStaffProp = false }: HeaderProps) {
                 <DropdownMenuTrigger asChild>
                   <Button size="sm" variant="outline" className="hidden sm:flex items-center gap-2 rounded-full border-slate-200 hover:border-primary/50 hover:bg-primary/5 px-4">
                     <div className="w-7 h-7 rounded-full bg-gradient-to-br from-primary to-blue-600 flex items-center justify-center text-white text-xs font-semibold">
-                      {(userSession.organization || userSession.full_name || "U").charAt(0).toUpperCase()}
+                      {(entityName || userSession.full_name || "U").charAt(0).toUpperCase()}
                     </div>
                     <span className="max-w-[160px] truncate font-medium text-slate-700">
-                      {userSession.organization || userSession.full_name}
+                      {entityName || userSession.organization || userSession.full_name}
                     </span>
                     <ChevronDown className="h-3.5 w-3.5 text-slate-400" />
                   </Button>
@@ -205,27 +222,25 @@ export function Header({ isStaff: isStaffProp = false }: HeaderProps) {
                 <DropdownMenuContent align="end" className="w-64 p-2">
                   <div className="px-3 py-2 mb-1">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-blue-600 flex items-center justify-center text-white font-semibold">
-                        {(userSession.organization || userSession.full_name || "U").charAt(0).toUpperCase()}
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-blue-600 flex items-center justify-center text-white font-semibold shrink-0">
+                        {(entityName || userSession.full_name || "U").charAt(0).toUpperCase()}
                       </div>
-                      <div>
-                        <p className="font-semibold text-slate-900">{userSession.full_name}</p>
-                        <p className="text-xs text-slate-500">{userSession.email}</p>
+                      <div className="min-w-0">
+                        <p className="font-semibold text-slate-900 truncate">
+                          {entityName || userSession.organization || "—"}
+                        </p>
+                        <p className="text-xs text-slate-500 truncate">{userSession.email}</p>
+                        <p className="text-xs text-slate-400 truncate">{userSession.full_name}</p>
                       </div>
                     </div>
-                    {userSession.organization && (
-                      <div className="mt-2 px-2 py-1 bg-primary/5 rounded-md">
-                        <p className="text-xs font-medium text-primary">{userSession.organization}</p>
-                      </div>
-                    )}
                   </div>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild className="rounded-lg cursor-pointer">
+                  {/* <DropdownMenuItem asChild className="rounded-lg cursor-pointer">
                     <Link href="/dashboard" className="flex items-center gap-2 py-2">
                       <LayoutDashboard className="h-4 w-4 text-slate-400" />
                       My Dashboard
                     </Link>
-                  </DropdownMenuItem>
+                  </DropdownMenuItem> */}
                   <DropdownMenuItem asChild className="rounded-lg cursor-pointer">
                     <Link href="/profile" className="flex items-center gap-2 py-2">
                       <User className="h-4 w-4 text-slate-400" />
