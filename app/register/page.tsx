@@ -62,6 +62,7 @@ export default function RegisterPage() {
     
     // MDA / Statutory / Court
     selectedMDA: "",
+    department: "",
     courtName: "",
     
     // Attorney fields
@@ -178,6 +179,7 @@ export default function RegisterPage() {
         companyNumber: formData.companyNumber,
         tradingName: formData.tradingName,
         selectedMDA: formData.selectedMDA,
+        department: formData.department || undefined,
         courtName: formData.courtName,
         lawFirmName: formData.lawFirmName,
         barNumber: formData.barNumber,
@@ -383,7 +385,7 @@ export default function RegisterPage() {
                             // Reset type-specific fields
                             firstName: "", middleName: "", lastName: "",
                             companyName: "", companyNumber: "", tradingName: "",
-                            selectedMDA: "", courtName: "",
+                            selectedMDA: "", department: "", courtName: "",
                             lawFirmName: "", barNumber: "",
                             contactName: "",
                             additionalUsers: []
@@ -527,6 +529,19 @@ export default function RegisterPage() {
                           </SelectContent>
                         </Select>
                         <p className="text-xs text-muted-foreground">Select your organization from the list of registered government entities</p>
+                      </div>
+                    )}
+
+                    {/* Department - Ministry only */}
+                    {formData.submitterType === "ministry" && (
+                      <div className="space-y-2">
+                        <Label htmlFor="department">Department</Label>
+                        <Input
+                          id="department"
+                          value={formData.department}
+                          onChange={(e) => setFormData(prev => ({ ...prev, department: e.target.value }))}
+                          placeholder="e.g. Finance, Legal, Administration"
+                        />
                       </div>
                     )}
 

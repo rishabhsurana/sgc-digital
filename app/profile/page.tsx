@@ -613,6 +613,9 @@ function ProfilePageInner() {
   const canManageEntityUsers =
     (displayProfile?.role || "").toLowerCase() === "primary"
 
+  const isMdaEntity =
+    (profile?.entity?.entity_type || "").toLowerCase() === "mda"
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100/50">
       {/* Hero Banner */}
@@ -861,7 +864,9 @@ function ProfilePageInner() {
                           <TableHead className="font-semibold text-slate-600">Name</TableHead>
                           <TableHead className="font-semibold text-slate-600">Email</TableHead>
                           <TableHead className="font-semibold text-slate-600">Role</TableHead>
-                          <TableHead className="font-semibold text-slate-600">Department</TableHead>
+                          {isMdaEntity && (
+                            <TableHead className="font-semibold text-slate-600">Department</TableHead>
+                          )}
                           <TableHead className="font-semibold text-slate-600">Status</TableHead>
                           <TableHead className="font-semibold text-slate-600">Last Login</TableHead>
                           <TableHead className="font-semibold text-slate-600">Date Joined</TableHead>
@@ -892,9 +897,11 @@ function ProfilePageInner() {
                                 {formatLabel(u.role)}
                               </span>
                             </TableCell>
-                            <TableCell className="text-slate-500">
-                              {u.department || <span className="text-slate-300">—</span>}
-                            </TableCell>
+                            {isMdaEntity && (
+                              <TableCell className="text-slate-500">
+                                {u.department || <span className="text-slate-300">—</span>}
+                              </TableCell>
+                            )}
                             <TableCell>
                               <StatusBadge status={loginStatus(u.last_login)} />
                             </TableCell>
