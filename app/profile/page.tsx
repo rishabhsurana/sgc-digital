@@ -72,7 +72,6 @@ interface ProfileData {
   organization: string | null
   department: string | null
   status: string
-  entity_number: string
   entity_id: string | null
   mda_id: number | null
   can_submit_contracts: boolean
@@ -576,8 +575,7 @@ function ProfilePageInner() {
 
   const entityNumber =
     profile?.entity?.entity_number ||
-    profile?.entity_number ||
-    localUser?.entity_number ||
+    profile?.mda?.code ||
     "—"
 
   const primaryUser =

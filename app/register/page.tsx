@@ -201,7 +201,7 @@ export default function RegisterPage() {
 
       const { token, user } = result.data
       setAuth(token, user)
-      setEntityNumber(user.entity_number)
+      setEntityNumber((result.data as any).entity_number || '')
       const addedUsers = (result.data as any).additional_users_created
       if (Array.isArray(addedUsers)) {
         setCreatedAdditionalUsers(addedUsers)
