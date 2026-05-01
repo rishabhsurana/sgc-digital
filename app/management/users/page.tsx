@@ -70,6 +70,7 @@ import {
   CheckCircle,
   XCircle,
   Eye,
+  EyeOff,
   Loader2,
   X
 } from "lucide-react"
@@ -292,6 +293,8 @@ export default function UserManagementPage() {
   // Tracks pre-flight validation errors surfaced inside the create dialogs.
   const [createUserError, setCreateUserError] = useState<string | null>(null)
   const [createMgmtUserError, setCreateMgmtUserError] = useState<string | null>(null)
+  const [showPortalPassword, setShowPortalPassword] = useState(false)
+  const [showManagementPassword, setShowManagementPassword] = useState(false)
 
   // Caller's role on the management portal. Used to hide affordances that
   // the backend won't accept (e.g. a plain `manager` cannot create/modify
@@ -827,16 +830,27 @@ export default function UserManagementPage() {
                   <Label htmlFor="portal-password">
                     Password <span className="text-red-500">*</span>
                   </Label>
-                  <Input
-                    id="portal-password"
-                    type="password"
-                    placeholder={`Minimum ${MIN_PASSWORD_LENGTH} characters`}
-                    value={newUserForm.password}
-                    onChange={(e) => setNewUserForm((prev) => ({ ...prev, password: e.target.value }))}
-                    minLength={MIN_PASSWORD_LENGTH}
-                    autoComplete="new-password"
-                    required
-                  />
+                  <div className="relative">
+                    <Input
+                      id="portal-password"
+                      type={showPortalPassword ? "text" : "password"}
+                      placeholder={`Minimum ${MIN_PASSWORD_LENGTH} characters`}
+                      value={newUserForm.password}
+                      onChange={(e) => setNewUserForm((prev) => ({ ...prev, password: e.target.value }))}
+                      minLength={MIN_PASSWORD_LENGTH}
+                      autoComplete="new-password"
+                      className="pr-10"
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPortalPassword((prev) => !prev)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                      aria-label={showPortalPassword ? "Hide password" : "Show password"}
+                    >
+                      {showPortalPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
                   <p className="text-xs text-muted-foreground">
                     Share this password with the user over a secure channel. They can change it after
                     first login.
@@ -1484,14 +1498,25 @@ export default function UserManagementPage() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="mgmt-password">Password</Label>
-              <Input
-                id="mgmt-password"
-                type="password"
-                placeholder={`Minimum ${MIN_PASSWORD_LENGTH} characters (or leave blank to auto-generate)`}
-                value={newMgmtUserForm.password}
-                onChange={(e) => setNewMgmtUserForm((p) => ({ ...p, password: e.target.value }))}
-                autoComplete="new-password"
-              />
+              <div className="relative">
+                <Input
+                  id="mgmt-password"
+                  type={showManagementPassword ? "text" : "password"}
+                  placeholder={`Minimum ${MIN_PASSWORD_LENGTH} characters (or leave blank to auto-generate)`}
+                  value={newMgmtUserForm.password}
+                  onChange={(e) => setNewMgmtUserForm((p) => ({ ...p, password: e.target.value }))}
+                  autoComplete="new-password"
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowManagementPassword((prev) => !prev)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                  aria-label={showManagementPassword ? "Hide password" : "Show password"}
+                >
+                  {showManagementPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
               <p className="text-xs text-muted-foreground">
                 Leave blank and we&apos;ll generate a strong one-time password that&apos;s displayed
                 after the user is created — share it securely and ask them to change it.

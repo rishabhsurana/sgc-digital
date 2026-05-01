@@ -42,6 +42,8 @@ import {
   Pencil,
   X,
   Check,
+  Eye,
+  EyeOff,
 } from "lucide-react"
 import { RequireAuthGuard } from "@/components/require-auth-guard"
 import { AskRex } from "@/components/ask-rex"
@@ -280,6 +282,8 @@ function AddUserDialog({ open, onClose, onSuccess }: AddUserDialogProps) {
   const [phone, setPhone] = useState("")
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [department, setDepartment] = useState("")
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState("")
@@ -399,16 +403,27 @@ function AddUserDialog({ open, onClose, onSuccess }: AddUserDialogProps) {
             <Label htmlFor="add-password">
               Password <span className="text-red-500">*</span>
             </Label>
-            <Input
-              id="add-password"
-              type="password"
-              placeholder={`Minimum ${MIN_PASSWORD_LENGTH} characters`}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              minLength={MIN_PASSWORD_LENGTH}
-              autoComplete="new-password"
-              required
-            />
+            <div className="relative">
+              <Input
+                id="add-password"
+                type={showPassword ? "text" : "password"}
+                placeholder={`Minimum ${MIN_PASSWORD_LENGTH} characters`}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                minLength={MIN_PASSWORD_LENGTH}
+                autoComplete="new-password"
+                className="pr-10"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((prev) => !prev)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
             <p className="text-xs text-slate-400">
               Share this password with the user securely. They can change it after first login.
             </p>
@@ -418,16 +433,27 @@ function AddUserDialog({ open, onClose, onSuccess }: AddUserDialogProps) {
             <Label htmlFor="add-password-confirm">
               Confirm Password <span className="text-red-500">*</span>
             </Label>
-            <Input
-              id="add-password-confirm"
-              type="password"
-              placeholder="Re-enter password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              minLength={MIN_PASSWORD_LENGTH}
-              autoComplete="new-password"
-              required
-            />
+            <div className="relative">
+              <Input
+                id="add-password-confirm"
+                type={showConfirmPassword ? "text" : "password"}
+                placeholder="Re-enter password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                minLength={MIN_PASSWORD_LENGTH}
+                autoComplete="new-password"
+                className="pr-10"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword((prev) => !prev)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
+              >
+                {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
           </div>
 
           <div className="space-y-1.5">
@@ -438,10 +464,10 @@ function AddUserDialog({ open, onClose, onSuccess }: AddUserDialogProps) {
               value={department}
               onChange={(e) => setDepartment(e.target.value)}
             />
-            <p className="text-xs text-slate-400">
+            {/* <p className="text-xs text-slate-400">
               New users are added as <span className="font-medium text-slate-500">Secondary</span> users.
               Primary entity users must be provisioned by SGC management.
-            </p>
+            </p> */}
           </div>
         </div>
 
@@ -807,7 +833,7 @@ function ProfilePageInner() {
               <CardHeader className="flex flex-row items-center justify-between border-b border-slate-100 pb-4">
                 <CardTitle className="flex items-center gap-2 text-base">
                   <Users className="h-4 w-4 text-blue-600" />
-                  Users in This Entity
+                  Entity Users
                   <span className="ml-1 rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-500">
                     {entityUsers.length}
                   </span>
