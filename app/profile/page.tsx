@@ -610,8 +610,10 @@ function ProfilePageInner() {
 
   const displayProfile = profile || (localUser as unknown as ProfileData)
 
-  const canManageEntityUsers =
-    (displayProfile?.role || "").toLowerCase() === "primary"
+  // const canManageEntityUsers =
+  //   (displayProfile?.role || "").toLowerCase() === "primary"
+
+  const canManageEntityUsers = true;
 
   const isMdaEntity =
     (profile?.entity?.entity_type || "").toLowerCase() === "mda"
