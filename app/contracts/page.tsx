@@ -943,7 +943,7 @@ function ContractsPageContent() {
     return (
       <div className="flex min-h-screen flex-col bg-background">
         <Header />
-        <AskRex position="content" />
+        <AskRex />
         <main className="flex-1 py-12">
           <div className="container mx-auto px-4 lg:px-8 max-w-2xl">
             <Card className="bg-card border-border overflow-hidden">
@@ -1058,7 +1058,7 @@ function ContractsPageContent() {
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <Header />
-      <AskRex position="content" />
+      <AskRex />
       
       <main className="flex-1 py-8 lg:py-12">
         <div className="container mx-auto px-4 lg:px-8 max-w-4xl">

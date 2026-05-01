@@ -66,7 +66,7 @@ export default function CaseManagementLandingPage() {
         </div>
       </header>
 
-      <AskRex position="content" />
+      <AskRex />
 
       <main className="flex-1">
         {/* Hero Section */}
