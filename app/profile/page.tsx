@@ -90,7 +90,8 @@ interface EntityUser {
   department: string | null
   status: string
   last_login: string | null
-  created_at: string
+  created_at?: string
+  createdAt?: string
 }
 
 /* ─── Helpers ────────────────────────────────────────────── */
@@ -114,6 +115,12 @@ function StatusBadge({ status }: { status: string }) {
   if (status === "inactive")
     return <Badge className="bg-gray-100 text-gray-600 border-gray-200">Inactive</Badge>
   return <Badge className="bg-yellow-100 text-yellow-700 border-yellow-200">{formatLabel(status)}</Badge>
+}
+
+function loginStatus(lastLogin: string | null | undefined): "active" | "inactive" {
+  if (!lastLogin) return "inactive"
+  const diff = Date.now() - new Date(lastLogin).getTime()
+  return diff <= 60 * 24 * 60 * 60 * 1000 ? "active" : "inactive"
 }
 
 /* ─── Inline Edit Field ──────────────────────────────────── */
@@ -470,6 +477,8 @@ function ProfilePageInner() {
   const [error, setError] = useState("")
   const [addDialogOpen, setAddDialogOpen] = useState(false)
   const [saveSuccess, setSaveSuccess] = useState(false)
+  const [roleSuccess, setRoleSuccess] = useState("")
+  const [roleLoading, setRoleLoading] = useState<string | null>(null)
 
   const localUser = getUser()
 
@@ -512,6 +521,24 @@ function ProfilePageInner() {
       setTimeout(() => setSaveSuccess(false), 3000)
     }
     return null
+  }
+
+  const handleRoleChange = async (userId: string, newRole: "primary" | "secondary") => {
+    setRoleLoading(userId)
+    const res = await apiRequest<EntityUser>(`/api/profile/entity-users/${userId}/role`, {
+      method: "PUT",
+      body: JSON.stringify({ role: newRole }),
+    })
+    setRoleLoading(null)
+    if (res.success) {
+      // Silently refresh only the users list — no global loading state
+      const usersRes = await apiGet<EntityUser[]>("/api/profile/entity-users")
+      if (usersRes.success && Array.isArray(usersRes.data)) {
+        setEntityUsers(usersRes.data)
+      }
+      setRoleSuccess(newRole === "primary" ? "User promoted to Primary." : "User demoted to Secondary.")
+      setTimeout(() => setRoleSuccess(""), 3000)
+    }
   }
 
   const entityName =
@@ -612,6 +639,12 @@ function ProfilePageInner() {
         <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-3 text-sm text-white shadow-lg">
           <CheckCircle className="h-4 w-4" />
           Profile updated successfully
+        </div>
+      )}
+      {roleSuccess && (
+        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-3 text-sm text-white shadow-lg">
+          <CheckCircle className="h-4 w-4" />
+          {roleSuccess}
         </div>
       )}
 
@@ -807,7 +840,10 @@ function ProfilePageInner() {
                           <TableHead className="font-semibold text-slate-600">Department</TableHead>
                           <TableHead className="font-semibold text-slate-600">Status</TableHead>
                           <TableHead className="font-semibold text-slate-600">Last Login</TableHead>
-                          <TableHead className="font-semibold text-slate-600">Joined</TableHead>
+                          <TableHead className="font-semibold text-slate-600">Date Joined</TableHead>
+                          {canManageEntityUsers && (
+                            <TableHead className="font-semibold text-slate-600">Actions</TableHead>
+                          )}
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -836,14 +872,47 @@ function ProfilePageInner() {
                               {u.department || <span className="text-slate-300">—</span>}
                             </TableCell>
                             <TableCell>
-                              <StatusBadge status={u.status} />
+                              <StatusBadge status={loginStatus(u.last_login)} />
                             </TableCell>
                             <TableCell className="text-slate-500 text-sm">
                               {formatDate(u.last_login)}
                             </TableCell>
                             <TableCell className="text-slate-500 text-sm">
-                              {formatDate(u.created_at)}
+                              {formatDate(u.created_at ?? u.createdAt)}
                             </TableCell>
+                            {canManageEntityUsers && (
+                              <TableCell>
+                                {u.role.toLowerCase() === "secondary" ? (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="h-7 px-2.5 text-xs border-emerald-300 text-emerald-700 hover:bg-emerald-50"
+                                    disabled={roleLoading === u.id}
+                                    onClick={() => void handleRoleChange(u.id, "primary")}
+                                  >
+                                    {roleLoading === u.id ? (
+                                      <Loader2 className="h-3 w-3 animate-spin" />
+                                    ) : (
+                                      "Promote"
+                                    )}
+                                  </Button>
+                                ) : u.role.toLowerCase() === "primary" ? (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="h-7 px-2.5 text-xs border-red-200 text-red-600 hover:bg-red-50"
+                                    disabled={roleLoading === u.id}
+                                    onClick={() => void handleRoleChange(u.id, "secondary")}
+                                  >
+                                    {roleLoading === u.id ? (
+                                      <Loader2 className="h-3 w-3 animate-spin" />
+                                    ) : (
+                                      "Demote"
+                                    )}
+                                  </Button>
+                                ) : null}
+                              </TableCell>
+                            )}
                           </TableRow>
                         ))}
                       </TableBody>
