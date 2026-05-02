@@ -18,6 +18,7 @@ BEGIN
   CREATE TABLE dbo.contract_register (
     register_id           BIGINT         NOT NULL IDENTITY(1, 1) PRIMARY KEY,
     contract_id           UNIQUEIDENTIFIER NOT NULL,
+    entity_id               UNIQUEIDENTIFIER NULL,
     contract_number       NVARCHAR(50)   NOT NULL,
     date_received         DATETIME2      NOT NULL,
     date_completed        DATETIME2      NULL,
@@ -43,6 +44,8 @@ BEGIN
   );
   CREATE NONCLUSTERED INDEX IX_contract_register_contract_id
     ON dbo.contract_register (contract_id);
+  CREATE NONCLUSTERED INDEX IX_contract_register_entity_id
+    ON dbo.contract_register (entity_id);
 END;
 
 IF OBJECT_ID(N'dbo.correspondence_register', N'U') IS NULL
@@ -50,6 +53,7 @@ BEGIN
   CREATE TABLE dbo.correspondence_register (
     register_id            BIGINT         NOT NULL IDENTITY(1, 1) PRIMARY KEY,
     correspondence_id      UNIQUEIDENTIFIER NOT NULL,
+    entity_id               UNIQUEIDENTIFIER NULL,
     reference_number       NVARCHAR(50)   NOT NULL,
     date_received          DATETIME2      NOT NULL,
     date_completed         DATETIME2      NULL,
@@ -70,4 +74,6 @@ BEGIN
   );
   CREATE NONCLUSTERED INDEX IX_correspondence_register_correspondence_id
     ON dbo.correspondence_register (correspondence_id);
+  CREATE NONCLUSTERED INDEX IX_correspondence_register_entity_id
+    ON dbo.correspondence_register (entity_id);
 END;
