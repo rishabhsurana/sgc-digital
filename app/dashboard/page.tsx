@@ -192,6 +192,13 @@ function SubmissionCard({
             <span className="font-mono text-sm font-semibold text-foreground shrink-0">
               {submission.transactionNumber}
             </span>
+            <Badge className={`text-xs shrink-0 ${
+              submission.type === "correspondence"
+                ? "bg-blue-100 text-blue-700 border-blue-200"
+                : "bg-emerald-100 text-emerald-700 border-emerald-200"
+            }`}>
+              {submission.type === "correspondence" ? "Correspondence" : "Contract"}
+            </Badge>
             <Badge variant="outline" className={`text-xs shrink-0 ${status.color}`}>
               <StatusIcon className="h-3 w-3 mr-1" />
               {status.label}
