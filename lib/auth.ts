@@ -8,7 +8,6 @@ export interface AuthUser {
   role: string;
   submitter_type: string;
   organization: string | null;
-  entity_number: string;
   entity_id: string | null;
   mda_id: number | null;
   can_submit_contracts: boolean;

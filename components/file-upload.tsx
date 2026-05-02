@@ -1,40 +1,44 @@
 "use client"
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, useRef } from "react"
 import { cn } from "@/lib/utils"
 import { generateUUID } from "@/lib/uuid"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Upload, X, FileText, AlertCircle } from "lucide-react"
+import { Upload, X, FileText, AlertCircle, Plus } from "lucide-react"
 
 export interface UploadedFile {
   id: string
   file: File
   documentType: string
-  description?: string
+  category?: string
 }
 
 interface FileUploadProps {
   onFilesChange: (files: UploadedFile[]) => void
-  files: UploadedFile[]
-  documentTypes: { value: string; label: string }[]
+  files?: UploadedFile[]
+  documentTypes?: { value: string; label: string }[]
   maxSize?: number // in MB
+  maxFiles?: number
+  accept?: Record<string, string[]>
   acceptedTypes?: string[]
   className?: string
 }
 
 export function FileUpload({
   onFilesChange,
-  files,
-  documentTypes,
+  files = [],
+  documentTypes = [],
   maxSize = 10,
+  maxFiles,
+  accept,
   acceptedTypes = [".pdf", ".doc", ".docx", ".xls", ".xlsx", ".jpg", ".jpeg", ".png"],
   className
 }: FileUploadProps) {
   const [dragActive, setDragActive] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const addFileInputRef = useRef<HTMLInputElement>(null)
 
   const handleDrag = useCallback((e: React.DragEvent) => {
     e.preventDefault()
@@ -46,12 +50,20 @@ export function FileUpload({
     }
   }, [])
 
+  const acceptedTypeList = accept
+    ? Array.from(
+        new Set(
+          Object.entries(accept).flatMap(([mimeType, extensions]) => [mimeType, ...extensions])
+        )
+      )
+    : acceptedTypes
+
   const validateFile = (file: File): string | null => {
     if (file.size > maxSize * 1024 * 1024) {
       return `File "${file.name}" exceeds ${maxSize}MB limit`
     }
     const extension = "." + file.name.split(".").pop()?.toLowerCase()
-    if (!acceptedTypes.includes(extension)) {
+    if (!acceptedTypeList.includes(extension)) {
       return `File type "${extension}" is not supported`
     }
     return null
@@ -64,6 +76,7 @@ export function FileUpload({
     const validFiles: UploadedFile[] = []
     
     Array.from(newFiles).forEach(file => {
+      if (typeof maxFiles === "number" && [...files, ...validFiles].length >= maxFiles) return
       const validationError = validateFile(file)
       if (validationError) {
         setError(validationError)
@@ -73,12 +86,11 @@ export function FileUpload({
         id: generateUUID(),
         file,
         documentType: "",
-        description: ""
       })
     })
     
     onFilesChange([...files, ...validFiles])
-  }, [files, onFilesChange, maxSize, acceptedTypes])
+  }, [files, onFilesChange, maxSize, maxFiles, acceptedTypeList])
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault()
@@ -93,10 +105,6 @@ export function FileUpload({
 
   const updateFileType = (id: string, documentType: string) => {
     onFilesChange(files.map(f => f.id === id ? { ...f, documentType } : f))
-  }
-
-  const updateFileDescription = (id: string, description: string) => {
-    onFilesChange(files.map(f => f.id === id ? { ...f, description } : f))
   }
 
   return (
@@ -114,7 +122,7 @@ export function FileUpload({
         <input
           type="file"
           multiple
-          accept={acceptedTypes.join(",")}
+          accept={acceptedTypeList.join(",")}
           onChange={(e) => addFiles(e.target.files)}
           className="absolute inset-0 cursor-pointer opacity-0"
         />
@@ -135,6 +143,15 @@ export function FileUpload({
           {error}
         </div>
       )}
+
+      <input
+        ref={addFileInputRef}
+        type="file"
+        multiple
+        accept={acceptedTypeList.join(",")}
+        onChange={(e) => { addFiles(e.target.files); e.target.value = "" }}
+        className="hidden"
+      />
 
       {files.length > 0 && (
         <div className="space-y-3">
@@ -188,17 +205,17 @@ export function FileUpload({
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor={`desc-${uploadedFile.id}`} className="text-xs">
-                    Description (Optional)
-                  </Label>
-                  <Input
-                    id={`desc-${uploadedFile.id}`}
-                    placeholder="Brief description"
-                    value={uploadedFile.description}
-                    onChange={(e) => updateFileDescription(uploadedFile.id, e.target.value)}
-                    className="h-9"
-                  />
+                <div className="flex items-end">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-9 w-full"
+                    onClick={() => addFileInputRef.current?.click()}
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add More Documents
+                  </Button>
                 </div>
               </div>
             </div>

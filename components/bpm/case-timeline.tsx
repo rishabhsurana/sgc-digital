@@ -103,7 +103,7 @@ export function CaseTimeline({
       {showLoadMore && maxItems && events.length > maxItems && (
         <button
           onClick={onLoadMore}
-          className="mt-4 ml-10 text-sm text-blue-600 hover:underline"
+          className="cursor-pointer mt-4 ml-10 text-sm text-blue-600 hover:underline"
         >
           Load more ({events.length - maxItems} more events)
         </button>

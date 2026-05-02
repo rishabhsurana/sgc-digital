@@ -146,7 +146,7 @@ export default function ManagementLandingPage() {
         </div>
         </div>
       </header>
-      <AskRex position="content" />
+      <AskRex />
       
       <main className="flex-1">
         {/* Hero Section */}

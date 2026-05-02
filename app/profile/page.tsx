@@ -6,7 +6,6 @@ import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
@@ -40,11 +39,17 @@ import {
   CheckCircle,
   XCircle,
   Clock,
+  Pencil,
+  X,
+  Check,
+  Eye,
+  EyeOff,
 } from "lucide-react"
 import { RequireAuthGuard } from "@/components/require-auth-guard"
 import { AskRex } from "@/components/ask-rex"
 import { getUser } from "@/lib/auth"
-import { apiGet, apiPost } from "@/lib/api-client"
+import { apiGet, apiPost, apiRequest } from "@/lib/api-client"
+import { Label } from "@/components/ui/label"
 
 /* ─── Types ─────────────────────────────────────────────── */
 
@@ -67,7 +72,6 @@ interface ProfileData {
   organization: string | null
   department: string | null
   status: string
-  entity_number: string
   entity_id: string | null
   mda_id: number | null
   can_submit_contracts: boolean
@@ -87,7 +91,8 @@ interface EntityUser {
   department: string | null
   status: string
   last_login: string | null
-  created_at: string
+  created_at?: string
+  createdAt?: string
 }
 
 /* ─── Helpers ────────────────────────────────────────────── */
@@ -113,6 +118,153 @@ function StatusBadge({ status }: { status: string }) {
   return <Badge className="bg-yellow-100 text-yellow-700 border-yellow-200">{formatLabel(status)}</Badge>
 }
 
+function loginStatus(lastLogin: string | null | undefined): "active" | "inactive" {
+  if (!lastLogin) return "inactive"
+  const diff = Date.now() - new Date(lastLogin).getTime()
+  return diff <= 60 * 24 * 60 * 60 * 1000 ? "active" : "inactive"
+}
+
+/* ─── Inline Edit Field ──────────────────────────────────── */
+
+interface InlineEditFieldProps {
+  icon: React.ElementType
+  label: string
+  value: string | null | undefined
+  displayValue?: React.ReactNode
+  fieldKey: "email" | "phone" | "organization"
+  onSave: (field: "email" | "phone" | "organization", value: string) => Promise<string | null>
+  placeholder?: string
+  type?: string
+}
+
+function InlineEditField({
+  icon: Icon,
+  label,
+  value,
+  displayValue,
+  fieldKey,
+  onSave,
+  placeholder,
+  type = "text",
+}: InlineEditFieldProps) {
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState(value ?? "")
+  const [saving, setSaving] = useState(false)
+  const [fieldError, setFieldError] = useState("")
+
+  const handleEdit = () => {
+    setDraft(value ?? "")
+    setFieldError("")
+    setEditing(true)
+  }
+
+  const handleCancel = () => {
+    setEditing(false)
+    setFieldError("")
+  }
+
+  const handleSave = async () => {
+    setSaving(true)
+    setFieldError("")
+    const err = await onSave(fieldKey, draft)
+    setSaving(false)
+    if (err) {
+      setFieldError(err)
+    } else {
+      setEditing(false)
+    }
+  }
+
+  return (
+    <div className="flex items-start gap-3 py-3 border-b border-slate-100 last:border-0">
+      <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-100">
+        <Icon className="h-4 w-4 text-slate-500" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="text-xs font-medium text-slate-400 uppercase tracking-wide">{label}</p>
+        {editing ? (
+          <div className="mt-1 space-y-1.5">
+            <Input
+              type={type}
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              placeholder={placeholder}
+              className="h-8 text-sm"
+              autoFocus
+              onKeyDown={(e) => {
+                if (e.key === "Enter") void handleSave()
+                if (e.key === "Escape") handleCancel()
+              }}
+            />
+            {fieldError && (
+              <p className="text-xs text-red-600 flex items-center gap-1">
+                <XCircle className="h-3 w-3" />
+                {fieldError}
+              </p>
+            )}
+            <div className="flex items-center gap-1.5">
+              <Button
+                size="sm"
+                className="h-7 px-2.5 text-xs bg-blue-600 hover:bg-blue-700"
+                onClick={() => void handleSave()}
+                disabled={saving}
+              >
+                {saving ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
+                <span className="ml-1">Save</span>
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-7 px-2.5 text-xs"
+                onClick={handleCancel}
+                disabled={saving}
+              >
+                <X className="h-3 w-3" />
+                <span className="ml-1">Cancel</span>
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <button
+            onClick={handleEdit}
+            className="cursor-pointer mt-0.5 flex w-full items-center justify-between gap-2 rounded-md px-2 py-1 -mx-2 text-left hover:bg-blue-50 transition-colors group"
+            title={`Edit ${label}`}
+          >
+            <p className="text-sm font-medium text-slate-800 break-all">
+              {displayValue ?? value ?? <span className="text-slate-400">Not provided</span>}
+            </p>
+            <Pencil className="h-3.5 w-3.5 shrink-0 text-slate-300 group-hover:text-blue-500 transition-colors" />
+          </button>
+        )}
+      </div>
+    </div>
+  )
+}
+
+/* ─── Static Detail Row ──────────────────────────────────── */
+
+function DetailRow({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: React.ElementType
+  label: string
+  value: React.ReactNode
+}) {
+  return (
+    <div className="flex items-start gap-3 py-3 border-b border-slate-100 last:border-0">
+      <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-100">
+        <Icon className="h-4 w-4 text-slate-500" />
+      </div>
+      <div className="min-w-0">
+        <p className="text-xs font-medium text-slate-400 uppercase tracking-wide">{label}</p>
+        <p className="mt-0.5 text-sm font-medium text-slate-800 break-all">{value}</p>
+      </div>
+    </div>
+  )
+}
+
 /* ─── Add User Dialog ────────────────────────────────────── */
 
 interface AddUserDialogProps {
@@ -129,6 +281,8 @@ function AddUserDialog({ open, onClose, onSuccess }: AddUserDialogProps) {
   const [phone, setPhone] = useState("")
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [department, setDepartment] = useState("")
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState("")
@@ -165,9 +319,6 @@ function AddUserDialog({ open, onClose, onSuccess }: AddUserDialogProps) {
       setError(`Password is required and must be at least ${MIN_PASSWORD_LENGTH} characters.`)
       return
     }
-    // Reject whitespace-only passwords; bcrypt would happily hash them but the
-    // resulting login would be effectively "Enter". We intentionally check
-    // this after the length guard so the message is consistent.
     if (password.trim().length === 0) {
       setError("Password cannot be blank or whitespace only.")
       return
@@ -183,10 +334,7 @@ function AddUserDialog({ open, onClose, onSuccess }: AddUserDialogProps) {
       email: trimmedEmail.toLowerCase(),
       phone: phone.trim() || null,
       password,
-      // The backend only allows entity admins to add 'submitter' users
-      // through this endpoint. Entity-admin provisioning must go through
-      // the management portal.
-      role: "submitter",
+      role: "secondary",
       department: department.trim() || null,
     })
     setSubmitting(false)
@@ -254,16 +402,27 @@ function AddUserDialog({ open, onClose, onSuccess }: AddUserDialogProps) {
             <Label htmlFor="add-password">
               Password <span className="text-red-500">*</span>
             </Label>
-            <Input
-              id="add-password"
-              type="password"
-              placeholder={`Minimum ${MIN_PASSWORD_LENGTH} characters`}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              minLength={MIN_PASSWORD_LENGTH}
-              autoComplete="new-password"
-              required
-            />
+            <div className="relative">
+              <Input
+                id="add-password"
+                type={showPassword ? "text" : "password"}
+                placeholder={`Minimum ${MIN_PASSWORD_LENGTH} characters`}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                minLength={MIN_PASSWORD_LENGTH}
+                autoComplete="new-password"
+                className="pr-10"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((prev) => !prev)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
             <p className="text-xs text-slate-400">
               Share this password with the user securely. They can change it after first login.
             </p>
@@ -273,16 +432,27 @@ function AddUserDialog({ open, onClose, onSuccess }: AddUserDialogProps) {
             <Label htmlFor="add-password-confirm">
               Confirm Password <span className="text-red-500">*</span>
             </Label>
-            <Input
-              id="add-password-confirm"
-              type="password"
-              placeholder="Re-enter password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              minLength={MIN_PASSWORD_LENGTH}
-              autoComplete="new-password"
-              required
-            />
+            <div className="relative">
+              <Input
+                id="add-password-confirm"
+                type={showConfirmPassword ? "text" : "password"}
+                placeholder="Re-enter password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                minLength={MIN_PASSWORD_LENGTH}
+                autoComplete="new-password"
+                className="pr-10"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword((prev) => !prev)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
+              >
+                {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
           </div>
 
           <div className="space-y-1.5">
@@ -293,10 +463,10 @@ function AddUserDialog({ open, onClose, onSuccess }: AddUserDialogProps) {
               value={department}
               onChange={(e) => setDepartment(e.target.value)}
             />
-            <p className="text-xs text-slate-400">
-              New users are added as <span className="font-medium text-slate-500">Submitters</span>.
-              Entity admins must be provisioned by SGC management.
-            </p>
+            {/* <p className="text-xs text-slate-400">
+              New users are added as <span className="font-medium text-slate-500">Secondary</span> users.
+              Primary entity users must be provisioned by SGC management.
+            </p> */}
           </div>
         </div>
 
@@ -323,30 +493,6 @@ function AddUserDialog({ open, onClose, onSuccess }: AddUserDialogProps) {
   )
 }
 
-/* ─── Profile Detail Row ─────────────────────────────────── */
-
-function DetailRow({
-  icon: Icon,
-  label,
-  value,
-}: {
-  icon: React.ElementType
-  label: string
-  value: React.ReactNode
-}) {
-  return (
-    <div className="flex items-start gap-3 py-3 border-b border-slate-100 last:border-0">
-      <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-100">
-        <Icon className="h-4 w-4 text-slate-500" />
-      </div>
-      <div className="min-w-0">
-        <p className="text-xs font-medium text-slate-400 uppercase tracking-wide">{label}</p>
-        <p className="mt-0.5 text-sm font-medium text-slate-800 break-all">{value}</p>
-      </div>
-    </div>
-  )
-}
-
 /* ─── Main Page ──────────────────────────────────────────── */
 
 function ProfilePageInner() {
@@ -355,6 +501,9 @@ function ProfilePageInner() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
   const [addDialogOpen, setAddDialogOpen] = useState(false)
+  const [saveSuccess, setSaveSuccess] = useState(false)
+  const [roleSuccess, setRoleSuccess] = useState("")
+  const [roleLoading, setRoleLoading] = useState<string | null>(null)
 
   const localUser = getUser()
 
@@ -380,6 +529,43 @@ function ProfilePageInner() {
     void load()
   }, [load])
 
+  const handleFieldSave = async (
+    field: "email" | "phone" | "organization",
+    value: string
+  ): Promise<string | null> => {
+    const res = await apiRequest<ProfileData>("/api/profile", {
+      method: "PUT",
+      body: JSON.stringify({ [field]: value || null }),
+    })
+    if (!res.success) {
+      return res.error || "Failed to save."
+    }
+    if (res.data) {
+      setProfile(res.data)
+      setSaveSuccess(true)
+      setTimeout(() => setSaveSuccess(false), 3000)
+    }
+    return null
+  }
+
+  const handleRoleChange = async (userId: string, newRole: "primary" | "secondary") => {
+    setRoleLoading(userId)
+    const res = await apiRequest<EntityUser>(`/api/profile/entity-users/${userId}/role`, {
+      method: "PUT",
+      body: JSON.stringify({ role: newRole }),
+    })
+    setRoleLoading(null)
+    if (res.success) {
+      // Silently refresh only the users list — no global loading state
+      const usersRes = await apiGet<EntityUser[]>("/api/profile/entity-users")
+      if (usersRes.success && Array.isArray(usersRes.data)) {
+        setEntityUsers(usersRes.data)
+      }
+      setRoleSuccess(newRole === "primary" ? "User promoted to Primary." : "User demoted to Secondary.")
+      setTimeout(() => setRoleSuccess(""), 3000)
+    }
+  }
+
   const entityName =
     profile?.entity?.entity_name ||
     profile?.mda?.name ||
@@ -389,9 +575,13 @@ function ProfilePageInner() {
 
   const entityNumber =
     profile?.entity?.entity_number ||
-    profile?.entity_number ||
-    localUser?.entity_number ||
+    profile?.mda?.code ||
     "—"
+
+  const primaryUser =
+    entityUsers.find((u) => u.role.toLowerCase() === "primary") ??
+    entityUsers[0] ??
+    null
 
   if (loading) {
     return (
@@ -420,11 +610,13 @@ function ProfilePageInner() {
 
   const displayProfile = profile || (localUser as unknown as ProfileData)
 
-  // [COMMENTED OUT] Previously only admins could add users.
   // const canManageEntityUsers =
-  //   localUser?.role === "admin" || localUser?.role === "entity_admin"
-  // Now all users can add users to their entity.
-  const canManageEntityUsers = true
+  //   (displayProfile?.role || "").toLowerCase() === "primary"
+
+  const canManageEntityUsers = true;
+
+  const isMdaEntity =
+    (profile?.entity?.entity_type || "").toLowerCase() === "mda"
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100/50">
@@ -436,51 +628,60 @@ function ProfilePageInner() {
         </div>
         <div className="relative mx-auto max-w-5xl">
           <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
-            {/* Avatar */}
+            {/* Entity icon */}
             <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-white/20 text-white backdrop-blur-sm ring-4 ring-white/30">
-              <User className="h-10 w-10" />
+              <Building2 className="h-10 w-10" />
             </div>
 
             <div className="flex-1">
               <p className="text-sm font-medium text-blue-100 uppercase tracking-widest mb-1">
-                My Profile
+                Entity Profile
               </p>
               <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
-                {displayProfile?.full_name || localUser?.full_name || "—"}
+                {entityName}
               </h1>
               <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-blue-100">
                 <span className="flex items-center gap-1.5">
-                  <Mail className="h-3.5 w-3.5" />
-                  {displayProfile?.email || localUser?.email || "—"}
+                  <Hash className="h-3.5 w-3.5" />
+                  {entityNumber}
                 </span>
-                {(displayProfile?.phone || localUser?.phone) && (
+                {primaryUser?.email && (
+                  <span className="flex items-center gap-1.5">
+                    <Mail className="h-3.5 w-3.5" />
+                    {primaryUser.email}
+                  </span>
+                )}
+                {primaryUser?.phone && (
                   <span className="flex items-center gap-1.5">
                     <Phone className="h-3.5 w-3.5" />
-                    {displayProfile?.phone || localUser?.phone}
+                    {primaryUser.phone}
                   </span>
                 )}
               </div>
-            </div>
-
-            {/* Entity chip */}
-            <div data-testid="entity-chip" className="shrink-0 rounded-xl bg-white/10 px-4 py-3 backdrop-blur-sm ring-1 ring-white/20">
-              <p className="text-xs font-medium text-blue-100 uppercase tracking-wide mb-1">Entity</p>
-              <p className="text-base font-semibold leading-tight">{entityName}</p>
-              <p className="mt-1 font-mono text-xs text-blue-200">{entityNumber}</p>
             </div>
           </div>
         </div>
       </div>
 
+      {/* Save success toast */}
+      {saveSuccess && (
+        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-3 text-sm text-white shadow-lg">
+          <CheckCircle className="h-4 w-4" />
+          Profile updated successfully
+        </div>
+      )}
+      {roleSuccess && (
+        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-3 text-sm text-white shadow-lg">
+          <CheckCircle className="h-4 w-4" />
+          {roleSuccess}
+        </div>
+      )}
+
       {/* Content */}
       <div className="mx-auto max-w-5xl px-4 py-8">
-        <Tabs defaultValue="profile">
+        <Tabs defaultValue="details">
           <TabsList className="mb-6 bg-white shadow-sm border border-slate-200 rounded-xl p-1">
-            <TabsTrigger value="profile" className="rounded-lg data-[state=active]:bg-blue-600 data-[state=active]:text-white">
-              <User className="mr-2 h-4 w-4" />
-              My Details
-            </TabsTrigger>
-            <TabsTrigger value="entity" className="rounded-lg data-[state=active]:bg-blue-600 data-[state=active]:text-white">
+            <TabsTrigger value="details" className="rounded-lg data-[state=active]:bg-blue-600 data-[state=active]:text-white">
               <Building2 className="mr-2 h-4 w-4" />
               Entity Details
             </TabsTrigger>
@@ -495,136 +696,138 @@ function ProfilePageInner() {
             </TabsTrigger>
           </TabsList>
 
-          {/* ── My Details ── */}
-          <TabsContent value="profile">
+          {/* ── Entity Details ── */}
+          <TabsContent value="details">
             <Card className="border-slate-200 shadow-sm">
               <CardHeader className="border-b border-slate-100 pb-4">
                 <CardTitle className="flex items-center gap-2 text-base">
-                  <User className="h-4 w-4 text-blue-600" />
-                  Personal Information
+                  <Building2 className="h-4 w-4 text-blue-600" />
+                  Entity Details
                 </CardTitle>
               </CardHeader>
               <CardContent className="pt-2">
-                <DetailRow icon={User} label="Full Name" value={displayProfile?.full_name || "—"} />
-                <DetailRow icon={Mail} label="Email Address" value={displayProfile?.email || "—"} />
-                <DetailRow
-                  icon={Phone}
-                  label="Phone Number"
-                  value={displayProfile?.phone || <span className="text-slate-400">Not provided</span>}
-                />
-                <DetailRow
-                  icon={Shield}
-                  label="Role"
-                  value={
-                    <span className="inline-flex items-center rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-700">
-                      {formatLabel(displayProfile?.role || "submitter")}
-                    </span>
-                  }
-                />
-                <DetailRow
-                  icon={Briefcase}
-                  label="Submitter Type"
-                  value={formatLabel(displayProfile?.submitter_type || "—")}
-                />
-                {(displayProfile as ProfileData)?.department && (
-                  <DetailRow
-                    icon={Briefcase}
-                    label="Department"
-                    value={(displayProfile as ProfileData).department!}
-                  />
-                )}
-                <DetailRow
-                  icon={CheckCircle}
-                  label="Account Status"
-                  value={<StatusBadge status={displayProfile?.status || "active"} />}
-                />
-                <DetailRow
-                  icon={Calendar}
-                  label="Member Since"
-                  value={formatDate((displayProfile as ProfileData)?.created_at)}
-                />
-                {(displayProfile as ProfileData)?.last_login && (
-                  <DetailRow
-                    icon={Clock}
-                    label="Last Login"
-                    value={formatDate((displayProfile as ProfileData).last_login)}
-                  />
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
+                <div className="grid grid-cols-1 gap-x-8 sm:grid-cols-2">
+                  <div>
+                    <InlineEditField
+                      icon={Mail}
+                      label="Email Address"
+                      value={displayProfile?.email}
+                      fieldKey="email"
+                      onSave={handleFieldSave}
+                      placeholder="email@example.com"
+                      type="email"
+                    />
 
-          {/* ── Entity Details ── */}
-          <TabsContent value="entity">
-            {profile?.entity ? (
-              <Card className="border-slate-200 shadow-sm">
-                <CardHeader className="border-b border-slate-100 pb-4">
-                  <CardTitle className="flex items-center gap-2 text-base">
-                    <Building2 className="h-4 w-4 text-teal-600" />
-                    Entity Information
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="pt-2">
-                  <DetailRow icon={Building2} label="Entity Name" value={profile.entity.entity_name} />
-                  <DetailRow
-                    icon={Hash}
-                    label="Entity Number"
-                    value={
-                      <span className="font-mono text-sm">{profile.entity.entity_number}</span>
-                    }
-                  />
-                  <DetailRow
-                    icon={Briefcase}
-                    label="Entity Type"
-                    value={formatLabel(profile.entity.entity_type)}
-                  />
-                  <DetailRow
-                    icon={CheckCircle}
-                    label="Status"
-                    value={
-                      profile.entity.is_active ? (
-                        <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200">Active</Badge>
-                      ) : (
-                        <Badge className="bg-gray-100 text-gray-600 border-gray-200">Inactive</Badge>
-                      )
-                    }
-                  />
-                  {profile.entity.mda && (
-                    <>
+                    <InlineEditField
+                      icon={Phone}
+                      label="Phone Number"
+                      value={displayProfile?.phone}
+                      displayValue={displayProfile?.phone ?? <span className="text-slate-400">Not provided</span>}
+                      fieldKey="phone"
+                      onSave={handleFieldSave}
+                      placeholder="+1 246 XXX XXXX"
+                    />
+
+                    <InlineEditField
+                      icon={Building2}
+                      label="Ministry / Organization"
+                      value={displayProfile?.organization}
+                      displayValue={displayProfile?.organization ?? <span className="text-slate-400">Not provided</span>}
+                      fieldKey="organization"
+                      onSave={handleFieldSave}
+                      placeholder="e.g. Ministry of Finance"
+                    />
+
+                    {(displayProfile as ProfileData)?.department && (
                       <DetailRow
-                        icon={Building2}
-                        label="Associated MDA"
-                        value={profile.entity.mda.name}
+                        icon={Briefcase}
+                        label="Department"
+                        value={(displayProfile as ProfileData).department!}
                       />
+                    )}
+                    <DetailRow
+                      icon={Calendar}
+                      label="Member Since"
+                      value={formatDate(profile?.created_at)}
+                    />
+                    {(displayProfile as ProfileData)?.last_login && (
                       <DetailRow
-                        icon={Hash}
-                        label="MDA Code"
-                        value={
-                          <span className="font-mono text-sm">{profile.entity.mda.code}</span>
-                        }
+                        icon={Clock}
+                        label="Last Login"
+                        value={formatDate((displayProfile as ProfileData).last_login)}
                       />
-                      {profile.entity.mda.type && (
+                    )}
+                  </div>
+
+                  <div>
+                    {profile?.entity ? (
+                      <>
+                        <DetailRow icon={Building2} label="Entity Name" value={profile.entity.entity_name} />
+                        <DetailRow
+                          icon={Hash}
+                          label="Entity Number"
+                          value={<span className="text-sm">{profile.entity.entity_number}</span>}
+                        />
                         <DetailRow
                           icon={Briefcase}
-                          label="MDA Type"
-                          value={profile.entity.mda.type}
+                          label="Entity Type"
+                          value={profile.entity.entity_type.toUpperCase()}
                         />
-                      )}
-                    </>
-                  )}
-                </CardContent>
-              </Card>
-            ) : (
-              <Card className="border-slate-200 shadow-sm">
-                <CardContent className="flex flex-col items-center justify-center py-16 text-center">
-                  <Building2 className="mb-3 h-10 w-10 text-slate-300" />
-                  <p className="text-sm font-medium text-slate-500">No Entity Linked</p>
-                  <p className="mt-1 text-xs text-slate-400">
-                    Your account is not currently linked to an entity.
-                  </p>
-                </CardContent>
-              </Card>
-            )}
+                        <DetailRow
+                          icon={CheckCircle}
+                          label="Entity Status"
+                          value={
+                            profile.entity.is_active ? (
+                              <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200">Active</Badge>
+                            ) : (
+                              <Badge className="bg-gray-100 text-gray-600 border-gray-200">Inactive</Badge>
+                            )
+                          }
+                        />
+                        {profile.entity.mda && (
+                          <>
+                            <DetailRow
+                              icon={Building2}
+                              label="Associated MDA"
+                              value={profile.entity.mda.name}
+                            />
+                            <DetailRow
+                              icon={Hash}
+                              label="MDA Code"
+                              value={<span className="text-sm">{profile.entity.mda.code}</span>}
+                            />
+                            {profile.entity.mda.type && (
+                              <DetailRow
+                                icon={Briefcase}
+                                label="MDA Type"
+                                value={profile.entity.mda.type}
+                              />
+                            )}
+                          </>
+                        )}
+                      </>
+                    ) : profile?.mda ? (
+                      <>
+                        <DetailRow icon={Building2} label="MDA Name" value={profile.mda.name} />
+                        <DetailRow
+                          icon={Hash}
+                          label="MDA Code"
+                          value={<span className="text-sm">{profile.mda.code}</span>}
+                        />
+                        {profile.mda.type && (
+                          <DetailRow icon={Briefcase} label="MDA Type" value={profile.mda.type} />
+                        )}
+                        <DetailRow
+                          icon={Hash}
+                          label="Entity Number"
+                          value={<span className="text-sm">{entityNumber}</span>}
+                        />
+                      </>
+                    ) : null}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* ── Entity Users ── */}
@@ -633,7 +836,7 @@ function ProfilePageInner() {
               <CardHeader className="flex flex-row items-center justify-between border-b border-slate-100 pb-4">
                 <CardTitle className="flex items-center gap-2 text-base">
                   <Users className="h-4 w-4 text-blue-600" />
-                  Users in This Entity
+                  Entity Users
                   <span className="ml-1 rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-500">
                     {entityUsers.length}
                   </span>
@@ -663,10 +866,15 @@ function ProfilePageInner() {
                           <TableHead className="font-semibold text-slate-600">Name</TableHead>
                           <TableHead className="font-semibold text-slate-600">Email</TableHead>
                           <TableHead className="font-semibold text-slate-600">Role</TableHead>
-                          <TableHead className="font-semibold text-slate-600">Department</TableHead>
+                          {isMdaEntity && (
+                            <TableHead className="font-semibold text-slate-600">Department</TableHead>
+                          )}
                           <TableHead className="font-semibold text-slate-600">Status</TableHead>
                           <TableHead className="font-semibold text-slate-600">Last Login</TableHead>
-                          <TableHead className="font-semibold text-slate-600">Joined</TableHead>
+                          <TableHead className="font-semibold text-slate-600">Date Joined</TableHead>
+                          {canManageEntityUsers && (
+                            <TableHead className="font-semibold text-slate-600">Actions</TableHead>
+                          )}
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -691,18 +899,53 @@ function ProfilePageInner() {
                                 {formatLabel(u.role)}
                               </span>
                             </TableCell>
-                            <TableCell className="text-slate-500">
-                              {u.department || <span className="text-slate-300">—</span>}
-                            </TableCell>
+                            {isMdaEntity && (
+                              <TableCell className="text-slate-500">
+                                {u.department || <span className="text-slate-300">—</span>}
+                              </TableCell>
+                            )}
                             <TableCell>
-                              <StatusBadge status={u.status} />
+                              <StatusBadge status={loginStatus(u.last_login)} />
                             </TableCell>
                             <TableCell className="text-slate-500 text-sm">
                               {formatDate(u.last_login)}
                             </TableCell>
                             <TableCell className="text-slate-500 text-sm">
-                              {formatDate(u.created_at)}
+                              {formatDate(u.created_at ?? u.createdAt)}
                             </TableCell>
+                            {canManageEntityUsers && (
+                              <TableCell>
+                                {u.role.toLowerCase() === "secondary" ? (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="h-7 px-2.5 text-xs border-emerald-300 text-emerald-700 hover:bg-emerald-50"
+                                    disabled={roleLoading === u.id}
+                                    onClick={() => void handleRoleChange(u.id, "primary")}
+                                  >
+                                    {roleLoading === u.id ? (
+                                      <Loader2 className="h-3 w-3 animate-spin" />
+                                    ) : (
+                                      "Promote"
+                                    )}
+                                  </Button>
+                                ) : u.role.toLowerCase() === "primary" ? (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="h-7 px-2.5 text-xs border-red-200 text-red-600 hover:bg-red-50"
+                                    disabled={roleLoading === u.id}
+                                    onClick={() => void handleRoleChange(u.id, "secondary")}
+                                  >
+                                    {roleLoading === u.id ? (
+                                      <Loader2 className="h-3 w-3 animate-spin" />
+                                    ) : (
+                                      "Demote"
+                                    )}
+                                  </Button>
+                                ) : null}
+                              </TableCell>
+                            )}
                           </TableRow>
                         ))}
                       </TableBody>

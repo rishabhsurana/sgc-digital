@@ -6,6 +6,7 @@ import {
   handleUnauthorizedResponse,
   type ApiResponse,
 } from '@/lib/api-client'
+import { toast } from 'sonner'
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001'
 
@@ -305,23 +306,28 @@ export async function downloadDocumentAuthorized(
   documentId: string,
   fileName: string
 ): Promise<void> {
-  const token = getToken()
-  const res = await fetch(`${API_BASE}/api/documents/${documentId}/download`, {
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
-  })
-  handleUnauthorizedResponse(res.status)
-  if (!res.ok) {
-    throw new Error('Download failed')
+  try {
+    const token = getToken()
+    const res = await fetch(`${API_BASE}/api/documents/${documentId}/download`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    })
+    handleUnauthorizedResponse(res.status)
+    if (!res.ok) {
+      toast.error('Download failed')
+      return
+    }
+    const blob = await res.blob()
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = fileName
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    URL.revokeObjectURL(url)
+  } catch (e) {
+    toast.error(e instanceof Error ? e.message : 'Download failed')
   }
-  const blob = await res.blob()
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = fileName
-  document.body.appendChild(a)
-  a.click()
-  a.remove()
-  URL.revokeObjectURL(url)
 }
 
 export interface ReportsFilters {

@@ -901,9 +901,6 @@ function ContractsPageContent() {
           form.append("document_type_code", uploaded.documentType || "OTHER")
           form.append("document_type_label", allDocumentTypes.find((t) => t.value === uploaded.documentType)?.label || "Other Document")
           form.append("condition", "if_applicable")
-          if (uploaded.description?.trim()) {
-            form.append("description", uploaded.description.trim())
-          }
           return apiPostFormData("/api/documents/upload", form)
         })
 
@@ -943,7 +940,7 @@ function ContractsPageContent() {
     return (
       <div className="flex min-h-screen flex-col bg-background">
         <Header />
-        <AskRex position="content" />
+        <AskRex />
         <main className="flex-1 py-12">
           <div className="container mx-auto px-4 lg:px-8 max-w-2xl">
             <Card className="bg-card border-border overflow-hidden">
@@ -1058,7 +1055,7 @@ function ContractsPageContent() {
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <Header />
-      <AskRex position="content" />
+      <AskRex />
       
       <main className="flex-1 py-8 lg:py-12">
         <div className="container mx-auto px-4 lg:px-8 max-w-4xl">
@@ -2421,7 +2418,7 @@ function ContractsPageContent() {
                       Your application has been saved. You can{' '}
                       <button 
                         onClick={handleSubmit}
-                        className="underline font-medium hover:no-underline"
+                        className="cursor-pointer underline font-medium hover:no-underline"
                       >
                         try again now
                       </button>

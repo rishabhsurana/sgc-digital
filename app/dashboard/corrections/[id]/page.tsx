@@ -196,13 +196,13 @@ export default function CorrectionResponsePage({ params }: { params: Promise<{ i
     })
   }
   
-  // Check if required documents are uploaded
-  const allRequiredDocumentsUploaded = () => {
-    if (!correctionRequest) return false
-    return correctionRequest.affectedDocuments.every(doc => 
-      uploadedFiles.some(f => f.documentType === doc.documentId)
-    )
-  }
+  // // Check if required documents are uploaded
+  // const allRequiredDocumentsUploaded = () => {
+  //   if (!correctionRequest) return false
+  //   return correctionRequest.affectedDocuments.every(doc => 
+  //     uploadedFiles.some(f => f.category === doc.documentId)
+  //   )
+  // }
   
   if (isLoading) {
     return (
@@ -623,12 +623,16 @@ export default function CorrectionResponsePage({ params }: { params: Promise<{ i
                     <FileUpload
                       files={uploadedFiles.filter(f => f.documentType === 'additional')}
                       onFilesChange={(files) => {
-                        const additionalFiles = files.map(f => ({ ...f, documentType: 'additional' }))
+                        const additionalFiles = files.map(f => ({ ...f, category: 'additional' }))
                         const existingRequired = uploadedFiles.filter(f => f.documentType !== 'additional')
                         setUploadedFiles([...existingRequired, ...additionalFiles])
                       }}
-                      documentTypes={[{ value: 'additional', label: 'Additional Supporting Document' }]}
-                      acceptedTypes={['.pdf', '.doc', '.docx', '.jpg', '.jpeg', '.png']}
+                      accept={{
+                        'application/pdf': ['.pdf'],
+                        'application/msword': ['.doc'],
+                        'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
+                        'image/*': ['.jpg', '.jpeg', '.png'],
+                      }}
                     />
                   </div>
                 </CardContent>

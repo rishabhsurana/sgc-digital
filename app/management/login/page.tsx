@@ -62,7 +62,6 @@ function ManagementLoginContent() {
         role: admin.role,
         submitter_type: "management_user",
         organization: null,
-        entity_number: "",
         entity_id: null,
         mda_id: null,
         can_submit_contracts: true,
@@ -158,7 +157,7 @@ function ManagementLoginContent() {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                    className="cursor-pointer absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                   >
                     {showPassword ? (
                       <EyeOff className="h-4 w-4" />

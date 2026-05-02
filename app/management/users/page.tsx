@@ -70,6 +70,7 @@ import {
   CheckCircle,
   XCircle,
   Eye,
+  EyeOff,
   Loader2,
   X
 } from "lucide-react"
@@ -104,11 +105,11 @@ const PORTAL_STATUSES = [
 ]
 
 const PORTAL_ROLE_OPTIONS = [
-  { value: "submitter", label: "Submitter" },
+  { value: "secondary", label: "Secondary" },
+  { value: "primary", label: "Primary" },
   { value: "reviewer", label: "Reviewer" },
   { value: "user", label: "User" },
   { value: "manager", label: "Manager" },
-  { value: "admin", label: "Admin" },
   { value: "super_admin", label: "Super Admin" },
 ]
 
@@ -257,7 +258,7 @@ export default function UserManagementPage() {
     mdaId: "",
     department: "",
     position: "",
-    role: "submitter",
+    role: "secondary",
   })
 
   const [newMgmtUserForm, setNewMgmtUserForm] = useState({
@@ -269,7 +270,7 @@ export default function UserManagementPage() {
   })
 
   const [editPortalForm, setEditPortalForm] = useState({
-    role: "submitter",
+    role: "secondary",
     status: "active",
     department: "",
     phone: "",
@@ -292,6 +293,8 @@ export default function UserManagementPage() {
   // Tracks pre-flight validation errors surfaced inside the create dialogs.
   const [createUserError, setCreateUserError] = useState<string | null>(null)
   const [createMgmtUserError, setCreateMgmtUserError] = useState<string | null>(null)
+  const [showPortalPassword, setShowPortalPassword] = useState(false)
+  const [showManagementPassword, setShowManagementPassword] = useState(false)
 
   // Caller's role on the management portal. Used to hide affordances that
   // the backend won't accept (e.g. a plain `manager` cannot create/modify
@@ -387,11 +390,19 @@ export default function UserManagementPage() {
 
   const getPortalRoleBadge = (role: string, submitterType?: string) => {
     const r = String(role || "").toLowerCase()
-    if (r === "super_admin" || r === "admin") {
+    if (r === "primary") {
       return (
         <Badge className="bg-purple-100 text-purple-800">
           <ShieldCheck className="h-3 w-3 mr-1" />
-          {role}
+          Primary
+        </Badge>
+      )
+    }
+    if (r === "super_admin") {
+      return (
+        <Badge className="bg-purple-100 text-purple-800">
+          <ShieldCheck className="h-3 w-3 mr-1" />
+          Super Admin
         </Badge>
       )
     }
@@ -403,7 +414,7 @@ export default function UserManagementPage() {
         </Badge>
       )
     }
-    if (r === "submitter") {
+    if (r === "secondary") {
       return <Badge className="bg-slate-100 text-slate-800">{submitterTypeLabel(String(submitterType || ""))}</Badge>
     }
     return <Badge variant="outline">{role || "—"}</Badge>
@@ -572,7 +583,7 @@ export default function UserManagementPage() {
           mdaId: "",
           department: "",
           position: "",
-          role: "submitter",
+          role: "secondary",
         })
       } else {
         setCreateUserError(res.error || "Failed to create user.")
@@ -819,16 +830,27 @@ export default function UserManagementPage() {
                   <Label htmlFor="portal-password">
                     Password <span className="text-red-500">*</span>
                   </Label>
-                  <Input
-                    id="portal-password"
-                    type="password"
-                    placeholder={`Minimum ${MIN_PASSWORD_LENGTH} characters`}
-                    value={newUserForm.password}
-                    onChange={(e) => setNewUserForm((prev) => ({ ...prev, password: e.target.value }))}
-                    minLength={MIN_PASSWORD_LENGTH}
-                    autoComplete="new-password"
-                    required
-                  />
+                  <div className="relative">
+                    <Input
+                      id="portal-password"
+                      type={showPortalPassword ? "text" : "password"}
+                      placeholder={`Minimum ${MIN_PASSWORD_LENGTH} characters`}
+                      value={newUserForm.password}
+                      onChange={(e) => setNewUserForm((prev) => ({ ...prev, password: e.target.value }))}
+                      minLength={MIN_PASSWORD_LENGTH}
+                      autoComplete="new-password"
+                      className="pr-10"
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPortalPassword((prev) => !prev)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                      aria-label={showPortalPassword ? "Hide password" : "Show password"}
+                    >
+                      {showPortalPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
                   <p className="text-xs text-muted-foreground">
                     Share this password with the user over a secure channel. They can change it after
                     first login.
@@ -1032,7 +1054,7 @@ export default function UserManagementPage() {
                   {searchQuery && (
                     <button
                       onClick={() => setSearchQuery('')}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                      className="cursor-pointer absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                     >
                       <X className="h-4 w-4" />
                     </button>
@@ -1314,7 +1336,7 @@ export default function UserManagementPage() {
                   {staffSearchQuery && (
                     <button
                       onClick={() => setStaffSearchQuery("")}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                      className="cursor-pointer absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                     >
                       <X className="h-4 w-4" />
                     </button>
@@ -1476,14 +1498,25 @@ export default function UserManagementPage() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="mgmt-password">Password</Label>
-              <Input
-                id="mgmt-password"
-                type="password"
-                placeholder={`Minimum ${MIN_PASSWORD_LENGTH} characters (or leave blank to auto-generate)`}
-                value={newMgmtUserForm.password}
-                onChange={(e) => setNewMgmtUserForm((p) => ({ ...p, password: e.target.value }))}
-                autoComplete="new-password"
-              />
+              <div className="relative">
+                <Input
+                  id="mgmt-password"
+                  type={showManagementPassword ? "text" : "password"}
+                  placeholder={`Minimum ${MIN_PASSWORD_LENGTH} characters (or leave blank to auto-generate)`}
+                  value={newMgmtUserForm.password}
+                  onChange={(e) => setNewMgmtUserForm((p) => ({ ...p, password: e.target.value }))}
+                  autoComplete="new-password"
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowManagementPassword((prev) => !prev)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                  aria-label={showManagementPassword ? "Hide password" : "Show password"}
+                >
+                  {showManagementPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
               <p className="text-xs text-muted-foreground">
                 Leave blank and we&apos;ll generate a strong one-time password that&apos;s displayed
                 after the user is created — share it securely and ask them to change it.

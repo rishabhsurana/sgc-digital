@@ -346,10 +346,6 @@ function CorrespondencePageContent() {
           form.append("document_type_code", uploaded.documentType || "OTHER")
           form.append("document_type_label", DOCUMENT_TYPES.find((t) => t.value === uploaded.documentType)?.label || "Other")
           form.append("condition", "if_applicable")
-          if (uploaded.description?.trim()) {
-            form.append("description", uploaded.description.trim())
-          }
-
           const uploadResult = await apiPostFormData("/api/documents/upload", form)
           if (!uploadResult.success) {
             throw new Error(uploadResult.error || "Document upload failed")
@@ -400,7 +396,7 @@ function CorrespondencePageContent() {
     return (
       <div className="flex min-h-screen flex-col bg-background">
         <Header />
-        <AskRex position="content" />
+        <AskRex />
         <main className="flex-1 py-12">
           <div className="container mx-auto px-4 lg:px-8 max-w-2xl">
             <Card className="bg-card border-border overflow-hidden">
@@ -450,9 +446,9 @@ function CorrespondencePageContent() {
                 <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 mb-6">
                   <h4 className="font-semibold text-sm text-blue-900 mb-2">What Happens Next?</h4>
                   <ol className="text-sm text-blue-800 space-y-1 list-decimal list-inside">
-                    <li>Your submission will be reviewed by the SGC Registry</li>
-                    <li>You will receive email updates as your submission progresses</li>
-                    <li>Track status anytime from your Dashboard</li>
+                    <li>Your correspondence request will be reviewed by the SGC</li>
+                    <li>You may be contacted for additional documents if needed</li>
+                    <li>Track progress anytime from your Dashboard</li>
                   </ol>
                 </div>
                 
@@ -482,7 +478,7 @@ function CorrespondencePageContent() {
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <Header />
-      <AskRex position="content" />
+      <AskRex />
       
       <main className="flex-1 py-8 lg:py-12">
         <div className="container mx-auto px-4 lg:px-8 max-w-4xl">
@@ -901,7 +897,7 @@ function CorrespondencePageContent() {
                       Your application has been saved. You can{' '}
                       <button 
                         onClick={handleSubmit}
-                        className="underline font-medium hover:no-underline"
+                        className="cursor-pointer underline font-medium hover:no-underline"
                       >
                         try again now
                       </button>

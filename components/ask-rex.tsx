@@ -61,6 +61,11 @@ export function AskRex({ position = "header" }: AskRexProps) {
   ])
   const scrollRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  const iconContainerRef = useRef<HTMLDivElement>(null)
+  const dragStartRef = useRef<{ mouseX: number; mouseY: number; elemX: number; elemY: number } | null>(null)
+  const hasDraggedRef = useRef(false)
+  const isDraggingRef = useRef(false)
+  const [iconPos, setIconPos] = useState<{ x: number; y: number } | null>(null)
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -75,6 +80,90 @@ export function AskRex({ position = "header" }: AskRexProps) {
       inputRef.current.focus()
     }
   }, [isOpen])
+
+  // Load saved icon position from localStorage
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("ask-rex-position")
+      if (saved) {
+        const pos = JSON.parse(saved)
+        if (
+          typeof pos.x === "number" &&
+          typeof pos.y === "number" &&
+          pos.x >= 0 &&
+          pos.y >= 0 &&
+          pos.x < window.innerWidth &&
+          pos.y < window.innerHeight
+        ) {
+          setIconPos(pos)
+        }
+      }
+    } catch {
+      // ignore invalid data
+    }
+  }, [])
+
+  // Persist icon position to localStorage
+  useEffect(() => {
+    if (iconPos) {
+      localStorage.setItem("ask-rex-position", JSON.stringify(iconPos))
+    }
+  }, [iconPos])
+
+  const handleIconPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.button !== 0) return
+    const container = iconContainerRef.current
+    if (!container) return
+
+    container.setPointerCapture(e.pointerId)
+    const rect = container.getBoundingClientRect()
+    dragStartRef.current = {
+      mouseX: e.clientX,
+      mouseY: e.clientY,
+      elemX: rect.left,
+      elemY: rect.top,
+    }
+    hasDraggedRef.current = false
+  }
+
+  const handleIconPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!dragStartRef.current) return
+
+    const dx = e.clientX - dragStartRef.current.mouseX
+    const dy = e.clientY - dragStartRef.current.mouseY
+
+    // Only start dragging after a small threshold to distinguish from clicks
+    if (!hasDraggedRef.current && Math.abs(dx) + Math.abs(dy) < 5) return
+    hasDraggedRef.current = true
+
+    const container = iconContainerRef.current
+    let newX = dragStartRef.current.elemX + dx
+    let newY = dragStartRef.current.elemY + dy
+
+    // Clamp to viewport bounds
+    if (container) {
+      const w = container.offsetWidth
+      const h = container.offsetHeight
+      newX = Math.max(0, Math.min(window.innerWidth - w, newX))
+      newY = Math.max(0, Math.min(window.innerHeight - h, newY))
+    }
+
+    setIconPos({ x: newX, y: newY })
+  }
+
+  const handleIconPointerUp = () => {
+    const wasDragged = hasDraggedRef.current
+    dragStartRef.current = null
+    hasDraggedRef.current = false
+
+    if (wasDragged) {
+      // Prevent the subsequent click event from opening the chat
+      isDraggingRef.current = true
+      requestAnimationFrame(() => {
+        isDraggingRef.current = false
+      })
+    }
+  }
 
   const handleVoiceInput = () => {
     if (!("webkitSpeechRecognition" in window) && !("SpeechRecognition" in window)) {
@@ -99,9 +188,21 @@ export function AskRex({ position = "header" }: AskRexProps) {
     }
 
     if (isListening) {
-      recognition.stop()
-    } else {
+      try {
+        recognition.stop()
+      } catch {
+        setIsListening(false)
+      }
+      return
+    }
+
+    try {
       recognition.start()
+    } catch (err) {
+      setIsListening(false)
+      const message =
+        err instanceof Error ? err.message : "Check microphone permission and try again."
+      alert(`Could not start voice input: ${message}`)
     }
   }
 
@@ -223,11 +324,18 @@ export function AskRex({ position = "header" }: AskRexProps) {
     const isSmall = position === "header"
     
     return (
-      <div className={cn(
-        "fixed right-4 z-[100]",
-        isSmall ? "top-8" : "top-36"
-      )}>
-        <div className="relative group">
+      <div
+        ref={iconContainerRef}
+        className={cn(
+          "fixed z-[100] cursor-grab active:cursor-grabbing select-none",
+          !iconPos && (isSmall ? "right-4 bottom-8" : "right-4 top-36")
+        )}
+        style={iconPos ? { left: iconPos.x, top: iconPos.y } : undefined}
+        onPointerDown={handleIconPointerDown}
+        onPointerMove={handleIconPointerMove}
+        onPointerUp={handleIconPointerUp}
+      >
+        <div className="relative group" style={{ touchAction: "none" }}>
           {/* Wire/cord hanging from top */}
           <div className={cn(
             "absolute left-1/2 -translate-x-1/2 bg-gradient-to-b from-slate-600 to-slate-400 rounded-full",
@@ -242,7 +350,7 @@ export function AskRex({ position = "header" }: AskRexProps) {
           
           {/* Main bulb button */}
           <Button
-            onClick={() => setIsOpen(true)}
+            onClick={() => { if (!isDraggingRef.current) setIsOpen(true) }}
             className={cn(
               "rounded-full shadow-2xl bg-gradient-to-br from-slate-300 to-slate-100 hover:from-yellow-200 hover:to-yellow-400 border-slate-400 hover:border-yellow-500 hover:shadow-[0_0_60px_20px_rgba(250,204,21,0.6)] transition-all duration-300 flex items-center justify-center group-hover:scale-105",
               isSmall ? "h-20 w-20 border-2" : "h-32 w-32 border-4"
