@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
@@ -24,80 +24,189 @@ import {
   Download,
   FileText,
   FileSignature,
-  Calendar,
   Filter,
   Clock,
   CheckCircle,
   AlertCircle,
   ArrowUpRight,
   ArrowDownRight,
-  Building2,
   Users,
   DollarSign,
-  Activity
+  Activity,
 } from "lucide-react"
 import { AskRex } from "@/components/ask-rex"
+import { apiDownloadFile } from "@/lib/api-client"
+import {
+  fetchReportsContractsByNature,
+  fetchReportsCorrespondenceByType,
+  fetchReportsMonthlyTrends,
+  fetchReportsStatusOverview,
+  fetchReportsSummary,
+  type ReportsContractsNaturePayload,
+  type ReportsCorrespondenceType,
+  type ReportsMonthlyTrend,
+  type ReportsStatusOverviewPayload,
+  type ReportsSummaryStats,
+} from "@/lib/dashboard-api"
 
-// Sample data for demonstration
-const SUMMARY_STATS = {
-  totalSubmissions: 1247,
-  submissionsChange: 12.5,
-  pendingReview: 89,
-  pendingChange: -8.2,
-  avgProcessingDays: 4.2,
-  processingChange: -15.3,
-  completionRate: 94.2,
-  completionChange: 2.1
+const COLORS = [
+  "bg-blue-500",
+  "bg-purple-500",
+  "bg-green-500",
+  "bg-orange-500",
+  "bg-red-500",
+  "bg-cyan-500",
+  "bg-gray-500",
+]
+
+const EMPTY_SUMMARY: ReportsSummaryStats = {
+  totalSubmissions: 0,
+  submissionsChange: 0,
+  pendingReview: 0,
+  pendingChange: 0,
+  avgProcessingDays: 0,
+  processingChange: 0,
+  completionRate: 0,
+  completionChange: 0,
+  totalCorrespondences: 0,
+  totalContracts: 0,
 }
 
-const CORRESPONDENCE_BY_TYPE = [
-  { type: "General", count: 342, percentage: 32, color: "bg-blue-500" },
-  { type: "Litigation", count: 287, percentage: 27, color: "bg-purple-500" },
-  { type: "Advisory", count: 198, percentage: 18, color: "bg-green-500" },
-  { type: "Compensation", count: 124, percentage: 11, color: "bg-orange-500" },
-  { type: "Cabinet/Confidential", count: 89, percentage: 8, color: "bg-red-500" },
-  { type: "Other", count: 42, percentage: 4, color: "bg-gray-500" }
-]
+const EMPTY_CONTRACTS: ReportsContractsNaturePayload = {
+  rows: [],
+  totalValue: 0,
+  totalCount: 0,
+  averageValue: 0,
+  largestValue: 0,
+}
 
-const CONTRACTS_BY_NATURE = [
-  { type: "Goods", count: 156, value: 45200000, color: "bg-blue-500" },
-  { type: "Consultancy/Services", count: 234, value: 89500000, color: "bg-purple-500" },
-  { type: "Works", count: 78, value: 234800000, color: "bg-orange-500" }
-]
+const EMPTY_STATUS: ReportsStatusOverviewPayload = {
+  correspondence: [],
+  contracts: [],
+  summary: {
+    pending: 0,
+    inProgress: 0,
+    completed: 0,
+    requiresAction: 0,
+    approved: 0,
+    rejected: 0,
+  },
+}
 
-const TOP_MINISTRIES = [
-  { name: "Ministry of Health", submissions: 187, percentage: 82 },
-  { name: "Ministry of Education", submissions: 156, percentage: 68 },
-  { name: "Ministry of Works", submissions: 143, percentage: 62 },
-  { name: "Ministry of Finance", submissions: 121, percentage: 53 },
-  { name: "Ministry of Agriculture", submissions: 98, percentage: 43 }
-]
+const REFRESH_INTERVAL_MS = 60_000
 
-const MONTHLY_TRENDS = [
-  { month: "Jul", correspondence: 145, contracts: 42 },
-  { month: "Aug", correspondence: 162, contracts: 51 },
-  { month: "Sep", correspondence: 178, contracts: 48 },
-  { month: "Oct", correspondence: 195, contracts: 56 },
-  { month: "Nov", correspondence: 189, contracts: 63 },
-  { month: "Dec", correspondence: 167, contracts: 45 },
-  { month: "Jan", correspondence: 201, contracts: 58 },
-  { month: "Feb", correspondence: 210, contracts: 65 }
-]
+function formatCurrency(n: number): string {
+  return `BBD $${n.toLocaleString("en-BB", { maximumFractionDigits: 2 })}`
+}
 
-const maxMonthlyValue = Math.max(...MONTHLY_TRENDS.flatMap(m => [m.correspondence, m.contracts]))
+function formatChange(v: number): string {
+  const rounded = Number(v.toFixed(1))
+  return `${rounded > 0 ? "+" : ""}${rounded}%`
+}
+
+function errorToText(value: unknown): string {
+  if (typeof value === "string") return value
+  if (value instanceof Error) return value.message
+  if (value && typeof value === "object") {
+    const maybeMessage = (value as { message?: unknown }).message
+    if (typeof maybeMessage === "string") return maybeMessage
+    try {
+      return JSON.stringify(value)
+    } catch {
+      return "Request failed."
+    }
+  }
+  return "Request failed."
+}
 
 export default function ReportsPage() {
-  const [dateRange, setDateRange] = useState("last-30")
-  const [ministry, setMinistry] = useState("all")
+  const [dateRange, setDateRange] = useState<
+    "last-7" | "last-30" | "last-90" | "last-year" | "all-time"
+  >("last-30")
+  const [fromDate, setFromDate] = useState("")
+  const [toDate, setToDate] = useState("")
+  const [summary, setSummary] = useState<ReportsSummaryStats>(EMPTY_SUMMARY)
+  const [corrByType, setCorrByType] = useState<ReportsCorrespondenceType[]>([])
+  const [contractsByNature, setContractsByNature] = useState<ReportsContractsNaturePayload>(EMPTY_CONTRACTS)
+  const [statusOverview, setStatusOverview] = useState<ReportsStatusOverviewPayload>(EMPTY_STATUS)
+  const [monthlyTrends, setMonthlyTrends] = useState<ReportsMonthlyTrend[]>([])
+  const [loading, setLoading] = useState(true)
+  const [exporting, setExporting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const filters = useMemo(
+    () => ({
+      dateRange,
+      from: fromDate || undefined,
+      to: toDate || undefined,
+    }),
+    [dateRange, fromDate, toDate]
+  )
+
+  const loadAll = useCallback(async () => {
+    setLoading(true)
+    setError(null)
+    const [summaryRes, corrTypeRes, contractsNatureRes, statusRes, trendsRes] = await Promise.all([
+      fetchReportsSummary(filters),
+      fetchReportsCorrespondenceByType(filters),
+      fetchReportsContractsByNature(filters),
+      fetchReportsStatusOverview(filters),
+      fetchReportsMonthlyTrends(filters),
+    ])
+
+    const failed = [summaryRes, corrTypeRes, contractsNatureRes, statusRes, trendsRes].find((r) => !r.success)
+    if (failed) {
+      setError(errorToText(failed.error || failed.message || "Failed to load reports."))
+    }
+
+    if (summaryRes.success && summaryRes.data) setSummary({ ...EMPTY_SUMMARY, ...summaryRes.data })
+    if (corrTypeRes.success && corrTypeRes.data) setCorrByType(corrTypeRes.data)
+    if (contractsNatureRes.success && contractsNatureRes.data) setContractsByNature(contractsNatureRes.data)
+    if (statusRes.success && statusRes.data) setStatusOverview(statusRes.data)
+    if (trendsRes.success && trendsRes.data) setMonthlyTrends(trendsRes.data)
+    setLoading(false)
+  }, [filters])
+
+  useEffect(() => {
+    void loadAll()
+  }, [loadAll])
+
+  useEffect(() => {
+    const tick = () => {
+      if (typeof document !== "undefined" && document.visibilityState !== "visible") return
+      void loadAll()
+    }
+    const id = window.setInterval(tick, REFRESH_INTERVAL_MS)
+    return () => window.clearInterval(id)
+  }, [loadAll])
+
+  const maxMonthlyValue = Math.max(1, ...monthlyTrends.flatMap((m) => [m.correspondence, m.contracts]))
+
+  const handleExport = useCallback(async () => {
+    setExporting(true)
+    try {
+      const q = new URLSearchParams()
+      q.set("date_range", dateRange)
+      if (fromDate) q.set("from", fromDate)
+      if (toDate) q.set("to", toDate)
+      await apiDownloadFile(
+        `/api/reports/export?${q.toString()}`,
+        `reports-${new Date().toISOString().slice(0, 10)}.xlsx`
+      )
+    } catch (err) {
+      setError(errorToText(err))
+    } finally {
+      setExporting(false)
+    }
+  }, [dateRange, fromDate, toDate])
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <Header />
       <AskRex />
-      
+
       <main className="flex-1 py-8">
         <div className="container mx-auto px-4 lg:px-8">
-          {/* Page Header */}
           <div className="mb-8">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
               <div>
@@ -108,17 +217,21 @@ export default function ReportsPage() {
                   Reports & Analytics
                 </h1>
                 <p className="mt-2 text-muted-foreground">
-                  Comprehensive insights into SGC Digital submissions and processing metrics.
+                  Insights for your organization’s submissions and processing metrics (updates automatically every
+                  minute and when filters change).
                 </p>
               </div>
-              <Button className="bg-accent hover:bg-accent/90 text-accent-foreground shadow-md">
+              <Button
+                className="bg-accent hover:bg-accent/90 text-accent-foreground shadow-md"
+                onClick={() => void handleExport()}
+                disabled={exporting}
+              >
                 <Download className="mr-2 h-4 w-4" />
-                Export Report
+                {exporting ? "Exporting..." : "Export Report"}
               </Button>
             </div>
           </div>
 
-          {/* Filters */}
           <Card className="mb-6 border-primary/20">
             <CardContent className="pt-6">
               <div className="flex flex-col sm:flex-row gap-4">
@@ -128,8 +241,10 @@ export default function ReportsPage() {
                 </div>
                 <div className="flex flex-wrap gap-4 flex-1">
                   <div className="space-y-1 min-w-[180px]">
-                    <Label htmlFor="dateRange" className="text-xs">Date Range</Label>
-                    <Select value={dateRange} onValueChange={setDateRange}>
+                    <Label htmlFor="dateRange" className="text-xs">
+                      Date Range
+                    </Label>
+                    <Select value={dateRange} onValueChange={(v) => setDateRange(v as typeof dateRange)}>
                       <SelectTrigger id="dateRange" className="h-9">
                         <SelectValue />
                       </SelectTrigger>
@@ -142,42 +257,50 @@ export default function ReportsPage() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="space-y-1 min-w-[200px]">
-                    <Label htmlFor="ministry" className="text-xs">Ministry/MDA</Label>
-                    <Select value={ministry} onValueChange={setMinistry}>
-                      <SelectTrigger id="ministry" className="h-9">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Ministries</SelectItem>
-                        <SelectItem value="MOH">Ministry of Health</SelectItem>
-                        <SelectItem value="MOE">Ministry of Education</SelectItem>
-                        <SelectItem value="MOF">Ministry of Finance</SelectItem>
-                        <SelectItem value="MWUI">Ministry of Works</SelectItem>
-                      </SelectContent>
-                    </Select>
+                  <div className="space-y-1">
+                    <Label htmlFor="startDate" className="text-xs">
+                      From
+                    </Label>
+                    <Input
+                      type="date"
+                      id="startDate"
+                      className="h-9 w-[140px]"
+                      value={fromDate}
+                      onChange={(e) => setFromDate(e.target.value)}
+                    />
                   </div>
                   <div className="space-y-1">
-                    <Label htmlFor="startDate" className="text-xs">From</Label>
-                    <Input type="date" id="startDate" className="h-9 w-[140px]" />
+                    <Label htmlFor="endDate" className="text-xs">
+                      To
+                    </Label>
+                    <Input
+                      type="date"
+                      id="endDate"
+                      className="h-9 w-[140px]"
+                      value={toDate}
+                      onChange={(e) => setToDate(e.target.value)}
+                    />
                   </div>
-                  <div className="space-y-1">
-                    <Label htmlFor="endDate" className="text-xs">To</Label>
-                    <Input type="date" id="endDate" className="h-9 w-[140px]" />
+                  <div className="flex items-end">
+                    <Button variant="outline" size="sm" onClick={() => void loadAll()} disabled={loading}>
+                      Refresh
+                    </Button>
                   </div>
                 </div>
               </div>
+              {error ? <p className="mt-3 text-sm text-destructive">{error}</p> : null}
             </CardContent>
           </Card>
 
-          {/* Summary Stats */}
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-6">
             <Card className="bg-gradient-to-br from-blue-50 to-blue-100/50 border-blue-200">
               <CardContent className="pt-6">
                 <div className="flex items-start justify-between">
                   <div>
                     <p className="text-sm font-medium text-blue-700">Total Submissions</p>
-                    <p className="text-3xl font-bold text-blue-900 mt-1">{SUMMARY_STATS.totalSubmissions.toLocaleString()}</p>
+                    <p className="text-3xl font-bold text-blue-900 mt-1">
+                      {loading ? "—" : summary.totalSubmissions.toLocaleString()}
+                    </p>
                   </div>
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/20">
                     <Activity className="h-5 w-5 text-blue-600" />
@@ -185,7 +308,7 @@ export default function ReportsPage() {
                 </div>
                 <div className="mt-3 flex items-center gap-1 text-xs">
                   <ArrowUpRight className="h-3 w-3 text-green-600" />
-                  <span className="text-green-600 font-medium">+{SUMMARY_STATS.submissionsChange}%</span>
+                  <span className="text-green-600 font-medium">{formatChange(summary.submissionsChange)}</span>
                   <span className="text-muted-foreground">vs last period</span>
                 </div>
               </CardContent>
@@ -196,7 +319,9 @@ export default function ReportsPage() {
                 <div className="flex items-start justify-between">
                   <div>
                     <p className="text-sm font-medium text-amber-700">Pending Review</p>
-                    <p className="text-3xl font-bold text-amber-900 mt-1">{SUMMARY_STATS.pendingReview}</p>
+                    <p className="text-3xl font-bold text-amber-900 mt-1">
+                      {loading ? "—" : summary.pendingReview}
+                    </p>
                   </div>
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-500/20">
                     <Clock className="h-5 w-5 text-amber-600" />
@@ -204,7 +329,7 @@ export default function ReportsPage() {
                 </div>
                 <div className="mt-3 flex items-center gap-1 text-xs">
                   <ArrowDownRight className="h-3 w-3 text-green-600" />
-                  <span className="text-green-600 font-medium">{SUMMARY_STATS.pendingChange}%</span>
+                  <span className="text-green-600 font-medium">{formatChange(summary.pendingChange)}</span>
                   <span className="text-muted-foreground">vs last period</span>
                 </div>
               </CardContent>
@@ -215,7 +340,10 @@ export default function ReportsPage() {
                 <div className="flex items-start justify-between">
                   <div>
                     <p className="text-sm font-medium text-purple-700">Avg. Processing Time</p>
-                    <p className="text-3xl font-bold text-purple-900 mt-1">{SUMMARY_STATS.avgProcessingDays} <span className="text-lg font-normal">days</span></p>
+                    <p className="text-3xl font-bold text-purple-900 mt-1">
+                      {loading ? "—" : summary.avgProcessingDays}{" "}
+                      <span className="text-lg font-normal">days</span>
+                    </p>
                   </div>
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-500/20">
                     <TrendingUp className="h-5 w-5 text-purple-600" />
@@ -223,7 +351,7 @@ export default function ReportsPage() {
                 </div>
                 <div className="mt-3 flex items-center gap-1 text-xs">
                   <ArrowDownRight className="h-3 w-3 text-green-600" />
-                  <span className="text-green-600 font-medium">{SUMMARY_STATS.processingChange}%</span>
+                  <span className="text-green-600 font-medium">{formatChange(summary.processingChange)}</span>
                   <span className="text-muted-foreground">faster</span>
                 </div>
               </CardContent>
@@ -234,7 +362,9 @@ export default function ReportsPage() {
                 <div className="flex items-start justify-between">
                   <div>
                     <p className="text-sm font-medium text-green-700">Completion Rate</p>
-                    <p className="text-3xl font-bold text-green-900 mt-1">{SUMMARY_STATS.completionRate}%</p>
+                    <p className="text-3xl font-bold text-green-900 mt-1">
+                      {loading ? "—" : `${summary.completionRate}%`}
+                    </p>
                   </div>
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-500/20">
                     <CheckCircle className="h-5 w-5 text-green-600" />
@@ -242,14 +372,13 @@ export default function ReportsPage() {
                 </div>
                 <div className="mt-3 flex items-center gap-1 text-xs">
                   <ArrowUpRight className="h-3 w-3 text-green-600" />
-                  <span className="text-green-600 font-medium">+{SUMMARY_STATS.completionChange}%</span>
+                  <span className="text-green-600 font-medium">{formatChange(summary.completionChange)}</span>
                   <span className="text-muted-foreground">improvement</span>
                 </div>
               </CardContent>
             </Card>
           </div>
 
-          {/* Tabs for Different Report Views */}
           <Tabs defaultValue="overview" className="space-y-6">
             <TabsList className="bg-muted/50 p-1">
               <TabsTrigger value="overview" className="data-[state=active]:bg-background">
@@ -270,86 +399,54 @@ export default function ReportsPage() {
               </TabsTrigger>
             </TabsList>
 
-            {/* Overview Tab */}
             <TabsContent value="overview" className="space-y-6">
-              <div className="grid gap-6 lg:grid-cols-2">
-                {/* Monthly Trends Chart */}
-                <Card className="border-primary/20">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <TrendingUp className="h-5 w-5 text-primary" />
-                      Monthly Submission Trends
-                    </CardTitle>
-                    <CardDescription>Correspondence vs Contracts over 8 months</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      {/* Simple Bar Chart */}
-                      <div className="flex items-end justify-between h-48 gap-2">
-                        {MONTHLY_TRENDS.map((month) => (
-                          <div key={month.month} className="flex-1 flex flex-col items-center gap-1">
-                            <div className="w-full flex gap-1 items-end h-40">
-                              <div 
-                                className="flex-1 bg-blue-500 rounded-t transition-all hover:bg-blue-600"
-                                style={{ height: `${(month.correspondence / maxMonthlyValue) * 100}%` }}
-                                title={`Correspondence: ${month.correspondence}`}
-                              />
-                              <div 
-                                className="flex-1 bg-purple-500 rounded-t transition-all hover:bg-purple-600"
-                                style={{ height: `${(month.contracts / maxMonthlyValue) * 100}%` }}
-                                title={`Contracts: ${month.contracts}`}
-                              />
-                            </div>
-                            <span className="text-xs text-muted-foreground">{month.month}</span>
+              <Card className="border-primary/20">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <TrendingUp className="h-5 w-5 text-primary" />
+                    Monthly Submission Trends
+                  </CardTitle>
+                  <CardDescription>Correspondence vs Contracts by month for your organization</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex items-end justify-between h-48 gap-2 overflow-x-auto pb-1">
+                      {(monthlyTrends.length
+                        ? monthlyTrends
+                        : [{ ym: "", month: loading ? "…" : "-", correspondence: 0, contracts: 0 }]
+                      ).map((month) => (
+                        <div key={`${month.ym}-${month.month}`} className="flex-1 min-w-[2rem] flex flex-col items-center gap-1">
+                          <div className="w-full flex gap-1 items-end h-40">
+                            <div
+                              className="flex-1 bg-blue-500 rounded-t transition-all hover:bg-blue-600"
+                              style={{ height: `${(month.correspondence / maxMonthlyValue) * 100}%` }}
+                              title={`Correspondence: ${month.correspondence}`}
+                            />
+                            <div
+                              className="flex-1 bg-purple-500 rounded-t transition-all hover:bg-purple-600"
+                              style={{ height: `${(month.contracts / maxMonthlyValue) * 100}%` }}
+                              title={`Contracts: ${month.contracts}`}
+                            />
                           </div>
-                        ))}
-                      </div>
-                      <div className="flex justify-center gap-6 pt-2">
-                        <div className="flex items-center gap-2">
-                          <div className="h-3 w-3 rounded bg-blue-500" />
-                          <span className="text-sm text-muted-foreground">Correspondence</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <div className="h-3 w-3 rounded bg-purple-500" />
-                          <span className="text-sm text-muted-foreground">Contracts</span>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Top Ministries */}
-                <Card className="border-primary/20">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Building2 className="h-5 w-5 text-primary" />
-                      Top Submitting Ministries
-                    </CardTitle>
-                    <CardDescription>By number of submissions this period</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      {TOP_MINISTRIES.map((ministry, index) => (
-                        <div key={ministry.name} className="space-y-2">
-                          <div className="flex items-center justify-between text-sm">
-                            <div className="flex items-center gap-2">
-                              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
-                                {index + 1}
-                              </span>
-                              <span className="font-medium text-foreground">{ministry.name}</span>
-                            </div>
-                            <span className="text-muted-foreground">{ministry.submissions}</span>
-                          </div>
-                          <Progress value={ministry.percentage} className="h-2" />
+                          <span className="text-xs text-muted-foreground">{month.month}</span>
                         </div>
                       ))}
                     </div>
-                  </CardContent>
-                </Card>
-              </div>
+                    <div className="flex justify-center gap-6 pt-2">
+                      <div className="flex items-center gap-2">
+                        <div className="h-3 w-3 rounded bg-blue-500" />
+                        <span className="text-sm text-muted-foreground">Correspondence</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="h-3 w-3 rounded bg-purple-500" />
+                        <span className="text-sm text-muted-foreground">Contracts</span>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </TabsContent>
 
-            {/* Correspondence Tab */}
             <TabsContent value="correspondence" className="space-y-6">
               <div className="grid gap-6 lg:grid-cols-2">
                 <Card className="border-blue-200">
@@ -362,11 +459,11 @@ export default function ReportsPage() {
                   </CardHeader>
                   <CardContent className="pt-6">
                     <div className="space-y-4">
-                      {CORRESPONDENCE_BY_TYPE.map((item) => (
+                      {corrByType.map((item, idx) => (
                         <div key={item.type} className="space-y-2">
                           <div className="flex items-center justify-between text-sm">
                             <div className="flex items-center gap-2">
-                              <div className={`h-3 w-3 rounded ${item.color}`} />
+                              <div className={`h-3 w-3 rounded ${COLORS[idx % COLORS.length]}`} />
                               <span className="font-medium text-foreground">{item.type}</span>
                             </div>
                             <div className="flex items-center gap-2">
@@ -375,8 +472,8 @@ export default function ReportsPage() {
                             </div>
                           </div>
                           <div className="h-2 rounded-full bg-muted overflow-hidden">
-                            <div 
-                              className={`h-full ${item.color} rounded-full transition-all`}
+                            <div
+                              className={`h-full ${COLORS[idx % COLORS.length]} rounded-full transition-all`}
                               style={{ width: `${item.percentage}%` }}
                             />
                           </div>
@@ -398,22 +495,22 @@ export default function ReportsPage() {
                     <div className="grid grid-cols-2 gap-4">
                       <div className="rounded-xl bg-gradient-to-br from-green-50 to-green-100/50 p-4 text-center">
                         <CheckCircle className="h-8 w-8 text-green-600 mx-auto mb-2" />
-                        <p className="text-2xl font-bold text-green-900">847</p>
+                        <p className="text-2xl font-bold text-green-900">{statusOverview.summary.completed}</p>
                         <p className="text-sm text-green-700">Completed</p>
                       </div>
                       <div className="rounded-xl bg-gradient-to-br from-amber-50 to-amber-100/50 p-4 text-center">
                         <Clock className="h-8 w-8 text-amber-600 mx-auto mb-2" />
-                        <p className="text-2xl font-bold text-amber-900">156</p>
+                        <p className="text-2xl font-bold text-amber-900">{statusOverview.summary.inProgress}</p>
                         <p className="text-sm text-amber-700">In Progress</p>
                       </div>
                       <div className="rounded-xl bg-gradient-to-br from-blue-50 to-blue-100/50 p-4 text-center">
                         <AlertCircle className="h-8 w-8 text-blue-600 mx-auto mb-2" />
-                        <p className="text-2xl font-bold text-blue-900">62</p>
+                        <p className="text-2xl font-bold text-blue-900">{statusOverview.summary.pending}</p>
                         <p className="text-sm text-blue-700">Pending Review</p>
                       </div>
                       <div className="rounded-xl bg-gradient-to-br from-red-50 to-red-100/50 p-4 text-center">
                         <AlertCircle className="h-8 w-8 text-red-600 mx-auto mb-2" />
-                        <p className="text-2xl font-bold text-red-900">17</p>
+                        <p className="text-2xl font-bold text-red-900">{statusOverview.summary.requiresAction}</p>
                         <p className="text-sm text-red-700">Requires Action</p>
                       </div>
                     </div>
@@ -422,7 +519,6 @@ export default function ReportsPage() {
               </div>
             </TabsContent>
 
-            {/* Contracts Tab */}
             <TabsContent value="contracts" className="space-y-6">
               <div className="grid gap-6 lg:grid-cols-2">
                 <Card className="border-purple-200">
@@ -435,11 +531,11 @@ export default function ReportsPage() {
                   </CardHeader>
                   <CardContent className="pt-6">
                     <div className="space-y-6">
-                      {CONTRACTS_BY_NATURE.map((item) => (
+                      {contractsByNature.rows.map((item, idx) => (
                         <div key={item.type} className="space-y-3">
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
-                              <div className={`h-4 w-4 rounded ${item.color}`} />
+                              <div className={`h-4 w-4 rounded ${COLORS[idx % COLORS.length]}`} />
                               <span className="font-semibold text-foreground">{item.type}</span>
                             </div>
                             <Badge variant="outline">{item.count} contracts</Badge>
@@ -447,13 +543,11 @@ export default function ReportsPage() {
                           <div className="rounded-lg bg-muted/50 p-3">
                             <div className="flex items-center justify-between mb-2">
                               <span className="text-sm text-muted-foreground">Total Value</span>
-                              <span className="font-bold text-foreground">
-                                BBD ${(item.value / 1000000).toFixed(1)}M
-                              </span>
+                              <span className="font-bold text-foreground">{formatCurrency(item.value)}</span>
                             </div>
                             <div className="flex items-center justify-between text-xs text-muted-foreground">
                               <span>Avg. Contract</span>
-                              <span>BBD ${((item.value / item.count) / 1000).toFixed(0)}K</span>
+                              <span>{formatCurrency(item.avgValue)}</span>
                             </div>
                           </div>
                         </div>
@@ -473,16 +567,24 @@ export default function ReportsPage() {
                   <CardContent className="pt-6">
                     <div className="rounded-xl bg-gradient-to-br from-primary/5 via-primary/10 to-accent/10 border border-primary/20 p-6 mb-6">
                       <p className="text-sm font-medium text-muted-foreground mb-1">Total Contract Value</p>
-                      <p className="text-4xl font-bold text-primary">BBD $369.5M</p>
-                      <p className="text-sm text-muted-foreground mt-2">468 contracts processed</p>
+                      <p className="text-4xl font-bold text-primary">
+                        {formatCurrency(contractsByNature.totalValue)}
+                      </p>
+                      <p className="text-sm text-muted-foreground mt-2">
+                        {contractsByNature.totalCount} contracts processed
+                      </p>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="text-center p-3 rounded-lg bg-muted/50">
-                        <p className="text-2xl font-bold text-foreground">$789K</p>
+                        <p className="text-2xl font-bold text-foreground">
+                          {formatCurrency(contractsByNature.averageValue)}
+                        </p>
                         <p className="text-xs text-muted-foreground">Average Value</p>
                       </div>
                       <div className="text-center p-3 rounded-lg bg-muted/50">
-                        <p className="text-2xl font-bold text-foreground">$45.2M</p>
+                        <p className="text-2xl font-bold text-foreground">
+                          {formatCurrency(contractsByNature.largestValue)}
+                        </p>
                         <p className="text-xs text-muted-foreground">Largest Contract</p>
                       </div>
                     </div>
@@ -491,36 +593,39 @@ export default function ReportsPage() {
               </div>
             </TabsContent>
 
-            {/* Trends Tab */}
             <TabsContent value="trends" className="space-y-6">
               <div className="grid gap-6 lg:grid-cols-3">
                 <Card className="lg:col-span-2 border-primary/20">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <TrendingUp className="h-5 w-5 text-primary" />
-                      Year-over-Year Comparison
+                      Period Comparison
                     </CardTitle>
-                    <CardDescription>Submission volume comparison with previous year</CardDescription>
+                    <CardDescription>Current filtered period vs the equivalent prior window</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-6">
                       <div className="grid grid-cols-2 gap-4">
                         <div className="rounded-xl bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 p-4">
-                          <p className="text-sm font-medium text-green-700">Current Year</p>
-                          <p className="text-3xl font-bold text-green-900 mt-1">1,247</p>
-                          <p className="text-xs text-green-600 mt-1">submissions YTD</p>
+                          <p className="text-sm font-medium text-green-700">Current Period</p>
+                          <p className="text-3xl font-bold text-green-900 mt-1">
+                            {summary.totalSubmissions.toLocaleString()}
+                          </p>
+                          <p className="text-xs text-green-600 mt-1">submissions</p>
                         </div>
                         <div className="rounded-xl bg-muted/50 border p-4">
-                          <p className="text-sm font-medium text-muted-foreground">Previous Year</p>
-                          <p className="text-3xl font-bold text-foreground mt-1">1,108</p>
-                          <p className="text-xs text-muted-foreground mt-1">same period</p>
+                          <p className="text-sm font-medium text-muted-foreground">Previous Period</p>
+                          <p className="text-3xl font-bold text-foreground mt-1">
+                            {Math.max(0, Math.round(summary.totalSubmissions / (1 + summary.submissionsChange / 100)))}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-1">equivalent window</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-3 p-4 rounded-lg bg-green-50 border border-green-200">
                         <ArrowUpRight className="h-8 w-8 text-green-600" />
                         <div>
-                          <p className="font-semibold text-green-900">12.5% Growth</p>
-                          <p className="text-sm text-green-700">139 more submissions than same period last year</p>
+                          <p className="font-semibold text-green-900">{formatChange(summary.submissionsChange)} change</p>
+                          <p className="text-sm text-green-700">Based on your selected date filters.</p>
                         </div>
                       </div>
                     </div>
@@ -531,39 +636,64 @@ export default function ReportsPage() {
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Users className="h-5 w-5 text-primary" />
-                      User Activity
+                      Operational Snapshot
                     </CardTitle>
-                    <CardDescription>Portal engagement metrics</CardDescription>
+                    <CardDescription>Quick health metrics for your organization</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
                       <div className="space-y-2">
                         <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">Active Users</span>
-                          <span className="font-semibold">324</span>
+                          <span className="text-muted-foreground">Completion Rate</span>
+                          <span className="font-semibold">{summary.completionRate}%</span>
                         </div>
-                        <Progress value={81} className="h-2" />
+                        <Progress value={Math.max(0, Math.min(100, summary.completionRate))} className="h-2" />
                       </div>
                       <div className="space-y-2">
                         <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">New Registrations</span>
-                          <span className="font-semibold">47</span>
+                          <span className="text-muted-foreground">Pending Share</span>
+                          <span className="font-semibold">
+                            {summary.totalSubmissions
+                              ? ((summary.pendingReview / summary.totalSubmissions) * 100).toFixed(1)
+                              : "0.0"}
+                            %
+                          </span>
                         </div>
-                        <Progress value={47} className="h-2" />
+                        <Progress
+                          value={
+                            summary.totalSubmissions
+                              ? Math.min(100, (summary.pendingReview / summary.totalSubmissions) * 100)
+                              : 0
+                          }
+                          className="h-2"
+                        />
                       </div>
                       <div className="space-y-2">
                         <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">Return Users</span>
-                          <span className="font-semibold">89%</span>
+                          <span className="text-muted-foreground">Avg Processing Days</span>
+                          <span className="font-semibold">{summary.avgProcessingDays}</span>
                         </div>
-                        <Progress value={89} className="h-2" />
+                        <Progress
+                          value={Math.min(100, Math.max(0, 100 - summary.avgProcessingDays * 10))}
+                          className="h-2"
+                        />
                       </div>
                       <div className="space-y-2">
                         <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">Mobile Usage</span>
-                          <span className="font-semibold">34%</span>
+                          <span className="text-muted-foreground">Needs Action</span>
+                          <span className="font-semibold">{statusOverview.summary.requiresAction}</span>
                         </div>
-                        <Progress value={34} className="h-2" />
+                        <Progress
+                          value={
+                            summary.totalSubmissions
+                              ? Math.min(
+                                  100,
+                                  (statusOverview.summary.requiresAction / summary.totalSubmissions) * 100
+                                )
+                              : 0
+                          }
+                          className="h-2"
+                        />
                       </div>
                     </div>
                   </CardContent>
