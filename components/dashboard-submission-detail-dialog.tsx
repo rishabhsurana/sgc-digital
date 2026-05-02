@@ -56,6 +56,7 @@ export function DashboardSubmissionDetailDialog({
   const [display, setDisplay] = useState<Submission>(submission)
   const [detailLoading, setDetailLoading] = useState(true)
   const [detailError, setDetailError] = useState<string | null>(null)
+  const [detailReloadKey, setDetailReloadKey] = useState(0)
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([])
   const [responseMessage, setResponseMessage] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -189,7 +190,7 @@ export function DashboardSubmissionDetailDialog({
       cancelled = true
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- reload when identity changes
-  }, [submission.id, submission.type])
+  }, [submission.id, submission.type, detailReloadKey])
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -239,13 +240,28 @@ export function DashboardSubmissionDetailDialog({
         <DialogDescription>{display.title}</DialogDescription>
       </DialogHeader>
 
-      {/* {detailError && <p className="text-sm text-destructive">{detailError}</p>}
       {detailLoading && (
-        <div className="flex items-center gap-2 text-sm text-muted-foreground py-2">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground py-2 shrink-0">
           <RefreshCw className="h-4 w-4 animate-spin" />
           Loading details…
         </div>
-      )} */}
+      )}
+
+      {detailError && (
+        <div className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 shrink-0 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm text-destructive">{detailError}</p>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="shrink-0 border-destructive/40"
+            onClick={() => setDetailReloadKey((k) => k + 1)}
+          >
+            <RefreshCw className="h-4 w-4 mr-1" />
+            Retry
+          </Button>
+        </div>
+      )}
 
       <Tabs defaultValue={defaultTab} className="flex-1 overflow-hidden flex flex-col">
         <TabsList className="grid w-full grid-cols-3">

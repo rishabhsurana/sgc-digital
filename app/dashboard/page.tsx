@@ -49,7 +49,7 @@ import {
   type DashboardSubmissionItem,
 } from "@/lib/dashboard-api"
 import type { Submission } from "@/lib/dashboard-types"
-import { STATUS_CONFIG } from "@/lib/dashboard-types"
+import { getStatusDisplayConfig } from "@/lib/dashboard-types"
 import { DashboardSubmissionDetailDialog } from "@/components/dashboard-submission-detail-dialog"
 import { ContractRegisterTable } from "@/components/dashboard/contract-register-table"
 import { CorrespondenceRegisterTable } from "@/components/dashboard/correspondence-register-table"
@@ -141,7 +141,7 @@ function SubmissionCard({
   submission: Submission
   onRefresh: () => void
 }) {
-  const status = STATUS_CONFIG[submission.status]
+  const status = getStatusDisplayConfig(submission.status)
   const StatusIcon = status.icon
   const [dialogOpen, setDialogOpen] = React.useState(false)
   const [dialogTab, setDialogTab] = React.useState<"details" | "documents" | "respond">("details")

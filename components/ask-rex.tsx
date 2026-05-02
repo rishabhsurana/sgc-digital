@@ -188,9 +188,21 @@ export function AskRex({ position = "header" }: AskRexProps) {
     }
 
     if (isListening) {
-      recognition.stop()
-    } else {
+      try {
+        recognition.stop()
+      } catch {
+        setIsListening(false)
+      }
+      return
+    }
+
+    try {
       recognition.start()
+    } catch (err) {
+      setIsListening(false)
+      const message =
+        err instanceof Error ? err.message : "Check microphone permission and try again."
+      alert(`Could not start voice input: ${message}`)
     }
   }
 

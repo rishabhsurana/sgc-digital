@@ -77,3 +77,27 @@ export const STATUS_CONFIG: Record<
     icon: AlertCircle,
   },
 }
+
+export type StatusDisplayConfig = (typeof STATUS_CONFIG)[SubmissionStatus]
+
+/** Safe lookup when API returns an unexpected ui_status — avoids Dashboard render crashes */
+export function getStatusDisplayConfig(status: string): StatusDisplayConfig {
+  if (status in STATUS_CONFIG)
+    return STATUS_CONFIG[status as SubmissionStatus]
+
+  const label =
+    typeof status === "string" && status.trim()
+      ? status
+          .replace(/-/g, " ")
+          .split(/[\s_]+/)
+          .filter(Boolean)
+          .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+          .join(" ")
+      : "Unknown"
+
+  return {
+    label,
+    color: "bg-slate-100 text-slate-700 border-slate-200 border",
+    icon: AlertCircle,
+  }
+}
