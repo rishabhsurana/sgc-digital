@@ -346,10 +346,6 @@ function CorrespondencePageContent() {
           form.append("document_type_code", uploaded.documentType || "OTHER")
           form.append("document_type_label", DOCUMENT_TYPES.find((t) => t.value === uploaded.documentType)?.label || "Other")
           form.append("condition", "if_applicable")
-          if (uploaded.description?.trim()) {
-            form.append("description", uploaded.description.trim())
-          }
-
           const uploadResult = await apiPostFormData("/api/documents/upload", form)
           if (!uploadResult.success) {
             throw new Error(uploadResult.error || "Document upload failed")

@@ -901,9 +901,6 @@ function ContractsPageContent() {
           form.append("document_type_code", uploaded.documentType || "OTHER")
           form.append("document_type_label", allDocumentTypes.find((t) => t.value === uploaded.documentType)?.label || "Other Document")
           form.append("condition", "if_applicable")
-          if (uploaded.description?.trim()) {
-            form.append("description", uploaded.description.trim())
-          }
           return apiPostFormData("/api/documents/upload", form)
         })
 
